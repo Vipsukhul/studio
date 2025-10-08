@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, AuthError } from 'firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -39,10 +39,26 @@ export default function LoginPage() {
       // The useEffect will handle the redirect
     } catch (error) {
       console.error('Login failed', error);
+      let description = 'An unexpected error occurred. Please try again.';
+      if (error instanceof Error && (error as AuthError).code) {
+        switch ((error as AuthError).code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            description = 'Invalid email or password. Please check your credentials or sign up.';
+            break;
+          case 'auth/invalid-email':
+            description = 'The email address is not valid.';
+            break;
+          default:
+            description = 'Please check your email and password and try again.';
+            break;
+        }
+      }
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: 'Please check your email and password and try again.',
+        description: description,
       });
     } finally {
       setIsLoading(false);
