@@ -18,7 +18,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { doc } from 'firebase/firestore';
+import { collection, doc } from 'firebase/firestore';
 
 import { Button } from "@/components/ui/button"
 import {
@@ -51,9 +51,55 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, setDocumentNonBlocking } from '@/firebase';
+import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 
 import type { Customer, Invoice } from "@/lib/types"
+
+const InvoiceDetails = ({ customer }: { customer: Customer }) => {
+    const firestore = useFirestore();
+    const invoicesCollection = useMemoFirebase(
+      () => firestore ? collection(firestore, 'customers', customer.id, 'invoices') : null,
+      [firestore, customer.id]
+    );
+    const { data: invoices, isLoading } = useCollection<Invoice>(invoicesCollection);
+  
+    if (isLoading) {
+      return <div className="p-4 text-center">Loading invoices...</div>;
+    }
+  
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Invoice #</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-right">Amount</TableHead>
+            <TableHead>Status</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {invoices?.length ? invoices.map((invoice: Invoice) => (
+            <TableRow key={invoice.id}>
+              <TableCell>{invoice.invoiceNumber}</TableCell>
+              <TableCell>{invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : 'N/A'}</TableCell>
+              <TableCell className="text-right">₹{invoice.invoiceAmount?.toLocaleString('en-IN') || 'N/A'}</TableCell>
+              <TableCell>
+                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
+                  invoice.status === 'dispute' ? 'bg-red-100 text-red-800' :
+                  'bg-yellow-100 text-yellow-800'
+                }`}>{invoice.status || 'unpaid'}</span>
+              </TableCell>
+            </TableRow>
+          )) : (
+            <TableRow>
+              <TableCell colSpan={4} className="text-center">No invoices found for this customer.</TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
+    );
+  };
 
 export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [sorting, setSorting] = React.useState<SortingState>([])
@@ -64,11 +110,11 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const handleRemarkChange = async (customerCode: string, newRemark: Customer['remarks']) => {
-    if (!customerCode) return;
-    const docRef = doc(firestore, 'customers', customerCode);
+  const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
+    if (!customerId || !firestore) return;
+    const docRef = doc(firestore, 'customers', customerId);
     setDocumentNonBlocking(docRef, { remarks: newRemark }, { merge: true });
-    toast({ title: 'Updating status...', description: `Setting remark for ${customerCode} to ${newRemark}.` });
+    toast({ title: 'Updating status...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
   };
 
   const columns: ColumnDef<Customer>[] = [
@@ -112,7 +158,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         cell: ({ row }) => (
           <Select
             defaultValue={row.original.remarks}
-            onValueChange={(value) => handleRemarkChange(row.original.customerCode, value as Customer['remarks'])}
+            onValueChange={(value) => handleRemarkChange(row.original.id, value as Customer['remarks'])}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Set remark" />
@@ -281,32 +327,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-4">
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>Invoice #</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead className="text-right">Amount</TableHead>
-                        <TableHead>Status</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {selectedCustomer?.invoices?.map((invoice: Invoice, index: number) => (
-                        <TableRow key={`${invoice.invoiceNumber}-${index}`}>
-                            <TableCell>{invoice.invoiceNumber}</TableCell>
-                            <TableCell>{invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : 'N/A'}</TableCell>
-                            <TableCell className="text-right">₹{invoice.invoiceAmount?.toLocaleString('en-IN') || 'N/A'}</TableCell>
-                            <TableCell>
-                                <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                                    invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
-                                    invoice.status === 'dispute' ? 'bg-red-100 text-red-800' :
-                                    'bg-yellow-100 text-yellow-800'
-                                }`}>{invoice.status || 'unpaid'}</span>
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
+            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} />}
           </div>
         </DialogContent>
       </Dialog>

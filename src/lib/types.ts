@@ -1,21 +1,32 @@
+export interface Outstanding {
+  id: string;
+  invoiceId: string;
+  month: string;
+  amount: number;
+  agePeriod: string;
+}
+
 export interface Invoice {
+  id: string;
+  customerId: string;
   invoiceNumber: string;
   invoiceAmount: number;
   invoiceDate: string; // ISO date string
   status: 'paid' | 'unpaid' | 'dispute';
+  outstandings?: Outstanding[]; // Optional, might not be loaded initially
 }
 
 export interface Customer {
-  id?: string; // Document ID from Firestore, optional on creation
+  id: string; // Document ID from Firestore
   customerCode: string;
   customerName: string;
   region: string;
-  agePeriod: '0-30' | '31-90' | '91-180' | '181-365' | '>365';
-  outstandingAmount: number;
-  invoices: Invoice[];
-  remarks: 'payment received' | 'partial payment' | 'under follow-up' | 'dispute' | 'write-off' | 'none';
-  notes: string;
-  assignedEngineer: string;
+  agePeriod?: '0-30' | '31-90' | '91-180' | '181-365' | '>365';
+  outstandingAmount?: number;
+  invoices?: Invoice[]; // Optional, as they are a subcollection
+  remarks?: 'payment received' | 'partial payment' | 'under follow-up' | 'dispute' | 'write-off' | 'none';
+  notes?: string;
+  assignedEngineer?: string;
 }
 
 export interface Kpi {

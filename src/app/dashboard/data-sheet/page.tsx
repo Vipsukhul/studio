@@ -8,7 +8,7 @@ import type { Customer } from "@/lib/types";
 
 export default function DataSheetPage() {
   const firestore = useFirestore();
-  const customersCollection = useMemoFirebase(() => collection(firestore, 'customers'), [firestore]);
+  const customersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'customers') : null, [firestore]);
   const { data: customersData, isLoading } = useCollection<Customer>(customersCollection);
 
   return (
