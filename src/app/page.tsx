@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
-import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
-import { AuthError } from 'firebase/auth';
+import { useAuth, useUser } from '@/firebase';
+import { AuthError, signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -136,11 +136,4 @@ export default function LoginPage() {
       </Card>
     </div>
   );
-}
-
-// Helper function to handle sign-in. This replaces initiateEmailSignIn
-// to handle the promise for loading states and redirection.
-async function signInWithEmailAndPassword(auth: import('firebase/auth').Auth, email: string, password: string) {
-    const { signInWithEmailAndPassword } = await import('firebase/auth');
-    return signInWithEmailAndPassword(auth, email, password);
 }
