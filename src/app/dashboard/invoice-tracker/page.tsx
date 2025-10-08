@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getInvoiceTrackerData } from '@/lib/api';
+import { invoiceTrackerData as staticInvoiceTrackerData } from '@/lib/data';
 import type { InvoiceTrackerData } from '@/lib/types';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { regionOptions } from '@/lib/data';
@@ -17,7 +17,8 @@ export default function InvoiceTrackerPage() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const result = await getInvoiceTrackerData(region) as InvoiceTrackerData[];
+      // In a real app, you would filter by region here.
+      const result = staticInvoiceTrackerData as InvoiceTrackerData[];
       setData(result);
       setLoading(false);
     }

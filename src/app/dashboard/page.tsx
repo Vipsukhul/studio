@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { getDashboardData } from '@/lib/api';
+import { kpis as staticKpis, outstandingByAge as staticOutstandingByAge, regionDistribution as staticRegionDistribution, monthlyTrends as staticMonthlyTrends } from '@/lib/data';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { ArrowDown, ArrowUp } from 'lucide-react';
@@ -47,7 +47,13 @@ export default function DashboardPage() {
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const dashboardData = await getDashboardData(month);
+      // Simulating fetching data. In a real app, this would be an API call.
+      const dashboardData = {
+        kpis: staticKpis,
+        outstandingByAge: staticOutstandingByAge,
+        regionDistribution: staticRegionDistribution,
+        monthlyTrends: staticMonthlyTrends,
+      };
       setData(dashboardData);
       setLoading(false);
     }
@@ -163,7 +169,7 @@ export default function DashboardPage() {
                 <TableHead className="text-right">30-90 Days</TableHead>
                 <TableHead className="text-right">90-180 Days</TableHead>
                 <TableHead className="text-right">180-365 Days</TableHead>
-                <TableHead className="text-right">&gt;1 Year</TableHead>
+                <TableHead className="text-right">>1 Year</TableHead>
                 <TableHead className="text-right font-bold">Total</TableHead>
               </TableRow>
             </TableHeader>
