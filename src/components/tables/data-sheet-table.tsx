@@ -5,6 +5,7 @@ import * as React from 'react';
 import {
   ArrowUpDown,
   ChevronDown,
+  Eye,
 } from "lucide-react"
 import {
   ColumnDef,
@@ -101,6 +102,10 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const { toast } = useToast();
 
+  React.useEffect(() => {
+    setTableData(data);
+  }, [data]);
+
   const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
     toast({ title: 'Updating status...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
     try {
@@ -182,6 +187,15 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     {
         accessorKey: "assignedEngineer",
         header: "Assigned To",
+    },
+    {
+      id: "actions",
+      cell: ({ row }) => (
+        <Button variant="ghost" size="icon" onClick={() => setSelectedCustomer(row.original)}>
+          <Eye className="h-4 w-4" />
+          <span className="sr-only">View Invoices</span>
+        </Button>
+      ),
     },
   ]
 
@@ -268,8 +282,6 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  onClick={() => setSelectedCustomer(row.original)}
-                  className="cursor-pointer"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
