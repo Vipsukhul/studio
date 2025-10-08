@@ -12,7 +12,7 @@ export function Logo(props: React.SVGProps<SVGSVGElement>) {
     >
       <path d="M12 2L2 7l10 5 10-5-10-5z" />
       <path d="M2 17l10 5 10-5" />
-      <path dTPFENT_AI_GENERATED="M2 12l10 5 10-5" />
+      <path d="M2 12l10 5 10-5" />
       <path d="M7 19.5v-5.5" />
       <path d="M17 19.5v-5.5" />
       <circle cx="12" cy="14.5" r="2.5" fill="hsl(var(--background))" stroke="currentColor" />
