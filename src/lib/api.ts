@@ -4,7 +4,9 @@ import { customers, invoiceTrackerData, kpis, monthlyTrends, outstandingByAge, r
 import type { Customer } from './types';
 import * as xlsx from 'xlsx';
 
-const API_DELAY = 500;
+const API_DELAY = 100; // Reduced delay for quicker updates
+
+let inMemoryDataStore: Customer[] = [...customers];
 
 // Mock API functions
 export async function login(credentials: { email: string; password: string }) {
@@ -69,41 +71,23 @@ export async function getInvoiceTrackerData(region?: string) {
 
 export async function getDataSheetData(filters?: { region?: string; customer?: string }) {
     console.log('Fetching data sheet data with filters:', filters);
-    return new Promise<Customer[]>((resolve) => {
-        setTimeout(() => {
-            resolve(customers);
-        }, API_DELAY);
-    });
-};
-
-export async function uploadExcel(formData: FormData) {
-    console.log('Uploading file for month:', formData.get('month'));
-    const file = formData.get('file') as File;
-    if (!file) {
-        throw new Error('No file uploaded');
+    // This now reads from the in-memory store which is updated by the upload endpoint
+    const response = await fetch('http://localhost:9002/api/upload', { cache: 'no-store' });
+    if (!response.ok) {
+      console.error("Failed to fetch data from in-memory store");
+      return customers; // fallback to static data
     }
-
-    const buffer = await file.arrayBuffer();
-    const workbook = xlsx.read(buffer, { type: 'buffer' });
-    const sheetName = workbook.SheetNames[0];
-    const worksheet = workbook.Sheets[sheetName];
-    const data = xlsx.utils.sheet_to_json(worksheet);
-    
-    // Here you would typically save the data to your database.
-    // For this demo, we'll just log it to the console.
-    console.log('Parsed Excel data:', data);
-
-    // This simulates saving the data and returning a success message.
-    // In a real app, you would have a separate function to handle database insertion.
-    return new Promise((resolve) => {
-        setTimeout(() => {
-            resolve({ message: 'Data processed and saved successfully', data });
-        }, API_DELAY + 1000);
-    });
+    const { data } = await response.json();
+    return data;
 };
 
 export async function updateInvoiceStatus(customerId: string, status: Customer['remarks']) {
     console.log(`Updating status for customer ${customerId} to ${status}`);
+    // In a real database, you'd perform an update query.
+    // Here, we'll update our in-memory store.
+    inMemoryDataStore = inMemoryDataStore.map(customer => 
+      customer.customerCode === customerId ? { ...customer, remarks: status } : customer
+    );
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve({ message: 'Status updated' });
