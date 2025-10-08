@@ -1,116 +1,131 @@
-/**
- * @fileoverview Firestore Security Rules for the Outstanding Tracker application.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for customers, invoices, and outstandings.
- * Only authenticated users can access data, and they can only access data related to their customers.
- *
- * Data Structure:
- * The data is organized hierarchically under the `/customers/{customerId}` path,
- * with invoices stored in `/customers/{customerId}/invoices/{invoiceId}`
- * and outstandings in `/customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}`.
- *
- * Key Security Decisions:
- * - All data is private and requires authentication to access.
- * - Users can only manage data related to the customers they own.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows access to customer documents.
+     * @description Protects the root `/customers` collection.
      * @path /customers/{customerId}
-     * @allow (get, list) Authenticated user can access customer data.
-     * @allow (create, update, delete) Authenticated user can create, update, and delete customer data where they are the owner.
-     * @deny (get, list) Unauthorized user cannot access customer data.
-     * @deny (create, update, delete) Unauthorized user cannot create, update, and delete customer data.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) Authenticated user can create a customer document if the customerId matches their auth UID.
+     * @deny (get) Not allowed.
+     * @deny (list) Not allowed.
+     * @deny (update) Not allowed.
+     * @deny (delete) Not allowed.
+     * @principle Enforces document ownership for writes. Restricts listing and get to authenticated owner.
      */
     match /customers/{customerId} {
+      // Helper function to check if the user is signed in
       function isSignedIn() {
         return request.auth != null;
       }
 
+      // Helper function to check if the user is the owner of the customer document
       function isOwner(customerId) {
-        return request.auth.uid == customerId;
+        return isSignedIn() && request.auth.uid == customerId;
       }
 
+      // Helper function to check if the user is the owner of an EXISTING customer document
       function isExistingOwner(customerId) {
-        return isOwner(customerId) && resource != null;
+        return isOwner(customerId) && existsAfter(/databases/$(database)/documents/customers/$(customerId));
       }
 
-      // Read Rules
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      // Only allow a user to create their own customer document, the document id must match the auth.uid
+      allow create: if isOwner(customerId);
 
-      // Write Rules
-      allow create: if isSignedIn() && isOwner(customerId);
+      // No one can read the document
+      allow get: if false;
+
+      // No one can list the documents in the customers collection
+      allow list: if false;
+
+      // Only the owner can update the document
       allow update: if isExistingOwner(customerId);
+
+      // Only the owner can delete the document
       allow delete: if isExistingOwner(customerId);
+
     }
 
     /**
-     * @description Allows access to invoice documents.
+     * @description Protects the `/customers/{customerId}/invoices` subcollection.
      * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (get, list) Authenticated user can access invoice data for their customer.
-     * @allow (create, update, delete) Authenticated user can create, update, and delete invoice data for their customer.
-     * @deny (get, list) Unauthorized user cannot access invoice data.
-     * @deny (create, update, delete) Unauthorized user cannot create, update, and delete invoice data.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) Authenticated user can create an invoice if they own the parent customer document, and the customerId matches.
+     * @allow (list) Authenticated user can list invoices if they own the parent customer document.
+     * @deny (get) Not allowed.
+     * @deny (update) Not allowed.
+     * @deny (delete) Not allowed.
+     * @principle Enforces document ownership for writes. Restricts listing and get to authenticated owner.
      */
     match /customers/{customerId}/invoices/{invoiceId} {
+      // Helper function to check if the user is signed in
       function isSignedIn() {
         return request.auth != null;
       }
 
+      // Helper function to check if the user is the owner of the customer document
       function isOwner(customerId) {
-        return request.auth.uid == customerId;
+        return isSignedIn() && request.auth.uid == customerId;
       }
 
-       function isExistingOwner(customerId) {
-        return isOwner(customerId) && resource != null;
+       // Helper function to check if the user is the owner of an EXISTING customer document
+      function isExistingOwner(customerId) {
+        return isOwner(customerId) && existsAfter(/databases/$(database)/documents/customers/$(customerId)/invoices/$(invoiceId));
       }
 
-      // Read Rules
-      allow get: if isSignedIn() && isOwner(customerId);
-      allow list: if isSignedIn() && isOwner(customerId);
+      // Only allow the owner to create an invoice if the customerId matches
+      allow create: if isOwner(customerId);
 
-      // Write Rules
-      allow create: if isSignedIn() && isOwner(customerId);
+      // No one can read the document
+      allow get: if false;
+
+      // Only allow the owner to list invoices
+      allow list: if isOwner(customerId);
+
+      // Only the owner can update the document
       allow update: if isExistingOwner(customerId);
+
+      // Only the owner can delete the document
       allow delete: if isExistingOwner(customerId);
     }
 
     /**
-     * @description Allows access to outstanding documents.
+     * @description Protects the `/customers/{customerId}/invoices/{invoiceId}/outstandings` subcollection.
      * @path /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}
-     * @allow (get, list) Authenticated user can access outstanding data for their customer's invoice.
-     * @allow (create, update, delete) Authenticated user can create, update, and delete outstanding data for their customer's invoice.
-     * @deny (get, list) Unauthorized user cannot access outstanding data.
-     * @deny (create, update, delete) Unauthorized user cannot create, update, and delete outstanding data.
-     * @principle Enforces document ownership for writes.
+     * @allow (create) Authenticated user can create an outstanding if they own the parent customer and invoice documents, and the customerId matches.
+     * @allow (list) Authenticated user can list outstandings if they own the parent customer and invoice documents.
+     * @deny (get) Not allowed.
+     * @deny (update) Not allowed.
+     * @deny (delete) Not allowed.
+     * @principle Enforces document ownership for writes. Restricts listing and get to authenticated owner.
      */
     match /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId} {
+      // Helper function to check if the user is signed in
       function isSignedIn() {
         return request.auth != null;
       }
 
+      // Helper function to check if the user is the owner of the customer document
       function isOwner(customerId) {
-        return request.auth.uid == customerId;
+        return isSignedIn() && request.auth.uid == customerId;
       }
 
+      // Helper function to check if the user is the owner of an EXISTING customer document
       function isExistingOwner(customerId) {
-        return isOwner(customerId) && resource != null;
+        return isOwner(customerId) && existsAfter(/databases/$(database)/documents/customers/$(customerId)/invoices/$(invoiceId)/outstandings/$(outstandingId));
       }
 
-      // Read Rules
-      allow get: if isSignedIn() && isOwner(customerId);
-      allow list: if isSignedIn() && isOwner(customerId);
+      // Only allow the owner to create an outstanding if the customerId matches
+      allow create: if isOwner(customerId);
 
-      // Write Rules
-      allow create: if isSignedIn() && isOwner(customerId);
+      // No one can read the document
+      allow get: if false;
+
+      // Only allow the owner to list outstandings
+      allow list: if isOwner(customerId);
+
+      // Only the owner can update the document
       allow update: if isExistingOwner(customerId);
+
+      // Only the owner can delete the document
       allow delete: if isExistingOwner(customerId);
     }
   }
