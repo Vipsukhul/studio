@@ -68,6 +68,23 @@ export async function updateCustomerRemark(customerId: string, newRemark: Custom
 }
 
 /**
+ * Simulates updating a customer's notes.
+ * @param customerId - The ID of the customer to update.
+ * @param newNotes - The new notes to set.
+ */
+export async function updateCustomerNotes(customerId: string, newNotes: string): Promise<{ success: boolean }> {
+  await delay(300);
+  console.log(`Updating notes for customer ${customerId} to "${newNotes}"`);
+  const customerIndex = customers.findIndex(c => c.customerCode === customerId);
+  if (customerIndex !== -1) {
+    customers[customerIndex].notes = newNotes;
+    return { success: true };
+  }
+  throw new Error('Customer not found');
+}
+
+
+/**
  * Processes an uploaded Excel file.
  * In a real app, you might send the file to a backend for processing.
  * Here, we'll process it on the client-side.

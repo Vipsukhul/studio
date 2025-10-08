@@ -51,7 +51,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { updateCustomerRemark } from '@/lib/api';
+import { updateCustomerRemark, updateCustomerNotes } from '@/lib/api';
 
 import type { Customer, Invoice } from "@/lib/types"
 
@@ -123,6 +123,22 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     }
   };
 
+  const handleNotesChange = async (customerId: string, newNotes: string) => {
+    try {
+      await updateCustomerNotes(customerId, newNotes);
+      setTableData((prevData) =>
+        prevData.map((customer) =>
+          customer.customerCode === customerId
+            ? { ...customer, notes: newNotes }
+            : customer
+        )
+      );
+      toast({ title: 'Success', description: 'Notes updated.' });
+    } catch (error) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update notes.' });
+    }
+  };
+
   const columns: ColumnDef<Customer>[] = [
     {
       accessorKey: "customerCode",
@@ -183,6 +199,30 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     {
         accessorKey: "notes",
         header: "Notes",
+        cell: ({ row }) => {
+            const [notes, setNotes] = React.useState(row.original.notes || '');
+
+            const handleBlur = () => {
+                if (notes !== row.original.notes) {
+                    handleNotesChange(row.original.customerCode, notes);
+                }
+            };
+            
+            const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+              if (e.key === 'Enter') {
+                handleBlur();
+                (e.target as HTMLInputElement).blur();
+              }
+            }
+
+            return <Input 
+                value={notes} 
+                onChange={(e) => setNotes(e.target.value)} 
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
+                className="min-w-[200px]"
+            />;
+        }
     },
     {
         accessorKey: "assignedEngineer",
