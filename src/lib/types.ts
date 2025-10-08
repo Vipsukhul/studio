@@ -1,14 +1,14 @@
 export interface Outstanding {
-  id: string;
-  invoiceId: string;
+  id?: string;
+  invoiceId?: string;
   month: string;
   amount: number;
   agePeriod: string;
 }
 
 export interface Invoice {
-  id: string;
-  customerId: string;
+  id?: string;
+  customerId?: string;
   invoiceNumber: string;
   invoiceAmount: number;
   invoiceDate: string; // ISO date string
@@ -17,7 +17,7 @@ export interface Invoice {
 }
 
 export interface Customer {
-  id: string; // Document ID from Firestore
+  id?: string; // Document ID from Firestore
   customerCode: string;
   customerName: string;
   region: string;

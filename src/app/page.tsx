@@ -9,8 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
-import { useAuth, useUser } from '@/firebase';
-import { AuthError, signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -18,8 +16,22 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuth();
-  const { user, isUserLoading } = useUser();
+  
+  // Simulate user state
+  const [user, setUser] = useState<object | null>(null);
+  const [isUserLoading, setIsUserLoading] = useState(true);
+
+  useEffect(() => {
+    // Simulate checking for a logged-in user
+    const checkUser = setTimeout(() => {
+      // To test the logged-in state, you can manually set a value in localStorage
+      // For now, we'll assume the user is not logged in.
+      setIsUserLoading(false);
+    }, 1000);
+
+    return () => clearTimeout(checkUser);
+  }, []);
+
 
   useEffect(() => {
     if (!isUserLoading && user) {
@@ -29,46 +41,29 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service not available.' });
-        return;
-    }
     setIsLoading(true);
-    signInWithEmailAndPassword(auth, email, password)
-      .then((userCredential) => {
-        // Signed in 
-        setIsLoading(false);
+
+    // Simulate a login request
+    setTimeout(() => {
+      if (email === 'test@example.com' && password === 'password') {
         toast({
             title: 'Login Successful',
             description: "Welcome back! You're being redirected to your dashboard.",
         });
+        setUser({email: 'test@example.com'});
         router.push('/dashboard');
-      })
-      .catch((error: AuthError) => {
-        setIsLoading(false);
-        let description = 'An unexpected error occurred. Please try again.';
-        switch (error.code) {
-          case 'auth/user-not-found':
-          case 'auth/wrong-password':
-          case 'auth/invalid-credential':
-            description = 'Invalid email or password. Please check your credentials or sign up.';
-            break;
-          case 'auth/invalid-email':
-            description = 'The email address is not valid.';
-            break;
-          default:
-            description = 'Please check your email and password and try again.';
-            break;
-        }
+      } else {
         toast({
           variant: 'destructive',
           title: 'Login Failed',
-          description: description,
+          description: 'Invalid email or password.',
         });
-      });
+      }
+      setIsLoading(false);
+    }, 1500);
   };
 
-  if (isUserLoading || user) {
+  if (isUserLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
@@ -85,7 +80,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Login</CardTitle>
-          <CardDescription>Enter your email below to login to your account.</CardDescription>
+          <CardDescription>Enter your credentials below to login. (Hint: test@example.com / password)</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="grid gap-4">

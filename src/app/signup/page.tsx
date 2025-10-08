@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -9,8 +9,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
-import { useAuth, useUser } from '@/firebase';
-import { createUserWithEmailAndPassword, updateProfile, AuthError } from 'firebase/auth';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -19,57 +17,22 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuth();
-  const { user, isUserLoading } = useUser();
-
-  useEffect(() => {
-    if (!isUserLoading && user) {
-      router.push('/dashboard');
-    }
-  }, [user, isUserLoading, router]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Authentication service not available.' });
-      return;
-    }
     setIsLoading(true);
-    createUserWithEmailAndPassword(auth, email, password)
-      .then(async (userCredential) => {
-        const user = userCredential.user;
-        if (name) {
-          try {
-            await updateProfile(user, { displayName: name });
-          } catch (error) {
-            console.error("Failed to update profile", error);
-            // Don't block the user flow for profile update failure
-          }
-        }
-        setIsLoading(false);
+    
+    // Simulate signup
+    setTimeout(() => {
         toast({
           title: 'Signup Successful',
-          description: "Your account has been created. Redirecting to dashboard...",
+          description: "Your account has been created. Redirecting to login...",
         });
-        router.push('/dashboard');
-      })
-      .catch((error: AuthError) => {
         setIsLoading(false);
-        toast({
-          variant: 'destructive',
-          title: 'Signup Failed',
-          description: error.message || 'An account with this email may already exist.',
-        });
-      });
+        router.push('/');
+    }, 1500)
   };
 
-  if (isUserLoading || user) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">

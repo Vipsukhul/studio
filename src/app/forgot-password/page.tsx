@@ -8,53 +8,26 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
-import { useAuth } from '@/firebase';
-import { sendPasswordResetEmail, AuthError } from 'firebase/auth';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isSent, setIsSent] = useState(false);
   const { toast } = useToast();
-  const auth = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service not available.' });
-        return;
-    }
     setIsLoading(true);
-    try {
-      await sendPasswordResetEmail(auth, email);
-      setIsSent(true);
-      toast({
-        title: 'Password Reset Email Sent',
-        description: 'Please check your inbox for instructions to reset your password.',
-      });
-    } catch (error) {
-      let description = 'An unexpected error occurred. Please try again.';
-      if (error instanceof Error && (error as AuthError).code) {
-        switch ((error as AuthError).code) {
-          case 'auth/user-not-found':
-            description = 'No user found with this email address.';
-            break;
-          case 'auth/invalid-email':
-            description = 'The email address is not valid.';
-            break;
-          default:
-            description = 'Failed to send password reset email. Please try again later.';
-            break;
-        }
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Request Failed',
-        description: description,
-      });
-    } finally {
-      setIsLoading(false);
-    }
+
+    // Simulate sending an email
+    setTimeout(() => {
+        setIsLoading(false);
+        setIsSent(true);
+        toast({
+            title: 'Password Reset Email Sent',
+            description: 'Please check your inbox for instructions to reset your password.',
+        });
+    }, 1500);
   };
 
   return (

@@ -18,7 +18,6 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
-import { collection, doc } from 'firebase/firestore';
 
 import { Button } from "@/components/ui/button"
 import {
@@ -51,21 +50,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { useFirestore, setDocumentNonBlocking, useCollection, useMemoFirebase } from '@/firebase';
 
 import type { Customer, Invoice } from "@/lib/types"
 
 const InvoiceDetails = ({ customer }: { customer: Customer }) => {
-    const firestore = useFirestore();
-    const invoicesCollection = useMemoFirebase(
-      () => firestore ? collection(firestore, 'customers', customer.id, 'invoices') : null,
-      [firestore, customer.id]
-    );
-    const { data: invoices, isLoading } = useCollection<Invoice>(invoicesCollection);
-  
-    if (isLoading) {
-      return <div className="p-4 text-center">Loading invoices...</div>;
-    }
+    
+    const invoices = customer.invoices || [];
   
     return (
       <Table>
@@ -78,8 +68,8 @@ const InvoiceDetails = ({ customer }: { customer: Customer }) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {invoices?.length ? invoices.map((invoice: Invoice) => (
-            <TableRow key={invoice.id}>
+          {invoices?.length ? invoices.map((invoice: Invoice, index: number) => (
+            <TableRow key={invoice.invoiceNumber + index}>
               <TableCell>{invoice.invoiceNumber}</TableCell>
               <TableCell>{invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : 'N/A'}</TableCell>
               <TableCell className="text-right">₹{invoice.invoiceAmount?.toLocaleString('en-IN') || 'N/A'}</TableCell>
@@ -108,13 +98,9 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const { toast } = useToast();
-  const firestore = useFirestore();
 
   const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
-    if (!customerId || !firestore) return;
-    const docRef = doc(firestore, 'customers', customerId);
-    setDocumentNonBlocking(docRef, { remarks: newRemark }, { merge: true });
-    toast({ title: 'Updating status...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
+    toast({ title: 'Updating status (simulated)...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
   };
 
   const columns: ColumnDef<Customer>[] = [
@@ -158,7 +144,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         cell: ({ row }) => (
           <Select
             defaultValue={row.original.remarks}
-            onValueChange={(value) => handleRemarkChange(row.original.id, value as Customer['remarks'])}
+            onValueChange={(value) => handleRemarkChange(row.original.customerCode, value as Customer['remarks'])}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Set remark" />

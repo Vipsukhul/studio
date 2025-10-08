@@ -2,14 +2,12 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataSheetTable } from "@/components/tables/data-sheet-table";
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from "firebase/firestore";
+import { customers } from "@/lib/data";
 import type { Customer } from "@/lib/types";
 
 export default function DataSheetPage() {
-  const firestore = useFirestore();
-  const customersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'customers') : null, [firestore]);
-  const { data: customersData, isLoading } = useCollection<Customer>(customersCollection);
+
+  const customersData: Customer[] = customers;
 
   return (
     <>
@@ -22,13 +20,7 @@ export default function DataSheetPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {isLoading ? (
-            <div className="flex items-center justify-center h-64">
-              <div className="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-primary"></div>
-            </div>
-          ) : (
-            <DataSheetTable data={customersData || []} />
-          )}
+          <DataSheetTable data={customersData || []} />
         </CardContent>
       </Card>
     </>
