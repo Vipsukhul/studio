@@ -144,11 +144,6 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      }
-    },
     state: {
       sorting,
       columnFilters,
