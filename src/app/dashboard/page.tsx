@@ -12,6 +12,7 @@ import { monthOptions } from '@/lib/data';
 import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution } from '@/lib/types';
 import { getDashboardData } from '@/lib/api';
+import { ResponsiveContainer } from 'recharts';
 
 function KpiCard({ kpi }: { kpi: Kpi }) {
   const isIncrease = kpi.changeType === 'increase';
@@ -133,7 +134,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
-              <RegionPieChart data={regionDistribution} />
+                <RegionPieChart data={regionDistribution} />
             </ChartContainer>
           </CardContent>
         </Card>
@@ -145,7 +146,7 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
-            <MonthlyLineChart data={monthlyTrends} />
+              <MonthlyLineChart data={monthlyTrends} />
           </ChartContainer>
         </CardContent>
       </Card>

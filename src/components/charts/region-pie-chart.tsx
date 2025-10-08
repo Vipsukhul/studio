@@ -6,6 +6,7 @@ import type { RegionDistribution } from '@/lib/types';
 
 export function RegionPieChart({ data }: { data: RegionDistribution[] }) {
   return (
+    <ResponsiveContainer width="100%" height="100%">
       <PieChart>
         <Tooltip
           cursor={false}
@@ -39,5 +40,6 @@ export function RegionPieChart({ data }: { data: RegionDistribution[] }) {
         </Pie>
         <Legend content={<ChartLegendContent />} />
       </PieChart>
+    </ResponsiveContainer>
   );
 }
