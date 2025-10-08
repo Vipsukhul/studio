@@ -11,6 +11,7 @@ import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
 import { monthOptions } from '@/lib/data';
+import { ChartContainer } from '@/components/ui/chart';
 
 function KpiCard({ kpi }: { kpi: Kpi }) {
   const isIncrease = kpi.changeType === 'increase';
@@ -68,6 +69,29 @@ export default function DashboardPage() {
     monthlyTrends: MonthlyTrend[];
   };
 
+  const ageChartConfig = {
+    '0-30': { label: '0-30 Days', color: 'hsl(var(--chart-1))' },
+    '31-90': { label: '31-90 Days', color: 'hsl(var(--chart-2))' },
+    '91-180': { label: '91-180 Days', color: 'hsl(var(--chart-3))' },
+    '181-365': { label: '181-365 Days', color: 'hsl(var(--chart-4))' },
+    '>365': { label: '>1 Year', color: 'hsl(var(--chart-5))' },
+  } as const;
+
+  const regionChartConfig = {
+    amount: { label: 'Amount' },
+    North: { label: 'North', color: 'hsl(var(--chart-1))' },
+    South: { label: 'South', color: 'hsl(var(--chart-2))' },
+    East: { label: 'East', color: 'hsl(var(--chart-3))' },
+    West: { label: 'West', color: 'hsl(var(--chart-4))' },
+  } as const;
+  
+  const monthlyChartConfig = {
+    North: { label: 'North', color: 'hsl(var(--chart-1))' },
+    West: { label: 'West', color: 'hsl(var(--chart-2))' },
+    South: { label: 'South', color: 'hsl(var(--chart-3))' },
+    East: { label: 'East', color: 'hsl(var(--chart-4))' },
+  } as const;
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -98,7 +122,9 @@ export default function DashboardPage() {
             <CardTitle>Region vs. Ageing</CardTitle>
           </CardHeader>
           <CardContent>
-            <AgeBarChart data={outstandingByAge} />
+            <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
+              <AgeBarChart data={outstandingByAge} />
+            </ChartContainer>
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
@@ -106,7 +132,9 @@ export default function DashboardPage() {
             <CardTitle>Region-wise Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <RegionPieChart data={regionDistribution} />
+            <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
+              <RegionPieChart data={regionDistribution} />
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
@@ -116,7 +144,9 @@ export default function DashboardPage() {
           <CardTitle>Month-wise Outstanding Trend</CardTitle>
         </CardHeader>
         <CardContent>
-          <MonthlyLineChart data={monthlyTrends} />
+          <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
+            <MonthlyLineChart data={monthlyTrends} />
+          </ChartContainer>
         </CardContent>
       </Card>
       

@@ -1,16 +1,16 @@
 'use client';
 
 import { Pie, PieChart, ResponsiveContainer, Cell, Legend, Tooltip } from 'recharts';
-import { ChartTooltipContent } from '@/components/ui/chart';
+import { ChartTooltipContent, ChartLegendContent } from '@/components/ui/chart';
 import type { RegionDistribution } from '@/lib/types';
-
-const COLORS = ['hsl(var(--chart-1))', 'hsl(var(--chart-2))', 'hsl(var(--chart-3))', 'hsl(var(--chart-4))'];
 
 export function RegionPieChart({ data }: { data: RegionDistribution[] }) {
   return (
-    <ResponsiveContainer width="100%" height={350}>
       <PieChart>
-        <Tooltip content={<ChartTooltipContent />} />
+        <Tooltip
+          cursor={false}
+          content={<ChartTooltipContent indicator="dot" hideLabel />}
+        />
         <Pie
           data={data}
           cx="50%"
@@ -18,13 +18,12 @@ export function RegionPieChart({ data }: { data: RegionDistribution[] }) {
           labelLine={false}
           outerRadius={110}
           innerRadius={70}
-          fill="#8884d8"
           dataKey="amount"
           nameKey="region"
           paddingAngle={5}
           label={({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }) => {
             const RADIAN = Math.PI / 180;
-            const radius = innerRadius + (outerRadius - innerRadius) * 1.2;
+            const radius = innerRadius + (outerRadius - innerRadius) * 1.3;
             const x = cx + radius * Math.cos(-midAngle * RADIAN);
             const y = cy + radius * Math.sin(-midAngle * RADIAN);
             return (
@@ -35,11 +34,10 @@ export function RegionPieChart({ data }: { data: RegionDistribution[] }) {
           }}
         >
           {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+            <Cell key={`cell-${index}`} fill={`var(--color-${entry.region})`} />
           ))}
         </Pie>
-        <Legend wrapperStyle={{fontSize: "0.8rem"}} />
+        <Legend content={<ChartLegendContent />} />
       </PieChart>
-    </ResponsiveContainer>
   );
 }
