@@ -2,9 +2,9 @@
 
 import * as React from 'react';
 import {
-  CaretSortIcon,
-  ChevronDownIcon,
-} from "@radix-ui/react-icons"
+  ArrowUpDown,
+  ChevronDown,
+} from "lucide-react"
 import {
   ColumnDef,
   ColumnFiltersState,
@@ -81,7 +81,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       accessorKey: "customerName",
       header: ({ column }) => (
         <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-          Customer Name <CaretSortIcon className="ml-2 h-4 w-4" />
+          Customer Name <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       ),
     },
@@ -94,7 +94,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       header: ({ column }) => (
         <div className="text-right">
             <Button variant="ghost" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
-                Total Outstanding <CaretSortIcon className="ml-2 h-4 w-4" />
+                Total Outstanding <ArrowUpDown className="ml-2 h-4 w-4" />
             </Button>
         </div>
       ),
@@ -166,7 +166,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
-              Columns <ChevronDownIcon className="ml-2 h-4 w-4" />
+              Columns <ChevronDown className="ml-2 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
