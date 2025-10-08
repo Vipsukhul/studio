@@ -1,75 +1,79 @@
 /**
- * @fileoverview Firestore Security Rules for the Outstanding Tracker application.
+ * @fileoverview Firestore Security Rules for Outstanding Tracker App
  *
- * Core Philosophy:
- * This ruleset enforces a strict ownership model, ensuring that users can only
- * access data related to their assigned customer. Data is organized hierarchically
- * under the `customers` collection, with subcollections for `invoices` and
- * `outstandings`. Authorization independence is achieved via data denormalization.
+ * Core Philosophy: This ruleset enforces a strict user-ownership model for customer, invoice, and outstanding data.
+ *  Each entity is secured within a hierarchical data structure, ensuring that only authenticated users can access and modify data they own.
+ *  The rules are designed to prevent unauthorized access by leveraging the user's authentication token and Firebase Authentication.
  *
  * Data Structure:
- * - /customers/{customerId}: Stores customer information.
- * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice details for a customer,
- *   including a denormalized `region` field from the parent customer document.
- * - /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}:
- *   Stores outstanding amounts for specific invoices.
+ * - /customers/{customerId}: Stores customer data.
+ * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer, with the customer's region denormalized for efficient authorization.
+ * - /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}: Stores outstanding amounts for a specific invoice.
  *
  * Key Security Decisions:
- * - Enforces ownership at each level of the hierarchy.
- * - Denormalizes customer data (`region`) to simplify authorization checks and
- *   avoid costly `get()` operations.
- * - Relies on authenticated users (`request.auth != null`) for all operations.
- * - Allows the creation of a customer if the authenticated user ID matches the customerId.
- * - Enforces the immutability of the customerId in invoices and outstandings to maintain relational integrity.
- * - Restricts listing of all collections to the owner.
+ * - Strict Ownership: All data access is restricted to authenticated users and based on path-based ownership.
+ *
+ * Denormalization for Authorization:
+ * - The customer's 'region' is denormalized into each invoice document to avoid costly 'get()' operations and simplify security rules.
+ * This is crucial for authorization independence and maintaining atomic operations.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Manages access to customer data.
+     * @description Manages access to customer data. Customers can only be created by themselves.
      * @path /customers/{customerId}
-     * @allow (create) Authenticated user can create a customer document where the customerId matches their UID.
-     * @allow (get, list, update, delete) Authenticated user can access a customer document where the customerId matches their UID.
-     * @deny (create) Authenticated user cannot create a customer document where the customerId does not match their UID.
-     * @deny (update, delete) Authenticated user cannot update or delete a customer document if they are not the owner.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data.
+     * @allow (create) - User with UID 'user_abc' can create a customer document if customerId == 'user_abc'.
+     * @deny (create) - User with UID 'user_xyz' cannot create a customer document if customerId == 'user_abc'.
+     * @allow (get, list, update, delete) - User with UID 'user_abc' can get, list, update or delete customer documents if customerId == 'user_abc'.
+     * @deny (get, list, update, delete) - User with UID 'user_xyz' cannot get, list, update or delete customer documents if customerId == 'user_abc'.
+     * @principle Enforces document ownership for writes.  Restricts access to a user's own data tree.
      */
     match /customers/{customerId} {
-      // Helper function to check if the authenticated user is the owner
-      function isOwner(customerId) {
-        return request.auth != null && request.auth.uid == customerId;
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Helper function to check if the authenticated user is the existing owner (resource != null)
-      function isExistingOwner(customerId) {
-        return isOwner(customerId) && resource != null;
+      // Helper function to check if the user is the owner of the document
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      // Helper function to check if the user is the owner of the existing document
+      function isExistingOwner(userId) {
+          return isOwner(userId) && resource != null;
       }
 
       allow get: if isOwner(customerId);
-      allow list: if isOwner(customerId);
+      allow list: if false;
       allow create: if isOwner(customerId);
       allow update: if isExistingOwner(customerId);
       allow delete: if isExistingOwner(customerId);
     }
 
     /**
-     * @description Manages access to invoice data within a customer's subcollection.
+     * @description Manages access to invoice data for a specific customer. Only the customer who owns the parent customer document can create, update, or delete invoices.
      * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (create) Authenticated user can create an invoice document where the customerId matches their UID.
-     * @allow (get, list, update, delete) Authenticated user can access an invoice document where the customerId matches their UID.
-     * @deny (create) Authenticated user cannot create an invoice document where the customerId does not match their UID.
-     * @deny (update, delete) Authenticated user cannot update or delete an invoice document if they are not the owner.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data.
+     * @allow (create) - User with UID 'user_abc' can create an invoice document under /customers/user_abc/invoices/{invoiceId}. The customerId in the invoice document must match 'user_abc'.
+     * @deny (create) - User with UID 'user_xyz' cannot create an invoice document under /customers/user_abc/invoices/{invoiceId}.
+     * @allow (get, list, update, delete) - User with UID 'user_abc' can get, list, update or delete invoice documents under /customers/user_abc/invoices/{invoiceId}.
+     * @deny (get, list, update, delete) - User with UID 'user_xyz' cannot get, list, update or delete invoice documents under /customers/user_abc/invoices/{invoiceId}.
+     * @principle Enforces document ownership for writes. Validates relational integrity between documents. Restricts access to a user's own data tree.
      */
     match /customers/{customerId}/invoices/{invoiceId} {
-      // Helper function to check if the authenticated user is the owner
-      function isOwner(customerId) {
-        return request.auth != null && request.auth.uid == customerId;
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Helper function to check if the authenticated user is the existing owner (resource != null)
+      // Helper function to check if the user is the owner of the parent customer document
+      function isOwner(customerId) {
+        return isSignedIn() && request.auth.uid == customerId;
+      }
+
+      // Helper function to check if the user is the owner of the existing parent customer document
       function isExistingOwner(customerId) {
         return isOwner(customerId) && resource != null;
       }
@@ -77,34 +81,39 @@ service cloud.firestore {
       allow get: if isOwner(customerId);
       allow list: if isOwner(customerId);
       allow create: if isOwner(customerId) && request.resource.data.customerId == customerId;
-      allow update: if isExistingOwner(customerId) && request.resource.data.customerId == resource.data.customerId; // enforce immutability
+      allow update: if isExistingOwner(customerId) && request.resource.data.customerId == customerId;
       allow delete: if isExistingOwner(customerId);
     }
 
-    /**
-     * @description Manages access to outstanding data within an invoice's subcollection.
-     * @path /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}
-     * @allow (create) Authenticated user can create an outstanding document where the customerId matches their UID.
-     * @allow (get, list, update, delete) Authenticated user can access an outstanding document where the customerId matches their UID.
-     * @deny (create) Authenticated user cannot create an outstanding document where the customerId does not match their UID.
-     * @deny (update, delete) Authenticated user cannot update or delete an outstanding document if they are not the owner.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data.
-     */
+     /**
+      * @description Manages access to outstanding data for a specific invoice. Only the customer who owns the parent customer document and invoice document can create, update, or delete outstandings.
+      * @path /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}
+      * @allow (create) - User with UID 'user_abc' can create an outstanding document under /customers/user_abc/invoices/{invoiceId}/outstandings/{outstandingId}. The customerId in the grand-parent customer document must match 'user_abc'.
+      * @deny (create) - User with UID 'user_xyz' cannot create an outstanding document under /customers/user_abc/invoices/{invoiceId}/outstandings/{outstandingId}.
+      * @allow (get, list, update, delete) - User with UID 'user_abc' can get, list, update or delete outstanding documents under /customers/user_abc/invoices/{invoiceId}/outstandings/{outstandingId}.
+      * @deny (get, list, update, delete) - User with UID 'user_xyz' cannot get, list, update or delete outstanding documents under /customers/user_abc/invoices/{invoiceId}/outstandings/{outstandingId}.
+      * @principle Enforces document ownership for writes. Validates relational integrity between documents. Restricts access to a user's own data tree.
+      */
     match /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId} {
-      // Helper function to check if the authenticated user is the owner
-      function isOwner(customerId) {
-        return request.auth != null && request.auth.uid == customerId;
+      // Helper function to check if the user is signed in
+      function isSignedIn() {
+        return request.auth != null;
       }
 
-      // Helper function to check if the authenticated user is the existing owner (resource != null)
+      // Helper function to check if the user is the owner of the grand-parent customer document
+      function isOwner(customerId) {
+        return isSignedIn() && request.auth.uid == customerId;
+      }
+
+      // Helper function to check if the user is the owner of the existing grand-parent customer document
       function isExistingOwner(customerId) {
         return isOwner(customerId) && resource != null;
       }
 
       allow get: if isOwner(customerId);
       allow list: if isOwner(customerId);
-      allow create: if isOwner(customerId) && request.resource.data.invoiceId == invoiceId;
-      allow update: if isExistingOwner(customerId) && request.resource.data.invoiceId == resource.data.invoiceId; // enforce immutability
+      allow create: if isOwner(customerId) && get(/databases/$(database)/documents/customers/$(customerId)/invoices/$(invoiceId)).data.customerId == customerId;
+      allow update: if isExistingOwner(customerId) && get(/databases/$(database)/documents/customers/$(customerId)/invoices/$(invoiceId)).data.customerId == customerId;
       allow delete: if isExistingOwner(customerId);
     }
   }
