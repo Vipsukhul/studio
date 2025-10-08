@@ -144,6 +144,11 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      }
+    },
     state: {
       sorting,
       columnFilters,
@@ -245,7 +250,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredRowModel().rows.length} of{" "}
-          {data.length} row(s).
+          {data.length} row(s) shown.
         </div>
         <div className="space-x-2">
           <Button
