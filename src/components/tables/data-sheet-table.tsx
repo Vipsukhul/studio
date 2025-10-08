@@ -51,9 +51,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { updateCustomerRemark, updateCustomerNotes } from '@/lib/api';
+import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion } from '@/lib/api';
 
-import type { Customer, Invoice } from "@/lib/types"
+import type { Customer, Invoice, Engineer } from "@/lib/types"
 
 const InvoiceDetails = ({ customer }: { customer: Customer }) => {
     
@@ -138,6 +138,47 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update notes.' });
     }
   };
+
+  const handleEngineerChange = async (customerId: string, newEngineer: string) => {
+    try {
+      await updateAssignedEngineer(customerId, newEngineer);
+      setTableData((prevData) =>
+        prevData.map((customer) =>
+          customer.customerCode === customerId ? { ...customer, assignedEngineer: newEngineer } : customer
+        )
+      );
+      toast({ title: "Success", description: "Engineer assigned." });
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to assign engineer." });
+    }
+  };
+
+  const AssignedToCell = ({ row }: { row: any }) => {
+    const customerRegion = row.original.region;
+    const [engineers, setEngineers] = React.useState<Engineer[]>([]);
+
+    React.useEffect(() => {
+        getEngineersByRegion(customerRegion).then(setEngineers);
+    }, [customerRegion]);
+
+    return (
+        <Select
+            value={row.original.assignedEngineer}
+            onValueChange={(value) => handleEngineerChange(row.original.customerCode, value)}
+        >
+            <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Assign an engineer" />
+            </SelectTrigger>
+            <SelectContent>
+                {engineers.map((engineer) => (
+                    <SelectItem key={engineer.id} value={engineer.name}>
+                        {engineer.name}
+                    </SelectItem>
+                ))}
+            </SelectContent>
+        </Select>
+    );
+};
 
   const columns: ColumnDef<Customer>[] = [
     {
@@ -227,6 +268,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     {
         accessorKey: "assignedEngineer",
         header: "Assigned To",
+        cell: AssignedToCell,
     },
     {
       id: "actions",

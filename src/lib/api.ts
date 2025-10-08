@@ -6,8 +6,9 @@ import {
   monthlyTrends,
   invoiceTrackerData,
   customers,
+  engineers
 } from './data';
-import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData } from './types';
+import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer } from './types';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -122,4 +123,29 @@ export async function processAndUploadFile(file: File): Promise<{ count: number;
 
     reader.readAsArrayBuffer(file);
   });
+}
+
+/**
+ * Simulates fetching engineers by region.
+ * @param region - The region to filter engineers by.
+ */
+export async function getEngineersByRegion(region: string): Promise<Engineer[]> {
+    await delay(100);
+    return engineers.filter(e => e.region === region);
+}
+
+/**
+ * Simulates updating the assigned engineer for a customer.
+ * @param customerId - The ID of the customer to update.
+ * @param engineerName - The name of the engineer to assign.
+ */
+export async function updateAssignedEngineer(customerId: string, engineerName: string): Promise<{ success: boolean }> {
+    await delay(300);
+    console.log(`Assigning engineer ${engineerName} to customer ${customerId}`);
+    const customerIndex = customers.findIndex(c => c.customerCode === customerId);
+    if (customerIndex !== -1) {
+        customers[customerIndex].assignedEngineer = engineerName;
+        return { success: true };
+    }
+    throw new Error('Customer not found');
 }

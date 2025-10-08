@@ -66,3 +66,9 @@ export interface InvoiceTrackerData {
   invoiceCountChange: number;
   disputedInvoices: number;
 }
+
+export interface Engineer {
+  id: string;
+  name: string;
+  region: 'North' | 'South' | 'East' | 'West';
+}

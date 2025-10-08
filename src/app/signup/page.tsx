@@ -9,21 +9,33 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { regionOptions } from '@/lib/data';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [region, setRegion] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!region) {
+        toast({
+            variant: 'destructive',
+            title: 'Incomplete Form',
+            description: 'Please select your region.',
+        });
+        return;
+    }
     setIsLoading(true);
     
     // Simulate signup
     setTimeout(() => {
+        console.log('New user:', { name, email, region });
         toast({
           title: 'Signup Successful',
           description: "Your account has been created. Redirecting to login...",
@@ -80,6 +92,21 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
+            </div>
+            <div className="grid gap-2">
+                <Label htmlFor="region">Region</Label>
+                <Select value={region} onValueChange={setRegion} required>
+                    <SelectTrigger id="region" disabled={isLoading}>
+                        <SelectValue placeholder="Select your region" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {regionOptions.filter(r => r.value !== 'All').map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">

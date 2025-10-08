@@ -1,4 +1,4 @@
-import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution } from './types';
+import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, Engineer, Invoice } from './types';
 
 export const kpis: Kpi[] = [
   {
@@ -69,9 +69,9 @@ export const customers: Customer[] = [
     { customerCode: 'CUST002', customerName: 'Zenith Solutions', region: 'West', agePeriod: '0-30', outstandingAmount: 78000, invoices: generateInvoices(2, 'unpaid'), remarks: 'under follow-up', notes: 'Call next week', assignedEngineer: 'P. Patel' },
     { customerCode: 'CUST003', customerName: 'Pinnacle Corp', region: 'South', agePeriod: '91-180', outstandingAmount: 240000, invoices: generateInvoices(5, 'unpaid'), remarks: 'dispute', notes: 'Quality issue on item #45', assignedEngineer: 'S. Iyer' },
     { customerCode: 'CUST004', customerName: 'Quantum Industries', region: 'East', agePeriod: '>365', outstandingAmount: 35000, invoices: generateInvoices(1, 'dispute'), remarks: 'none', notes: '', assignedEngineer: 'A. Das' },
-    { customerCode: 'CUST005', customerName: 'Stellar Tech', region: 'West', agePeriod: '31-90', outstandingAmount: 150000, invoices: generateInvoices(4, 'unpaid'), remarks: 'partial payment', notes: 'Paid 50k on 15th', assignedEngineer: 'P. Patel' },
-    { customerCode: 'CUST006', customerName: 'Fusion Dynamics', region: 'North', agePeriod: '0-30', outstandingAmount: 45000, invoices: generateInvoices(1, 'unpaid'), remarks: 'payment received', notes: 'Full payment received', assignedEngineer: 'R. Sharma' },
-    { customerCode: 'CUST007', customerName: 'Nexus Enterprises', region: 'South', agePeriod: '181-365', outstandingAmount: 95000, invoices: generateInvoices(2, 'unpaid'), remarks: 'under follow-up', notes: '', assignedEngineer: 'S. Iyer' },
+    { customerCode: 'CUST005', customerName: 'Stellar Tech', region: 'West', agePeriod: '31-90', outstandingAmount: 150000, invoices: generateInvoices(4, 'unpaid'), remarks: 'partial payment', notes: 'Paid 50k on 15th', assignedEngineer: 'V. Mehta' },
+    { customerCode: 'CUST006', customerName: 'Fusion Dynamics', region: 'North', agePeriod: '0-30', outstandingAmount: 45000, invoices: generateInvoices(1, 'unpaid'), remarks: 'payment received', notes: 'Full payment received', assignedEngineer: 'S. Gupta' },
+    { customerCode: 'CUST007', customerName: 'Nexus Enterprises', region: 'South', agePeriod: '181-365', outstandingAmount: 95000, invoices: generateInvoices(2, 'unpaid'), remarks: 'under follow-up', notes: '', assignedEngineer: 'K. Rao' },
 ];
 
 export const monthOptions = [
@@ -87,4 +87,15 @@ export const regionOptions = [
     { value: 'South', label: 'South' },
     { value: 'East', label: 'East' },
     { value: 'West', label: 'West' },
+];
+
+export const engineers: Engineer[] = [
+    { id: 'ENG01', name: 'R. Sharma', region: 'North' },
+    { id: 'ENG02', name: 'S. Gupta', region: 'North' },
+    { id: 'ENG03', name: 'S. Iyer', region: 'South' },
+    { id: 'ENG04', name: 'K. Rao', region: 'South' },
+    { id: 'ENG05', name: 'A. Das', region: 'East' },
+    { id: 'ENG06', name: 'B. Chatterjee', region: 'East' },
+    { id: 'ENG07', name: 'P. Patel', region: 'West' },
+    { id: 'ENG08', name: 'V. Mehta', region: 'West' },
 ];
