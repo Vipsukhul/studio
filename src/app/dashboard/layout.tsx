@@ -19,6 +19,7 @@ import {
   LineChart,
   LogOut,
   Menu,
+  Settings,
   Sheet as SheetIcon,
   Upload,
 } from 'lucide-react';
@@ -31,6 +32,7 @@ const navItems = [
   { href: '/dashboard/invoice-tracker', label: 'Invoice Tracker', icon: LineChart },
   { href: '/dashboard/data-sheet', label: 'Data Sheet', icon: SheetIcon },
   { href: '/dashboard/upload-data', label: 'Upload Data', icon: Upload },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function DashboardLayout({
@@ -114,7 +116,9 @@ export default function DashboardLayout({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <DropdownMenuItem>Settings</DropdownMenuItem>
+              <Link href="/dashboard/settings" passHref>
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+              </Link>
               <DropdownMenuItem>Support</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
