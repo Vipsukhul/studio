@@ -1,10 +1,13 @@
+
+'use server';
+
 import { customers, invoiceTrackerData, kpis, monthlyTrends, outstandingByAge, regionDistribution } from './data';
 import type { Customer } from './types';
 
 const API_DELAY = 500;
 
 // Mock API functions
-export const login = (credentials: { email: string; password: string }) => {
+export const login = async (credentials: { email: string; password: string }) => {
   console.log('Logging in with:', credentials.email);
   return new Promise<{ token: string }>((resolve, reject) => {
     setTimeout(() => {
@@ -17,7 +20,7 @@ export const login = (credentials: { email: string; password: string }) => {
   });
 };
 
-export const signup = (userData: { name: string; email: string; password: string }) => {
+export const signup = async (userData: { name: string; email: string; password: string }) => {
   console.log('Signing up with:', userData.email);
   return new Promise<{ token: string }>((resolve, reject) => {
     setTimeout(() => {
@@ -30,7 +33,7 @@ export const signup = (userData: { name: string; email: string; password: string
   });
 };
 
-export const getDashboardData = (month?: string) => {
+export const getDashboardData = async (month?: string) => {
   console.log('Fetching dashboard data for month:', month);
   return new Promise((resolve) => {
     setTimeout(() => {
@@ -44,7 +47,7 @@ export const getDashboardData = (month?: string) => {
   });
 };
 
-export const getInvoiceTrackerData = (region?: string) => {
+export const getInvoiceTrackerData = async (region?: string) => {
     console.log('Fetching invoice tracker data for region:', region);
     return new Promise((resolve) => {
       setTimeout(() => {
@@ -64,7 +67,7 @@ export const getInvoiceTrackerData = (region?: string) => {
     });
   };
 
-export const getDataSheetData = (filters?: { region?: string; customer?: string }) => {
+export const getDataSheetData = async (filters?: { region?: string; customer?: string }) => {
     console.log('Fetching data sheet data with filters:', filters);
     return new Promise<Customer[]>((resolve) => {
         setTimeout(() => {
@@ -73,7 +76,7 @@ export const getDataSheetData = (filters?: { region?: string; customer?: string 
     });
 };
 
-export const uploadExcel = (formData: FormData) => {
+export const uploadExcel = async (formData: FormData) => {
     console.log('Uploading file for month:', formData.get('month'));
     return new Promise((resolve) => {
         setTimeout(() => {
@@ -82,7 +85,7 @@ export const uploadExcel = (formData: FormData) => {
     });
 };
 
-export const updateInvoiceStatus = (customerId: string, status: Customer['remarks']) => {
+export const updateInvoiceStatus = async (customerId: string, status: Customer['remarks']) => {
     console.log(`Updating status for customer ${customerId} to ${status}`);
     return new Promise((resolve) => {
         setTimeout(() => {
