@@ -58,6 +58,7 @@ export default function DashboardLayout({
   }
 
   const handleLogout = async () => {
+    if (!auth) return;
     try {
       await auth.signOut();
       toast({
@@ -108,15 +109,15 @@ export default function DashboardLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col bg-sidebar">
-              <SheetHeader className="sr-only">
-                <SheetTitle>Mobile Navigation</SheetTitle>
-                <SheetDescription>A list of links to navigate the application.</SheetDescription>
-              </SheetHeader>
-              <nav className="grid gap-2 text-lg font-medium">
-                <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold mb-4">
+              <SheetHeader>
+                <SheetTitle className="sr-only">Mobile Navigation</SheetTitle>
+                <SheetDescription className="sr-only">A list of links to navigate the application.</SheetDescription>
+                 <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <Logo className="h-6 w-6 text-sidebar-primary" />
                   <span className="font-headline text-sidebar-foreground">Tracker</span>
                 </Link>
+              </SheetHeader>
+              <nav className="grid gap-2 text-lg font-medium">
                 {navItems.map((item) => (
                   <NavItem key={item.href} {...item} mobile />
                 ))}

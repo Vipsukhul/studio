@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
-import { onAuthStateChanged, AuthError } from 'firebase/auth';
+import { AuthError } from 'firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -26,45 +26,6 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
   }, [user, isUserLoading, router]);
-  
-  useEffect(() => {
-    if (!auth) return;
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-        if (user) {
-            setIsLoading(false);
-            toast({
-                title: 'Login Successful',
-                description: "Welcome back! You're being redirected to your dashboard.",
-            });
-        }
-    }, (error) => {
-        setIsLoading(false);
-        let description = 'An unexpected error occurred. Please try again.';
-        if (error instanceof Error && (error as AuthError).code) {
-          switch ((error as AuthError).code) {
-            case 'auth/user-not-found':
-            case 'auth/wrong-password':
-            case 'auth/invalid-credential':
-              description = 'Invalid email or password. Please check your credentials or sign up.';
-              break;
-            case 'auth/invalid-email':
-              description = 'The email address is not valid.';
-              break;
-            default:
-              description = 'Please check your email and password and try again.';
-              break;
-          }
-        }
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: description,
-        });
-    });
-
-    return () => unsubscribe();
-  }, [auth, toast]);
-
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -73,7 +34,38 @@ export default function LoginPage() {
         return;
     }
     setIsLoading(true);
-    initiateEmailSignIn(auth, email, password);
+    signInWithEmailAndPassword(auth, email, password)
+      .then((userCredential) => {
+        // Signed in 
+        setIsLoading(false);
+        toast({
+            title: 'Login Successful',
+            description: "Welcome back! You're being redirected to your dashboard.",
+        });
+        router.push('/dashboard');
+      })
+      .catch((error: AuthError) => {
+        setIsLoading(false);
+        let description = 'An unexpected error occurred. Please try again.';
+        switch (error.code) {
+          case 'auth/user-not-found':
+          case 'auth/wrong-password':
+          case 'auth/invalid-credential':
+            description = 'Invalid email or password. Please check your credentials or sign up.';
+            break;
+          case 'auth/invalid-email':
+            description = 'The email address is not valid.';
+            break;
+          default:
+            description = 'Please check your email and password and try again.';
+            break;
+        }
+        toast({
+          variant: 'destructive',
+          title: 'Login Failed',
+          description: description,
+        });
+      });
   };
 
   if (isUserLoading || user) {
@@ -144,4 +136,11 @@ export default function LoginPage() {
       </Card>
     </div>
   );
+}
+
+// Helper function to handle sign-in. This replaces initiateEmailSignIn
+// to handle the promise for loading states and redirection.
+async function signInWithEmailAndPassword(auth: import('firebase/auth').Auth, email: string, password: string) {
+    const { signInWithEmailAndPassword } = await import('firebase/auth');
+    return signInWithEmailAndPassword(auth, email, password);
 }

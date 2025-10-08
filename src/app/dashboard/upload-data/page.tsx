@@ -8,11 +8,11 @@ import { useToast } from '@/hooks/use-toast';
 import { monthOptions } from '@/lib/data';
 import { UploadCloud, File, X } from 'lucide-react';
 import * as xlsx from 'xlsx';
-import { useFirestore, useUser, setDocumentNonBlocking, addDocumentNonBlocking } from '@/firebase';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
 import { doc, collection } from 'firebase/firestore';
 
 // Generate a random ID for sub-collection documents
-const generateId = () => doc(collection(useFirestore(), '_')).id;
+const generateId = (fs: any) => doc(collection(fs, '_')).id;
 
 export default function UploadDataPage() {
   const [month, setMonth] = useState('Apr-25');
@@ -123,7 +123,7 @@ export default function UploadDataPage() {
               setDocumentNonBlocking(customerDocRef, customerPayload, { merge: true });
 
               for (const [invoiceNumber, invoice] of customer.invoices.entries()) {
-                const invoiceId = generateId(); // Use a new unique ID for each invoice doc
+                const invoiceId = generateId(firestore);
                 const invoiceDocRef = doc(firestore, 'customers', customerCode.toString(), 'invoices', invoiceId);
                 const invoicePayload = {
                   id: invoiceId,
@@ -133,7 +133,7 @@ export default function UploadDataPage() {
                 setDocumentNonBlocking(invoiceDocRef, invoicePayload, { merge: true });
 
                 for(const outstanding of invoice.outstandings) {
-                    const outstandingId = generateId();
+                    const outstandingId = generateId(firestore);
                     const outstandingDocRef = doc(firestore, `customers/${customerCode}/invoices/${invoiceId}/outstandings`, outstandingId);
                     const outstandingPayload = {
                         id: outstandingId,

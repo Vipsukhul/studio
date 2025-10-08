@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
-import { useAuth, useUser, initiateEmailSignUp } from '@/firebase';
-import { updateProfile, onAuthStateChanged, AuthError } from 'firebase/auth';
+import { useAuth, useUser } from '@/firebase';
+import { createUserWithEmailAndPassword, updateProfile, AuthError } from 'firebase/auth';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -28,47 +28,39 @@ export default function SignupPage() {
     }
   }, [user, isUserLoading, router]);
 
-  useEffect(() => {
-    if (!auth) return;
-
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-        if (user) {
-            // New user created and signed in
-            if (name) { // Ensure name is available before updating profile
-                try {
-                    await updateProfile(user, { displayName: name });
-                } catch (error) {
-                    console.error("Failed to update profile", error);
-                    // Don't block the user flow for profile update failure
-                }
-            }
-            setIsLoading(false);
-            toast({
-                title: 'Signup Successful',
-                description: "Your account has been created. Redirecting to dashboard...",
-            });
-        }
-    }, (error) => {
-        setIsLoading(false);
-        toast({
-            variant: 'destructive',
-            title: 'Signup Failed',
-            description: (error as AuthError).message || 'An account with this email may already exist.',
-        });
-    });
-
-    return () => unsubscribe();
-
-  }, [auth, name, toast]);
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!auth) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service not available.' });
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'Authentication service not available.' });
+      return;
     }
     setIsLoading(true);
-    initiateEmailSignUp(auth, email, password);
+    createUserWithEmailAndPassword(auth, email, password)
+      .then(async (userCredential) => {
+        const user = userCredential.user;
+        if (name) {
+          try {
+            await updateProfile(user, { displayName: name });
+          } catch (error) {
+            console.error("Failed to update profile", error);
+            // Don't block the user flow for profile update failure
+          }
+        }
+        setIsLoading(false);
+        toast({
+          title: 'Signup Successful',
+          description: "Your account has been created. Redirecting to dashboard...",
+        });
+        router.push('/dashboard');
+      })
+      .catch((error: AuthError) => {
+        setIsLoading(false);
+        toast({
+          variant: 'destructive',
+          title: 'Signup Failed',
+          description: error.message || 'An account with this email may already exist.',
+        });
+      });
   };
 
   if (isUserLoading || user) {
