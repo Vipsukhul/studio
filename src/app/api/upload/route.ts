@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       }
     });
     
-    console.log(`Data for ${month} processed. New records: ${newCount}, Updated records: ${updatedCount}. Total records: ${Object.keys(storedData).length}`);
+    console.log(`[API POST /api/upload] Data for ${month} processed. New records: ${newCount}, Updated records: ${updatedCount}. Total records: ${Object.keys(storedData).length}`);
 
     return NextResponse.json({
       message: `File processed. ${newCount} new and ${updatedCount} updated records.`,
@@ -66,5 +66,6 @@ export async function POST(request: Request) {
 // GET endpoint to return the stored data as an array
 export async function GET() {
   const dataArray = Object.values(storedData);
+  console.log(`[API GET /api/upload] Serving ${dataArray.length} records.`);
   return NextResponse.json({ data: dataArray });
 }
