@@ -7,12 +7,17 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { monthOptions } from '@/lib/data';
 import { UploadCloud, File, X } from 'lucide-react';
+import * as xlsx from 'xlsx';
+import { useFirestore, useUser, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
 
 export default function UploadDataPage() {
   const [month, setMonth] = useState('Apr-25');
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const { user } = useUser();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -46,7 +51,73 @@ export default function UploadDataPage() {
     }
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const processAndUploadFile = (fileToProcess: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e: ProgressEvent<FileReader>) => {
+        if (!e.target?.result || !user) {
+            setIsLoading(false);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not read file or user not found.' });
+            return;
+        }
+        try {
+            const data = new Uint8Array(e.target.result as ArrayBuffer);
+            const workbook = xlsx.read(data, { type: 'array' });
+            const sheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[sheetName];
+            const jsonData: any[] = xlsx.utils.sheet_to_json(worksheet);
+
+            let processedCount = 0;
+            const promises: Promise<void>[] = [];
+
+            jsonData.forEach(row => {
+                const customerCode = row.customerCode || row['Customer Code'];
+                if (!customerCode) {
+                    return; // Skip rows without a customer code
+                }
+
+                // Prepare data for Firestore, converting to proper types if needed
+                const record = {
+                    ...row,
+                    // Ensure numeric fields are numbers, not strings
+                    outstandingAmount: Number(row.outstandingAmount) || 0, 
+                    uploadMonth: month,
+                    // Add any other data transformations here
+                };
+
+                // Use non-blocking set with merge to upsert
+                const docRef = doc(firestore, 'customers', customerCode.toString());
+                setDocumentNonBlocking(docRef, record, { merge: true });
+                
+                processedCount++;
+            });
+
+            toast({
+                title: 'Upload Successful',
+                description: `${processedCount} records for ${month} have been processed and are being saved.`,
+            });
+            setFile(null);
+
+        } catch (error) {
+            console.error('Upload failed', error);
+            const errorMessage = error instanceof Error ? error.message : 'There was a problem processing your file.';
+            toast({
+                variant: 'destructive',
+                title: 'Processing Failed',
+                description: errorMessage,
+            });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    reader.onerror = () => {
+        setIsLoading(false);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to read the file.' });
+    };
+    reader.readAsArrayBuffer(fileToProcess);
+  };
+
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
       toast({
@@ -56,39 +127,16 @@ export default function UploadDataPage() {
       });
       return;
     }
-    setIsLoading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('month', month);
-
-    try {
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.details || 'An unknown error occurred');
-      }
-
-      toast({
-        title: 'Upload Successful',
-        description: `${result.rowCount} records for ${month} have been processed.`,
-      });
-      setFile(null);
-    } catch (error) {
-      console.error('Upload failed', error);
-      const errorMessage = error instanceof Error ? error.message : 'There was a problem uploading your file.';
+    if (!user) {
       toast({
         variant: 'destructive',
-        title: 'Upload Failed',
-        description: errorMessage,
+        title: 'Not Authenticated',
+        description: 'You must be logged in to upload data.',
       });
-    } finally {
-      setIsLoading(false);
+      return;
     }
+    setIsLoading(true);
+    processAndUploadFile(file);
   };
 
   return (

@@ -1,15 +1,16 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { signup } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
+import { useAuth, useUser } from '@/firebase';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 
 export default function SignupPage() {
   const [name, setName] = useState('');
@@ -18,22 +19,28 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && user) {
+      router.push('/dashboard');
+    }
+  }, [user, isUserLoading, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     try {
-      const response = await signup({ name, email, password });
-      if (response.token) {
-        localStorage.setItem('token', response.token);
-        toast({
-          title: 'Signup Successful',
-          description: "Your account has been created. Redirecting to dashboard...",
-        });
-        router.push('/dashboard');
-      } else {
-        throw new Error('Could not create account');
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      if (userCredential.user) {
+        await updateProfile(userCredential.user, { displayName: name });
       }
+      toast({
+        title: 'Signup Successful',
+        description: "Your account has been created. Redirecting to dashboard...",
+      });
+      // The useEffect will handle the redirect
     } catch (error) {
       console.error('Signup failed', error);
       toast({
@@ -45,6 +52,14 @@ export default function SignupPage() {
       setIsLoading(false);
     }
   };
+
+  if (isUserLoading || user) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">

@@ -6,6 +6,7 @@ export interface Invoice {
 }
 
 export interface Customer {
+  id: string; // Document ID from Firestore
   customerCode: string;
   customerName: string;
   region: string;

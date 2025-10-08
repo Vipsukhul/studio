@@ -18,6 +18,7 @@ import {
   getSortedRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import { doc } from 'firebase/firestore';
 
 import { Button } from "@/components/ui/button"
 import {
@@ -50,7 +51,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { updateInvoiceStatus } from '@/lib/api';
+import { useFirestore, setDocumentNonBlocking } from '@/firebase';
 
 import type { Customer, Invoice } from "@/lib/types"
 
@@ -61,16 +62,13 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const handleRemarkChange = async (customerCode: string, newRemark: Customer['remarks']) => {
+    if (!customerCode) return;
+    const docRef = doc(firestore, 'customers', customerCode);
+    setDocumentNonBlocking(docRef, { remarks: newRemark }, { merge: true });
     toast({ title: 'Updating status...', description: `Setting remark for ${customerCode} to ${newRemark}.` });
-    try {
-      await updateInvoiceStatus(customerCode, newRemark);
-      toast({ title: 'Success', description: 'Remark updated successfully.' });
-      // Here you would refetch the data or update the state locally
-    } catch (error) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Failed to update remark.' });
-    }
   };
 
   const columns: ColumnDef<Customer>[] = [
@@ -151,11 +149,6 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
-    initialState: {
-      pagination: {
-        pageSize: 10,
-      }
-    },
     state: {
       sorting,
       columnFilters,
@@ -298,17 +291,17 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {selectedCustomer?.invoices?.map((invoice: Invoice) => (
-                        <TableRow key={invoice.invoiceNumber}>
+                    {selectedCustomer?.invoices?.map((invoice: Invoice, index: number) => (
+                        <TableRow key={`${invoice.invoiceNumber}-${index}`}>
                             <TableCell>{invoice.invoiceNumber}</TableCell>
-                            <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
-                            <TableCell className="text-right">₹{invoice.invoiceAmount.toLocaleString('en-IN')}</TableCell>
+                            <TableCell>{invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : 'N/A'}</TableCell>
+                            <TableCell className="text-right">₹{invoice.invoiceAmount?.toLocaleString('en-IN') || 'N/A'}</TableCell>
                             <TableCell>
                                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
                                     invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
                                     invoice.status === 'dispute' ? 'bg-red-100 text-red-800' :
                                     'bg-yellow-100 text-yellow-800'
-                                }`}>{invoice.status}</span>
+                                }`}>{invoice.status || 'unpaid'}</span>
                             </TableCell>
                         </TableRow>
                     ))}

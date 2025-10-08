@@ -1,10 +1,15 @@
+'use client';
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataSheetTable } from "@/components/tables/data-sheet-table";
-import { getDataSheetData } from "@/lib/api";
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from "firebase/firestore";
+import type { Customer } from "@/lib/types";
 
-export default async function DataSheetPage() {
-  // In a real app, you'd pass filters from URL search params
-  const data = await getDataSheetData();
+export default function DataSheetPage() {
+  const firestore = useFirestore();
+  const customersCollection = useMemoFirebase(() => collection(firestore, 'customers'), [firestore]);
+  const { data: customersData, isLoading } = useCollection<Customer>(customersCollection);
 
   return (
     <>
@@ -17,7 +22,13 @@ export default async function DataSheetPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataSheetTable data={data} />
+          {isLoading ? (
+            <div className="flex items-center justify-center h-64">
+              <div className="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+            </div>
+          ) : (
+            <DataSheetTable data={customersData || []} />
+          )}
         </CardContent>
       </Card>
     </>

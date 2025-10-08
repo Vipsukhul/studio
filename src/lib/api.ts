@@ -1,37 +1,11 @@
 'use server';
 
-import { customers, invoiceTrackerData, kpis, monthlyTrends, outstandingByAge, regionDistribution } from './data';
-import type { Customer } from './types';
-import * as xlsx from 'xlsx';
+import { invoiceTrackerData, kpis, monthlyTrends, outstandingByAge, regionDistribution } from './data';
 
 const API_DELAY = 100;
 
-// Mock API functions
-export async function login(credentials: { email: string; password: string }) {
-  console.log('Logging in with:', credentials.email);
-  return new Promise<{ token: string }>((resolve, reject) => {
-    setTimeout(() => {
-      if (credentials.email && credentials.password) {
-        resolve({ token: 'mock-jwt-token-for-demo' });
-      } else {
-        reject(new Error('Invalid credentials'));
-      }
-    }, API_DELAY);
-  });
-};
-
-export async function signup(userData: { name: string; email: string; password: string }) {
-  console.log('Signing up with:', userData.email);
-  return new Promise<{ token: string }>((resolve, reject) => {
-    setTimeout(() => {
-      if (userData.email && userData.password && userData.name) {
-        resolve({ token: 'mock-jwt-token-for-new-user' });
-      } else {
-        reject(new Error('Failed to create account'));
-      }
-    }, API_DELAY);
-  });
-};
+// Mock API functions - auth functions are no longer used.
+// These dashboard functions can be replaced with Firestore queries later.
 
 export async function getDashboardData(month?: string) {
   console.log('Fetching dashboard data for month:', month);
@@ -67,26 +41,22 @@ export async function getInvoiceTrackerData(region?: string) {
     });
   };
 
+// This function is no longer the primary source for the data sheet,
+// but can be kept for other purposes or removed.
+// The data sheet now fetches directly from Firestore.
 export async function getDataSheetData(filters?: { region?: string; customer?: string }) {
-    console.log('Fetching data sheet data with filters:', filters);
-    // This now reads from the in-memory store which is updated by the upload endpoint
-    try {
-        const response = await fetch('http://localhost:9002/api/upload', { cache: 'no-store' });
-        if (!response.ok) {
-          console.error("Failed to fetch data from in-memory store, returning empty array");
-          return [];
-        }
-        const { data } = await response.json();
-        return data || [];
-    } catch (error) {
-        console.error("Error fetching data sheet data:", error);
-        return [];
-    }
+    console.log('Fetching data sheet data with filters (from mock):', filters);
+    return new Promise((resolve) => {
+        setTimeout(() => {
+            resolve([]); // Return empty array as Firestore is the source of truth now
+        }, API_DELAY)
+    });
 };
 
-export async function updateInvoiceStatus(customerId: string, status: Customer['remarks']) {
+export async function updateInvoiceStatus(customerId: string, status: any) {
     console.log(`Updating status for customer ${customerId} to ${status}`);
-    // This is a mock. In a real DB, you'd perform an update.
+    // This is now handled on the client-side directly with Firestore
+    // This function can be removed or adapted if a server-side action is needed.
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve({ message: 'Status updated' });

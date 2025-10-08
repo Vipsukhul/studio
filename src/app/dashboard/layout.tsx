@@ -1,6 +1,5 @@
 'use client';
 
-import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -16,20 +15,17 @@ import {
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import {
-  Bell,
   Home,
   LineChart,
   LogOut,
   Menu,
-  Package,
-  PanelLeft,
   Sheet as SheetIcon,
   Upload,
-  Users,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth, useUser } from '@/firebase';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -44,33 +40,41 @@ export default function DashboardLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
-  const [isClient, setIsClient] = useState(false);
   const { toast } = useToast();
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
 
-  useEffect(() => {
-    setIsClient(true);
-    const token = localStorage.getItem('token');
-    if (!token) {
-      router.replace('/');
-    }
-  }, [router]);
-
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    toast({
-      title: 'Logged Out',
-      description: 'You have been successfully logged out.',
-    });
-    router.replace('/');
-  };
-
-  if (!isClient) {
+  if (isUserLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
       </div>
     );
   }
+
+  if (!user) {
+    router.replace('/');
+    return null; // or a loading spinner
+  }
+
+  const handleLogout = async () => {
+    try {
+      await auth.signOut();
+      toast({
+        title: 'Logged Out',
+        description: 'You have been successfully logged out.',
+      });
+      router.replace('/');
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Logout Failed',
+        description: 'There was a problem logging you out.',
+      });
+    }
+  };
+
+  const userInitial = user?.displayName?.charAt(0).toUpperCase() || user?.email?.charAt(0).toUpperCase() || 'U';
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
@@ -122,14 +126,14 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src="https://picsum.photos/seed/user/32/32" />
-                  <AvatarFallback>U</AvatarFallback>
+                  <AvatarImage src={user?.photoURL || `https://picsum.photos/seed/${user?.uid}/32/32`} />
+                  <AvatarFallback>{userInitial}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{user.displayName || user.email}</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Settings</DropdownMenuItem>
               <DropdownMenuItem>Support</DropdownMenuItem>
