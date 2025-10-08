@@ -67,6 +67,7 @@ const InvoiceDetails = ({ customer }: { customer: Customer }) => {
             <TableHead>Date</TableHead>
             <TableHead className="text-right">Amount</TableHead>
             <TableHead>Status</TableHead>
+            <TableHead>Disputed</TableHead>
           </TableRow>
         </TableHeader>
         <TableBody>
@@ -77,15 +78,18 @@ const InvoiceDetails = ({ customer }: { customer: Customer }) => {
               <TableCell className="text-right">₹{invoice.invoiceAmount?.toLocaleString('en-IN') || 'N/A'}</TableCell>
               <TableCell>
                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  invoice.status === 'paid' ? 'bg-green-100 text-green-800' :
-                  invoice.status === 'dispute' ? 'bg-red-100 text-red-800' :
-                  'bg-yellow-100 text-yellow-800'
-                }`}>{invoice.status || 'unpaid'}</span>
+                  invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                }`}>{invoice.status === 'paid' ? 'Paid' : 'Unpaid'}</span>
+              </TableCell>
+              <TableCell>
+                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
+                  invoice.status === 'dispute' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
+                }`}>{invoice.status === 'dispute' ? 'Yes' : 'No'}</span>
               </TableCell>
             </TableRow>
           )) : (
             <TableRow>
-              <TableCell colSpan={4} className="text-center">No invoices found for this customer.</TableCell>
+              <TableCell colSpan={5} className="text-center">No invoices found for this customer.</TableCell>
             </TableRow>
           )}
         </TableBody>
@@ -414,7 +418,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       </div>
 
       <Dialog open={!!selectedCustomer} onOpenChange={(isOpen) => !isOpen && setSelectedCustomer(null)}>
-        <DialogContent className="sm:max-w-[625px]">
+        <DialogContent className="sm:max-w-[725px]">
           <DialogHeader>
             <DialogTitle>Invoice Details for {selectedCustomer?.customerName}</DialogTitle>
             <DialogDescription>
