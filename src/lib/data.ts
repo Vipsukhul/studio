@@ -1,4 +1,4 @@
-import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, Engineer, Invoice } from './types';
+import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, Engineer, Invoice, OutstandingRecoveryTrend } from './types';
 
 export const kpis: Kpi[] = [
   {
@@ -54,6 +54,16 @@ export const invoiceTrackerData: InvoiceTrackerData[] = [
     { monthYear: 'Mar-25', previousMonthInvoices: 510, previousMonthAmount: 9500000, currentMonthInvoices: 520, currentMonthAmount: 9800000, invoiceCountChange: 10, disputedInvoices: 12 },
     { monthYear: 'Feb-25', previousMonthInvoices: 500, previousMonthAmount: 9200000, currentMonthInvoices: 510, currentMonthAmount: 9500000, invoiceCountChange: 10, disputedInvoices: 10 },
 ];
+
+export const outstandingRecoveryTrend: OutstandingRecoveryTrend[] = [
+  { month: 'Jan-24', new: 1800000, recovered: 1500000 },
+  { month: 'Feb-24', new: 1650000, recovered: 1700000 },
+  { month: 'Mar-24', new: 2100000, recovered: 1800000 },
+  { month: 'Apr-24', new: 1900000, recovered: 2000000 },
+  { month: 'May-24', new: 2200000, recovered: 1950000 },
+  { month: 'Jun-24', new: 2050000, recovered: 2150000 },
+];
+
 
 const generateInvoices = (count: number, status: 'paid' | 'unpaid' | 'dispute'): Invoice[] => {
     return Array.from({ length: count }, (_, i) => ({

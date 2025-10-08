@@ -6,9 +6,10 @@ import {
   monthlyTrends,
   invoiceTrackerData,
   customers,
-  engineers
+  engineers,
+  outstandingRecoveryTrend,
 } from './data';
-import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice } from './types';
+import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend } from './types';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -172,4 +173,12 @@ export async function updateInvoiceDisputeStatus(customerId: string, invoiceNumb
   customers[customerIndex].invoices![invoiceIndex].status = newStatus;
   
   return { success: true };
+}
+
+/**
+ * Simulates fetching the outstanding vs. recovery trend data.
+ */
+export async function getOutstandingRecoveryTrend(): Promise<OutstandingRecoveryTrend[]> {
+  await delay(500);
+  return outstandingRecoveryTrend;
 }

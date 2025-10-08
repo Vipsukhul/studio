@@ -72,3 +72,9 @@ export interface Engineer {
   name: string;
   region: 'North' | 'South' | 'East' | 'West';
 }
+
+export interface OutstandingRecoveryTrend {
+  month: string;
+  new: number;
+  recovered: number;
+}

@@ -8,10 +8,11 @@ import { ArrowDown, ArrowUp } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
+import { OutstandingRecoveryChart } from '@/components/charts/outstanding-recovery-chart';
 import { monthOptions } from '@/lib/data';
 import { ChartContainer } from '@/components/ui/chart';
-import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution } from '@/lib/types';
-import { getDashboardData } from '@/lib/api';
+import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
+import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
 import { ResponsiveContainer } from 'recharts';
 
 function KpiCard({ kpi }: { kpi: Kpi }) {
@@ -41,26 +42,31 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
 }
 
 export default function DashboardPage() {
-  const [data, setData] = useState<{
+  const [dashboardData, setDashboardData] = useState<{
     kpis: Kpi[];
     outstandingByAge: OutstandingByAge[];
     regionDistribution: RegionDistribution[];
     monthlyTrends: MonthlyTrend[];
   } | null>(null);
+  const [recoveryData, setRecoveryData] = useState<OutstandingRecoveryTrend[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState('Apr-25');
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      const dashboardData = await getDashboardData(month);
-      setData(dashboardData);
+      const [mainData, recoveryTrendData] = await Promise.all([
+        getDashboardData(month),
+        getOutstandingRecoveryTrend()
+      ]);
+      setDashboardData(mainData);
+      setRecoveryData(recoveryTrendData);
       setLoading(false);
     }
     fetchData();
   }, [month]);
 
-  if (loading || !data) {
+  if (loading || !dashboardData || !recoveryData) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
@@ -68,7 +74,7 @@ export default function DashboardPage() {
     );
   }
 
-  const { kpis, outstandingByAge, regionDistribution, monthlyTrends } = data;
+  const { kpis, outstandingByAge, regionDistribution, monthlyTrends } = dashboardData;
 
   const ageChartConfig = {
     '0-30': { label: '0-30 Days', color: 'hsl(var(--chart-1))' },
@@ -91,6 +97,11 @@ export default function DashboardPage() {
     West: { label: 'West', color: 'hsl(var(--chart-2))' },
     South: { label: 'South', color: 'hsl(var(--chart-3))' },
     East: { label: 'East', color: 'hsl(var(--chart-4))' },
+  } as const;
+
+  const recoveryChartConfig = {
+    new: { label: 'New', color: 'hsl(var(--chart-2))' },
+    recovered: { label: 'Recovered', color: 'hsl(var(--chart-1))' },
   } as const;
 
   return (
@@ -140,16 +151,28 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Month-wise Outstanding Trend</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
-              <MonthlyLineChart data={monthlyTrends} />
-          </ChartContainer>
-        </CardContent>
-      </Card>
+      <div className="grid gap-4 md:grid-cols-2">
+        <Card>
+            <CardHeader>
+                <CardTitle>Month-wise Outstanding Trend</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
+                    <MonthlyLineChart data={monthlyTrends} />
+                </ChartContainer>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>New vs. Recovered Outstanding</CardTitle>
+            </CardHeader>
+            <CardContent>
+                <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full">
+                    <OutstandingRecoveryChart data={recoveryData} />
+                </ChartContainer>
+            </CardContent>
+        </Card>
+      </div>
       
       <Card>
         <CardHeader>
