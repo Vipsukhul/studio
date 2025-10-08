@@ -72,13 +72,18 @@ export async function getInvoiceTrackerData(region?: string) {
 export async function getDataSheetData(filters?: { region?: string; customer?: string }) {
     console.log('Fetching data sheet data with filters:', filters);
     // This now reads from the in-memory store which is updated by the upload endpoint
-    const response = await fetch('http://localhost:9002/api/upload', { cache: 'no-store' });
-    if (!response.ok) {
-      console.error("Failed to fetch data from in-memory store");
-      return customers; // fallback to static data
+    try {
+        const response = await fetch('http://localhost:9002/api/upload', { cache: 'no-store' });
+        if (!response.ok) {
+          console.error("Failed to fetch data from in-memory store, returning empty array");
+          return [];
+        }
+        const { data } = await response.json();
+        return data || [];
+    } catch (error) {
+        console.error("Error fetching data sheet data:", error);
+        return [];
     }
-    const { data } = await response.json();
-    return data;
 };
 
 export async function updateInvoiceStatus(customerId: string, status: Customer['remarks']) {
