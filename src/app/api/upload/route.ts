@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import * as xlsx from 'xlsx';
 
-// In-memory 'database' for demonstration purposes
-let storedData: any[] = [];
+// Use an object as a key-value store for better data management,
+// with customerCode as the key.
+let storedData: { [key: string]: any } = {};
 
 export async function POST(request: Request) {
   try {
@@ -21,16 +22,38 @@ export async function POST(request: Request) {
     const workbook = xlsx.read(buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = xlsx.utils.sheet_to_json(worksheet);
+    const jsonData: any[] = xlsx.utils.sheet_to_json(worksheet);
 
-    // Simulate storing data in a database
-    // In a real app, you'd connect to a database (e.g., Firestore, PostgreSQL) here
-    storedData = [...storedData, ...jsonData.map(row => ({ ...row, uploadMonth: month }))];
+    // Implement "upsert" logic to prevent duplicates
+    let updatedCount = 0;
+    let newCount = 0;
+
+    jsonData.forEach(row => {
+      // Assuming 'customerCode' is the unique identifier from the Excel file.
+      // Make sure your Excel file has a column named 'customerCode'.
+      const customerCode = row.customerCode || row['Customer Code'];
+      if (!customerCode) {
+        // Skip rows without a customer code
+        return;
+      }
+      
+      const recordToStore = { ...row, uploadMonth: month };
+
+      if (storedData[customerCode]) {
+        // Update existing record
+        storedData[customerCode] = { ...storedData[customerCode], ...recordToStore };
+        updatedCount++;
+      } else {
+        // Add new record
+        storedData[customerCode] = recordToStore;
+        newCount++;
+      }
+    });
     
-    console.log(`Data for ${month} uploaded. Total records: ${storedData.length}`);
+    console.log(`Data for ${month} processed. New records: ${newCount}, Updated records: ${updatedCount}. Total records: ${Object.keys(storedData).length}`);
 
     return NextResponse.json({
-      message: 'File processed and data stored successfully.',
+      message: `File processed. ${newCount} new and ${updatedCount} updated records.`,
       rowCount: jsonData.length,
     });
   } catch (error) {
@@ -40,7 +63,8 @@ export async function POST(request: Request) {
   }
 }
 
-// Optional: GET endpoint to see what's in the 'database'
+// GET endpoint to return the stored data as an array
 export async function GET() {
-  return NextResponse.json({ data: storedData });
+  const dataArray = Object.values(storedData);
+  return NextResponse.json({ data: dataArray });
 }

@@ -1,4 +1,3 @@
-
 'use server';
 
 import { customers, invoiceTrackerData, kpis, monthlyTrends, outstandingByAge, regionDistribution } from './data';
