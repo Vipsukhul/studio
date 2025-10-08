@@ -8,7 +8,7 @@ import {
   customers,
   engineers
 } from './data';
-import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer } from './types';
+import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice } from './types';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -148,4 +148,28 @@ export async function updateAssignedEngineer(customerId: string, engineerName: s
         return { success: true };
     }
     throw new Error('Customer not found');
+}
+
+/**
+ * Simulates updating an invoice's dispute status.
+ * @param customerId The customer's code
+ * @param invoiceNumber The invoice number
+ * @param newStatus The new dispute status
+ */
+export async function updateInvoiceDisputeStatus(customerId: string, invoiceNumber: string, newStatus: 'dispute' | 'paid' | 'unpaid'): Promise<{ success: boolean }> {
+  await delay(300);
+  console.log(`Updating invoice ${invoiceNumber} for customer ${customerId} to status "${newStatus}"`);
+  
+  const customerIndex = customers.findIndex(c => c.customerCode === customerId);
+  if (customerIndex === -1) throw new Error('Customer not found');
+  
+  const customer = customers[customerIndex];
+  if (!customer.invoices) throw new Error('Customer has no invoices');
+
+  const invoiceIndex = customer.invoices.findIndex(i => i.invoiceNumber === invoiceNumber);
+  if (invoiceIndex === -1) throw new Error('Invoice not found');
+
+  customers[customerIndex].invoices![invoiceIndex].status = newStatus;
+  
+  return { success: true };
 }

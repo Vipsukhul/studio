@@ -51,13 +51,24 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion } from '@/lib/api';
+import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus } from '@/lib/api';
 
 import type { Customer, Invoice, Engineer } from "@/lib/types"
 
-const InvoiceDetails = ({ customer }: { customer: Customer }) => {
-    
-    const invoices = customer.invoices || [];
+const InvoiceDetails = ({ customer, onInvoiceUpdate }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void }) => {
+    const { toast } = useToast();
+
+    const handleDisputeChange = async (invoiceNumber: string, newStatus: string) => {
+        const status = newStatus === 'dispute' ? 'dispute' : 'unpaid';
+        toast({ title: 'Updating invoice...', description: `Setting status for invoice ${invoiceNumber} to ${status}.`});
+        try {
+            await updateInvoiceDisputeStatus(customer.customerCode, invoiceNumber, status);
+            onInvoiceUpdate(invoiceNumber, status);
+            toast({ title: 'Success', description: 'Invoice status updated.'});
+        } catch(error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to update invoice status.' });
+        }
+    };
   
     return (
       <Table>
@@ -71,8 +82,8 @@ const InvoiceDetails = ({ customer }: { customer: Customer }) => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {invoices?.length ? invoices.map((invoice: Invoice, index: number) => (
-            <TableRow key={invoice.invoiceNumber + index}>
+          {customer.invoices?.length ? customer.invoices.map((invoice: Invoice) => (
+            <TableRow key={invoice.invoiceNumber}>
               <TableCell>{invoice.invoiceNumber}</TableCell>
               <TableCell>{invoice.invoiceDate ? new Date(invoice.invoiceDate).toLocaleDateString() : 'N/A'}</TableCell>
               <TableCell className="text-right">₹{invoice.invoiceAmount?.toLocaleString('en-IN') || 'N/A'}</TableCell>
@@ -82,9 +93,18 @@ const InvoiceDetails = ({ customer }: { customer: Customer }) => {
                 }`}>{invoice.status === 'paid' ? 'Paid' : 'Unpaid'}</span>
               </TableCell>
               <TableCell>
-                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  invoice.status === 'dispute' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800'
-                }`}>{invoice.status === 'dispute' ? 'Yes' : 'No'}</span>
+                 <Select
+                    value={invoice.status === 'dispute' ? 'dispute' : 'not-disputed'}
+                    onValueChange={(value) => handleDisputeChange(invoice.invoiceNumber, value)}
+                 >
+                    <SelectTrigger className='w-28'>
+                        <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="not-disputed">No</SelectItem>
+                        <SelectItem value="dispute">Yes</SelectItem>
+                    </SelectContent>
+                 </Select>
               </TableCell>
             </TableRow>
           )) : (
@@ -156,6 +176,23 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       toast({ variant: "destructive", title: "Error", description: "Failed to assign engineer." });
     }
   };
+  
+    const handleInvoiceUpdate = (invoiceNumber: string, newStatus: Invoice['status']) => {
+        if (!selectedCustomer) return;
+
+        const updatedInvoices = selectedCustomer.invoices?.map(inv => 
+            inv.invoiceNumber === invoiceNumber ? { ...inv, status: newStatus } : inv
+        );
+
+        const updatedCustomer = { ...selectedCustomer, invoices: updatedInvoices };
+
+        setSelectedCustomer(updatedCustomer);
+
+        setTableData(prevData => prevData.map(cust => 
+            cust.customerCode === selectedCustomer.customerCode ? updatedCustomer : cust
+        ));
+    };
+
 
   const AssignedToCell = ({ row }: { row: any }) => {
     const customerRegion = row.original.region;
@@ -426,7 +463,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-4">
-            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} />}
+            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} />}
           </div>
         </DialogContent>
       </Dialog>
