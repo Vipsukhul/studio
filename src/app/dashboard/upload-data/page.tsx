@@ -4,7 +4,6 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { uploadExcel } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { monthOptions } from '@/lib/data';
 import { UploadCloud, File, X } from 'lucide-react';
@@ -17,7 +16,16 @@ export default function UploadDataPage() {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
-      setFile(e.target.files[0]);
+      const selectedFile = e.target.files[0];
+      if (selectedFile.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || selectedFile.name.endsWith('.xlsx')) {
+        setFile(selectedFile);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid File Type',
+          description: 'Please upload a valid .xlsx Excel file.',
+        });
+      }
     }
   };
 
@@ -25,7 +33,16 @@ export default function UploadDataPage() {
     e.preventDefault();
     e.stopPropagation();
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      setFile(e.dataTransfer.files[0]);
+      const droppedFile = e.dataTransfer.files[0];
+      if (droppedFile.type === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' || droppedFile.name.endsWith('.xlsx')) {
+        setFile(droppedFile);
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Invalid File Type',
+          description: 'Please upload a valid .xlsx Excel file.',
+        });
+      }
     }
   };
 
@@ -45,18 +62,29 @@ export default function UploadDataPage() {
     formData.append('month', month);
 
     try {
-      await uploadExcel(formData);
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.details || 'An unknown error occurred');
+      }
+
       toast({
         title: 'Upload Successful',
-        description: `Data for ${month} has been processed.`,
+        description: `${result.rowCount} records for ${month} have been processed.`,
       });
       setFile(null);
     } catch (error) {
       console.error('Upload failed', error);
+      const errorMessage = error instanceof Error ? error.message : 'There was a problem uploading your file.';
       toast({
         variant: 'destructive',
         title: 'Upload Failed',
-        description: 'There was a problem uploading your file. Please try again.',
+        description: errorMessage,
       });
     } finally {
       setIsLoading(false);
@@ -89,7 +117,10 @@ export default function UploadDataPage() {
 
               <div
                 className="relative flex flex-col items-center justify-center w-full p-8 border-2 border-dashed rounded-lg cursor-pointer border-border hover:border-primary transition-colors"
-                onDragOver={(e) => e.preventDefault()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
                 onDrop={handleDrop}
               >
                 {!file ? (
@@ -99,7 +130,7 @@ export default function UploadDataPage() {
                       <span className="font-semibold text-primary">Click to upload</span> or drag and drop
                     </p>
                     <p className="text-xs text-muted-foreground">Excel files (.xlsx) only</p>
-                    <input id="file-upload" type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx" onChange={handleFileChange} />
+                    <input id="file-upload" type="file" className="absolute inset-0 w-full h-full opacity-0 cursor-pointer" accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" onChange={handleFileChange} />
                   </>
                 ) : (
                   <div className="flex flex-col items-center text-center">
