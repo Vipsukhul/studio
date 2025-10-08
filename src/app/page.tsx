@@ -9,8 +9,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
-import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword, AuthError } from 'firebase/auth';
+import { useAuth, useUser, initiateEmailSignIn } from '@/firebase';
+import { onAuthStateChanged, AuthError } from 'firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -26,43 +26,54 @@ export default function LoginPage() {
       router.push('/dashboard');
     }
   }, [user, isUserLoading, router]);
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsLoading(true);
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: 'Login Successful',
-        description: "Welcome back! You're being redirected to your dashboard.",
-      });
-      // The useEffect will handle the redirect
-    } catch (error) {
-      console.error('Login failed', error);
-      let description = 'An unexpected error occurred. Please try again.';
-      if (error instanceof Error && (error as AuthError).code) {
-        switch ((error as AuthError).code) {
-          case 'auth/user-not-found':
-          case 'auth/wrong-password':
-          case 'auth/invalid-credential':
-            description = 'Invalid email or password. Please check your credentials or sign up.';
-            break;
-          case 'auth/invalid-email':
-            description = 'The email address is not valid.';
-            break;
-          default:
-            description = 'Please check your email and password and try again.';
-            break;
+  
+  useEffect(() => {
+    if (!auth) return;
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+        if (user) {
+            setIsLoading(false);
+            toast({
+                title: 'Login Successful',
+                description: "Welcome back! You're being redirected to your dashboard.",
+            });
         }
-      }
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: description,
-      });
-    } finally {
-      setIsLoading(false);
+    }, (error) => {
+        setIsLoading(false);
+        let description = 'An unexpected error occurred. Please try again.';
+        if (error instanceof Error && (error as AuthError).code) {
+          switch ((error as AuthError).code) {
+            case 'auth/user-not-found':
+            case 'auth/wrong-password':
+            case 'auth/invalid-credential':
+              description = 'Invalid email or password. Please check your credentials or sign up.';
+              break;
+            case 'auth/invalid-email':
+              description = 'The email address is not valid.';
+              break;
+            default:
+              description = 'Please check your email and password and try again.';
+              break;
+          }
+        }
+        toast({
+          variant: 'destructive',
+          title: 'Login Failed',
+          description: description,
+        });
+    });
+
+    return () => unsubscribe();
+  }, [auth, toast]);
+
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service not available.' });
+        return;
     }
+    setIsLoading(true);
+    initiateEmailSignIn(auth, email, password);
   };
 
   if (isUserLoading || user) {
