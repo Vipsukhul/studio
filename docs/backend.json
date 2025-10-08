@@ -12,7 +12,7 @@
         },
         "customerCode": {
           "type": "string",
-          "description": "The code assigned to the customer."
+          "description": "The unique code assigned to the customer."
         },
         "customerName": {
           "type": "string",
@@ -20,7 +20,7 @@
         },
         "region": {
           "type": "string",
-          "description": "The region the customer belongs to."
+          "description": "The geographical region the customer belongs to."
         },
         "invoiceIds": {
           "type": "array",
@@ -53,7 +53,7 @@
         },
         "invoiceNumber": {
           "type": "string",
-          "description": "The invoice number."
+          "description": "The unique number of the invoice."
         },
         "invoiceAmount": {
           "type": "number",
@@ -106,18 +106,38 @@
         "amount": {
           "type": "number",
           "description": "The outstanding amount for the specified month."
-        },
-        "agePeriod": {
-          "type": "string",
-          "description": "The aging period of the outstanding amount (e.g., 0-30days, 30-90days)."
         }
       },
       "required": [
         "id",
         "invoiceId",
         "month",
-        "amount",
-        "agePeriod"
+        "amount"
+      ]
+    },
+    "AgePeriod": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "AgePeriod",
+      "type": "object",
+      "description": "Represents the age of an outstanding invoice.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the age period."
+        },
+        "customerId": {
+          "type": "string",
+          "description": "Reference to Customer. (Relationship: Customer 1:N AgePeriod)"
+        },
+        "period": {
+          "type": "string",
+          "description": "The age period (e.g., 0-30days, 30-90days)."
+        }
+      },
+      "required": [
+        "id",
+        "customerId",
+        "period"
       ]
     }
   },
@@ -136,11 +156,11 @@
           "schema": {
             "$ref": "#/backend/entities/Customer"
           },
-          "description": "Stores customer data. Each document represents a customer. Includes Customer ID, Customer Code, Customer Name and Region.",
+          "description": "Stores customer information.",
           "params": [
             {
               "name": "customerId",
-              "description": "The unique identifier for the customer."
+              "description": "The unique ID of the customer."
             }
           ]
         }
@@ -152,15 +172,15 @@
           "schema": {
             "$ref": "#/backend/entities/Invoice"
           },
-          "description": "Stores invoice data for a specific customer. Includes denormalized 'region' from the parent customer for authorization independence. Each document represents an invoice associated with the parent Customer. Contains details such as invoice number, amount, date, status, and customerId.",
+          "description": "Stores invoice information for a specific customer.",
           "params": [
             {
               "name": "customerId",
-              "description": "The unique identifier for the customer."
+              "description": "The unique ID of the customer."
             },
             {
               "name": "invoiceId",
-              "description": "The unique identifier for the invoice."
+              "description": "The unique ID of the invoice."
             }
           ]
         }
@@ -172,24 +192,44 @@
           "schema": {
             "$ref": "#/backend/entities/Outstanding"
           },
-          "description": "Stores outstanding amounts for a specific invoice. Each document represents an outstanding entry for an invoice. Includes the month, outstanding amount, and aging period.",
+          "description": "Stores outstanding amounts for a specific invoice, broken down by month.",
           "params": [
             {
               "name": "customerId",
-              "description": "The unique identifier for the customer."
+              "description": "The unique ID of the customer."
             },
             {
               "name": "invoiceId",
-              "description": "The unique identifier for the invoice."
+              "description": "The unique ID of the invoice."
             },
             {
               "name": "outstandingId",
-              "description": "The unique identifier for the outstanding entry."
+              "description": "The unique ID of the outstanding amount entry."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/customers/{customerId}/agePeriods/{agePeriodId}",
+        "definition": {
+          "entityName": "AgePeriod",
+          "schema": {
+            "$ref": "#/backend/entities/AgePeriod"
+          },
+          "description": "Stores age period data for a specific customer.",
+          "params": [
+            {
+              "name": "customerId",
+              "description": "The unique ID of the customer."
+            },
+            {
+              "name": "agePeriodId",
+              "description": "The unique ID of the age period."
             }
           ]
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to store customer, invoice, and outstanding data, optimized for the Outstanding Tracker application. It prioritizes authorization independence via denormalization and structural segregation for secure and scalable access control. Each collection's security rules are simplified by ensuring homogeneity in data access requirements within the collection.\n\nCustomers are stored in a top-level `customers` collection. Invoices are stored as subcollections of customers (`/customers/{customerId}/invoices/{invoiceId}`), and outstandings are stored as subcollections of invoices (`/customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}`). This structure enforces clear ownership and simplifies querying for invoices and outstandings related to specific customers.\n\nTo achieve authorization independence (CRITICAL), the customer's `region` is denormalized into each invoice document. This allows security rules to validate access based on the user's allowed regions without needing to perform `get()` operations on the parent `customer` document. This is crucial for maintaining atomic operations and simplifying security rule debugging.\n\nThe structure supports the required QAPs by segregating data based on ownership and relationship.  The hierarchical path-based ownership (`/customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}`) ensures that only authorized users can access specific customer's invoices and outstandings."
+    "reasoning": "This Firestore structure is designed to track customer invoices and outstanding amounts, while ensuring security and scalability. It's optimized for querying and reporting. The structure uses path-based ownership for customers and denormalizes data to avoid complex security rules.\n\nEach `customer` document contains general information about a customer. Each customer has a collection of `invoices`, which contain a record of the invoices related to a particular customer. Each invoice then contains a collection of `outstandings`, which represent the outstanding amounts for that particular invoice, split by month.\n\n**Authorization Independence and QAPs**:\n\n*   **Authorization Independence:** Authorization is achieved through path-based rules, which do not need a `get()` call. The application enforces security by associating customers with invoices and outstandings through the path structure.\n*   **QAPs (Rules are not Filters):** Secure list operations are enabled through structural segregation. The invoices are stored in subcollections of users and customers, ensuring that listing invoices or outstandings always happens within the authorization context established by the path."
   }
 }

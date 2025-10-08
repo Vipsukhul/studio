@@ -1,93 +1,149 @@
 /**
-  * @fileoverview Firestore Security Rules for the Outstanding Tracker application.
-  *
-  * Core Philosophy:
-  * This ruleset enforces a strict hierarchical data ownership model. Each customer owns their invoices, and each invoice owns its outstandings.
-  * All access is controlled by path-based authorization, leveraging the inherent hierarchy of the Firestore structure.
-  *
-  * Data Structure:
-  * - /customers/{customerId}: Customer documents, uniquely identified by customerId.
-  * - /customers/{customerId}/invoices/{invoiceId}: Invoice documents belonging to a specific customer.
-  * - /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}: Outstanding documents for a particular invoice.
-  *
-  * Key Security Decisions:
-  * - Customers can only access their own data.
-  * - No public listing of customers, invoices, or outstandings is allowed.
-  * - Denormalization is used to make security rules more efficient, specifically the customer's `region` is copied to each `invoice`.
-  *
-  * Denormalization for Authorization:
-  * - The customer's `region` is denormalized into each `invoice` document to allow security rules to validate access based on the user's allowed regions without needing to perform `get()` operations on the parent `customer` document.
-  */
- 
-
- rules_version = '2';
- service cloud.firestore {
+ * @fileoverview Firestore Security Rules for the customer-invoice application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model.  All data is nested under
+ * /customers/{customerId}/... and access is controlled based on the `customerId`
+ * path parameter matching the authenticated user's UID.
+ *
+ * Data Structure:
+ * - /customers/{customerId}: Stores customer profile information.
+ * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice details for a specific customer.
+ * - /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}: Stores outstanding amounts for an invoice.
+ * - /customers/{customerId}/agePeriods/{agePeriodId}: Stores age period data for a customer.
+ *
+ * Key Security Decisions:
+ * - Customers can only access their own data.
+ * - Listing customers is disallowed.
+ * - All write operations require a valid, authenticated user.
+ */
+rules_version = '2';
+service cloud.firestore {
   match /databases/{database}/documents {
- 
 
-  function isSignedIn() {
-  return request.auth != null;
-  }
- 
+    /**
+     * @description Secures the /customers/{customerId} collection. Only the customer can read/write their own data.
+     * @path /customers/{customerId}
+     * @allow (create) User abc can create their own customer profile if request.auth.uid == customerId.
+     * @allow (get) User abc can read their own customer profile if request.auth.uid == customerId.
+     * @allow (update) User abc can update their own customer profile if request.auth.uid == customerId.
+     * @allow (delete) User abc can delete their own customer profile if request.auth.uid == customerId.
+     * @deny (create) User def cannot create a customer profile for user abc.
+     * @principle Enforces document ownership.
+     */
+    match /customers/{customerId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-  function isOwner(customerId) {
-  return request.auth.uid == customerId;
-  }
- 
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
 
-  function isExistingOwner(customerId) {
-  return isSignedIn() && resource.data.id == customerId;
-  }
- 
+      function isExistingOwner(userId) {
+          return isOwner(userId) && resource != null;
+      }
 
-  /**
-  * @description Controls access to the customers collection. Only the owner can read, create, update, or delete their customer document.
-  * @path /customers/{customerId}
-  * @allow (create) - Authenticated user with UID matching the customerId in the document data can create a new customer document.
-  * @allow (get) - Authenticated user with UID matching the customerId can get their customer document.
-  * @deny (create) - Authenticated user attempts to create a customer document where the 'id' field does not match their UID.
-  * @principle Enforces document ownership, allowing only the owner to manage their customer data.
-  */
-  match /customers/{customerId} {
-  allow get: if isOwner(customerId);
-  allow list: if false;
-  allow create: if isSignedIn() && request.auth.uid == customerId && request.resource.data.data.id == customerId;
-  allow update: if isSignedIn() && isOwner(customerId);
-  allow delete: if isSignedIn() && isOwner(customerId);
-  }
- 
+      allow get: if isOwner(customerId);
+      allow list: if false; // Listing customers is not allowed
 
-  /**
-  * @description Controls access to the invoices subcollection of a customer.
-  * @path /customers/{customerId}/invoices/{invoiceId}
-  * @allow (create) - Authenticated user with UID matching the customerId in the path can create a new invoice document.
-  * @allow (get) - Authenticated user with UID matching the customerId in the path can get an invoice document.
-  * @deny (update) - Authenticated user attempts to update an invoice document where the customerId in the path does not match their UID.
-  * @principle Enforces document ownership, allowing only the owner to manage their invoices.
-  */
-  match /customers/{customerId}/invoices/{invoiceId} {
-  allow get: if isOwner(customerId);
-  allow list: if false;
-  allow create: if isSignedIn() && isOwner(customerId);
-  allow update: if isSignedIn() && isOwner(customerId);
-  allow delete: if isSignedIn() && isOwner(customerId);
-  }
- 
+      allow create: if isOwner(customerId) && request.resource.data.id == customerId;
+      allow update: if isExistingOwner(customerId) && request.resource.data.id == resource.data.id;
+      allow delete: if isExistingOwner(customerId);
+    }
 
-  /**
-  * @description Controls access to the outstandings subcollection of an invoice.
-  * @path /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}
-  * @allow (create) - Authenticated user with UID matching the customerId in the path can create a new outstanding document.
-  * @allow (get) - Authenticated user with UID matching the customerId in the path can get an outstanding document.
-  * @deny (update) - Authenticated user attempts to update an outstanding document where the customerId in the path does not match their UID.
-  * @principle Enforces document ownership, allowing only the owner to manage their outstandings.
-  */
-  match /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId} {
-  allow get: if isOwner(customerId);
-  allow list: if false;
-  allow create: if isSignedIn() && isOwner(customerId);
-  allow update: if isSignedIn() && isOwner(customerId);
-  allow delete: if isSignedIn() && isOwner(customerId);
+    /**
+     * @description Secures the /customers/{customerId}/invoices/{invoiceId} collection. Only the customer can read/write their own invoices.
+     * @path /customers/{customerId}/invoices/{invoiceId}
+     * @allow (create) User abc can create invoices under their customer profile (customerId = abc).
+     * @allow (get) User abc can read invoices under their customer profile (customerId = abc).
+     * @allow (update) User abc can update invoices under their customer profile (customerId = abc).
+     * @allow (delete) User abc can delete invoices under their customer profile (customerId = abc).
+     * @deny (create) User def cannot create invoices under customer profile abc.
+     * @principle Enforces document ownership.
+     */
+    match /customers/{customerId}/invoices/{invoiceId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+          return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(customerId);
+      allow list: if isOwner(customerId);
+
+      allow create: if isOwner(customerId) && request.resource.data.customerId == customerId;
+      allow update: if isExistingOwner(customerId) && request.resource.data.customerId == resource.data.customerId;
+      allow delete: if isExistingOwner(customerId);
+    }
+
+    /**
+     * @description Secures the /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId} collection. Only the customer can read/write their own outstanding entries.
+     * @path /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}
+     * @allow (create) User abc can create outstanding entries under their invoice (customerId = abc).
+     * @allow (get) User abc can read outstanding entries under their invoice (customerId = abc).
+     * @allow (update) User abc can update outstanding entries under their invoice (customerId = abc).
+     * @allow (delete) User abc can delete outstanding entries under their invoice (customerId = abc).
+     * @deny (create) User def cannot create outstanding entries under customer profile abc's invoices.
+     * @principle Enforces document ownership.
+     */
+    match /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+          return isOwner(userId) && resource != null;
+      }
+
+      allow get: if isOwner(customerId);
+      allow list: if isOwner(customerId);
+
+      allow create: if isOwner(customerId) && request.resource.data.invoiceId == invoiceId;
+      allow update: if isExistingOwner(customerId) && request.resource.data.invoiceId == resource.data.invoiceId;
+      allow delete: if isExistingOwner(customerId);
+    }
+
+        /**
+     * @description Secures the /customers/{customerId}/agePeriods/{agePeriodId} collection. Only the customer can read/write their own age periods.
+     * @path /customers/{customerId}/agePeriods/{agePeriodId}
+     * @allow (create) User abc can create age periods under their customer profile (customerId = abc).
+     * @allow (get) User abc can read age periods under their customer profile (customerId = abc).
+     * @allow (update) User abc can update age periods under their customer profile (customerId = abc).
+     * @allow (delete) User abc can delete age periods under their customer profile (customerId = abc).
+     * @deny (create) User def cannot create age periods under customer profile abc.
+     * @principle Enforces document ownership.
+     */
+    match /customers/{customerId}/agePeriods/{agePeriodId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(userId) {
+        return isSignedIn() && request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+          return isOwner(userId) && resource != null;
+      }
+
+
+      allow get: if isOwner(customerId);
+      allow list: if isOwner(customerId);
+
+      allow create: if isOwner(customerId) && request.resource.data.customerId == customerId;
+      allow update: if isExistingOwner(customerId) && request.resource.data.customerId == resource.data.customerId;
+      allow delete: if isExistingOwner(customerId);
+    }
   }
-  }
- }
+}
