@@ -93,6 +93,7 @@ const InvoiceDetails = ({ customer }: { customer: Customer }) => {
   };
 
 export const DataSheetTable = ({ data }: { data: Customer[] }) => {
+  const [tableData, setTableData] = React.useState(data);
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
@@ -104,6 +105,13 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     toast({ title: 'Updating status...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
     try {
       await updateCustomerRemark(customerId, newRemark);
+      setTableData((prevData) =>
+        prevData.map((customer) =>
+          customer.customerCode === customerId
+            ? { ...customer, remarks: newRemark }
+            : customer
+        )
+      );
       toast({ title: 'Success', description: 'Remark updated successfully.'});
     } catch(error) {
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update remark.' });
@@ -150,7 +158,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         header: "Remarks",
         cell: ({ row }) => (
           <Select
-            defaultValue={row.original.remarks}
+            value={row.original.remarks}
             onValueChange={(value) => handleRemarkChange(row.original.customerCode, value as Customer['remarks'])}
           >
             <SelectTrigger className="w-[180px]">
@@ -178,7 +186,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   ]
 
   const table = useReactTable({
-    data,
+    data: tableData,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
