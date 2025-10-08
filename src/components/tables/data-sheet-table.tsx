@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -98,7 +99,13 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             </Button>
         </div>
       ),
-      cell: ({ row }) => <div className="text-right font-medium">₹{row.original.outstandingAmount.toLocaleString('en-IN')}</div>,
+      cell: ({ row }) => {
+        const amount = parseFloat(row.getValue("outstandingAmount"))
+        if (isNaN(amount)) {
+          return <div className="text-right font-medium">N/A</div>
+        }
+        return <div className="text-right font-medium">₹{amount.toLocaleString('en-IN')}</div>
+      },
     },
     {
         id: "remarks",
@@ -144,6 +151,11 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    initialState: {
+      pagination: {
+        pageSize: 10,
+      }
+    },
     state: {
       sorting,
       columnFilters,
@@ -286,7 +298,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
                     </TableRow>
                 </TableHeader>
                 <TableBody>
-                    {selectedCustomer?.invoices.map((invoice: Invoice) => (
+                    {selectedCustomer?.invoices?.map((invoice: Invoice) => (
                         <TableRow key={invoice.invoiceNumber}>
                             <TableCell>{invoice.invoiceNumber}</TableCell>
                             <TableCell>{new Date(invoice.invoiceDate).toLocaleDateString()}</TableCell>
