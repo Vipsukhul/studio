@@ -50,6 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
+import { updateCustomerRemark } from '@/lib/api';
 
 import type { Customer, Invoice } from "@/lib/types"
 
@@ -100,7 +101,13 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const { toast } = useToast();
 
   const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
-    toast({ title: 'Updating status (simulated)...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
+    toast({ title: 'Updating status...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
+    try {
+      await updateCustomerRemark(customerId, newRemark);
+      toast({ title: 'Success', description: 'Remark updated successfully.'});
+    } catch(error) {
+       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update remark.' });
+    }
   };
 
   const columns: ColumnDef<Customer>[] = [

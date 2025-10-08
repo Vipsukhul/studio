@@ -1,13 +1,32 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { DataSheetTable } from "@/components/tables/data-sheet-table";
-import { customers } from "@/lib/data";
 import type { Customer } from "@/lib/types";
+import { getCustomers } from '@/lib/api';
 
 export default function DataSheetPage() {
+  const [customersData, setCustomersData] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const customersData: Customer[] = customers;
+  useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      const data = await getCustomers();
+      setCustomersData(data);
+      setLoading(false);
+    }
+    loadData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -20,7 +39,7 @@ export default function DataSheetPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <DataSheetTable data={customersData || []} />
+          <DataSheetTable data={customersData} />
         </CardContent>
       </Card>
     </>

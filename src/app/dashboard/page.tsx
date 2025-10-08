@@ -3,8 +3,6 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { kpis as staticKpis, outstandingByAge as staticOutstandingByAge, regionDistribution as staticRegionDistribution, monthlyTrends as staticMonthlyTrends } from '@/lib/data';
-import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
@@ -12,6 +10,8 @@ import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
 import { monthOptions } from '@/lib/data';
 import { ChartContainer } from '@/components/ui/chart';
+import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution } from '@/lib/types';
+import { getDashboardData } from '@/lib/api';
 
 function KpiCard({ kpi }: { kpi: Kpi }) {
   const isIncrease = kpi.changeType === 'increase';
@@ -40,20 +40,19 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
 }
 
 export default function DashboardPage() {
-  const [data, setData] = useState<any>(null);
+  const [data, setData] = useState<{
+    kpis: Kpi[];
+    outstandingByAge: OutstandingByAge[];
+    regionDistribution: RegionDistribution[];
+    monthlyTrends: MonthlyTrend[];
+  } | null>(null);
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState('Apr-25');
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
-      // Simulating fetching data. In a real app, this would be an API call.
-      const dashboardData = {
-        kpis: staticKpis,
-        outstandingByAge: staticOutstandingByAge,
-        regionDistribution: staticRegionDistribution,
-        monthlyTrends: staticMonthlyTrends,
-      };
+      const dashboardData = await getDashboardData(month);
       setData(dashboardData);
       setLoading(false);
     }
@@ -68,12 +67,7 @@ export default function DashboardPage() {
     );
   }
 
-  const { kpis, outstandingByAge, regionDistribution, monthlyTrends } = data as {
-    kpis: Kpi[];
-    outstandingByAge: OutstandingByAge[];
-    regionDistribution: RegionDistribution[];
-    monthlyTrends: MonthlyTrend[];
-  };
+  const { kpis, outstandingByAge, regionDistribution, monthlyTrends } = data;
 
   const ageChartConfig = {
     '0-30': { label: '0-30 Days', color: 'hsl(var(--chart-1))' },

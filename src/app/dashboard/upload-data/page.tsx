@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { monthOptions } from '@/lib/data';
 import { UploadCloud, File, X } from 'lucide-react';
-import * as xlsx from 'xlsx';
+import { processAndUploadFile } from '@/lib/api';
 
 export default function UploadDataPage() {
   const [month, setMonth] = useState('Apr-25');
@@ -47,50 +47,7 @@ export default function UploadDataPage() {
     }
   };
 
-  const processAndUploadFile = (fileToProcess: File) => {
-    const reader = new FileReader();
-    reader.onload = async (e: ProgressEvent<FileReader>) => {
-        if (!e.target?.result) {
-            setIsLoading(false);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not read file.' });
-            return;
-        }
-        try {
-            const data = new Uint8Array(e.target.result as ArrayBuffer);
-            const workbook = xlsx.read(data, { type: 'array' });
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const jsonData: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: null });
-
-            console.log('Simulating data processing:', jsonData);
-            
-            toast({
-                title: 'Upload Successful (Simulated)',
-                description: `${jsonData.length} records for ${month} were processed.`,
-            });
-            setFile(null);
-
-        } catch (error) {
-            console.error('Upload failed', error);
-            const errorMessage = error instanceof Error ? error.message : 'There was a problem processing your file.';
-            toast({
-                variant: 'destructive',
-                title: 'Processing Failed',
-                description: errorMessage,
-            });
-        } finally {
-            setIsLoading(false);
-        }
-    };
-    reader.onerror = () => {
-        setIsLoading(false);
-        toast({ variant: 'destructive', title: 'Error', description: 'Failed to read the file.' });
-    };
-    reader.readAsArrayBuffer(fileToProcess);
-  };
-
-
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!file) {
       toast({
@@ -101,7 +58,24 @@ export default function UploadDataPage() {
       return;
     }
     setIsLoading(true);
-    processAndUploadFile(file);
+    
+    try {
+      const result = await processAndUploadFile(file);
+      toast({
+          title: 'Upload Successful',
+          description: `${result.count} records for ${month} were processed.`,
+      });
+      setFile(null);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'There was a problem processing your file.';
+      toast({
+          variant: 'destructive',
+          title: 'Processing Failed',
+          description: errorMessage,
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
