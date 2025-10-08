@@ -105,7 +105,7 @@ export default function DashboardLayout({
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col bg-sidebar">
               <nav className="grid gap-2 text-lg font-medium">
-                <Link href="#" className="flex items-center gap-2 text-lg font-semibold mb-4">
+                <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <Logo className="h-6 w-6 text-sidebar-primary" />
                   <span className="font-headline text-sidebar-foreground">Tracker</span>
                 </Link>
