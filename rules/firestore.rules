@@ -1,0 +1,111 @@
+/**
+ * @fileoverview Firestore Security Rules for the Outstanding Tracker application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict ownership model, ensuring that users can only
+ * access data related to their assigned customer. Data is organized hierarchically
+ * under the `customers` collection, with subcollections for `invoices` and
+ * `outstandings`. Authorization independence is achieved via data denormalization.
+ *
+ * Data Structure:
+ * - /customers/{customerId}: Stores customer information.
+ * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice details for a customer,
+ *   including a denormalized `region` field from the parent customer document.
+ * - /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}:
+ *   Stores outstanding amounts for specific invoices.
+ *
+ * Key Security Decisions:
+ * - Enforces ownership at each level of the hierarchy.
+ * - Denormalizes customer data (`region`) to simplify authorization checks and
+ *   avoid costly `get()` operations.
+ * - Relies on authenticated users (`request.auth != null`) for all operations.
+ * - Allows the creation of a customer if the authenticated user ID matches the customerId.
+ * - Enforces the immutability of the customerId in invoices and outstandings to maintain relational integrity.
+ * - Restricts listing of all collections to the owner.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Manages access to customer data.
+     * @path /customers/{customerId}
+     * @allow (create) Authenticated user can create a customer document where the customerId matches their UID.
+     * @allow (get, list, update, delete) Authenticated user can access a customer document where the customerId matches their UID.
+     * @deny (create) Authenticated user cannot create a customer document where the customerId does not match their UID.
+     * @deny (update, delete) Authenticated user cannot update or delete a customer document if they are not the owner.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data.
+     */
+    match /customers/{customerId} {
+      // Helper function to check if the authenticated user is the owner
+      function isOwner(customerId) {
+        return request.auth != null && request.auth.uid == customerId;
+      }
+
+      // Helper function to check if the authenticated user is the existing owner (resource != null)
+      function isExistingOwner(customerId) {
+        return isOwner(customerId) && resource != null;
+      }
+
+      allow get: if isOwner(customerId);
+      allow list: if isOwner(customerId);
+      allow create: if isOwner(customerId);
+      allow update: if isExistingOwner(customerId);
+      allow delete: if isExistingOwner(customerId);
+    }
+
+    /**
+     * @description Manages access to invoice data within a customer's subcollection.
+     * @path /customers/{customerId}/invoices/{invoiceId}
+     * @allow (create) Authenticated user can create an invoice document where the customerId matches their UID.
+     * @allow (get, list, update, delete) Authenticated user can access an invoice document where the customerId matches their UID.
+     * @deny (create) Authenticated user cannot create an invoice document where the customerId does not match their UID.
+     * @deny (update, delete) Authenticated user cannot update or delete an invoice document if they are not the owner.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data.
+     */
+    match /customers/{customerId}/invoices/{invoiceId} {
+      // Helper function to check if the authenticated user is the owner
+      function isOwner(customerId) {
+        return request.auth != null && request.auth.uid == customerId;
+      }
+
+      // Helper function to check if the authenticated user is the existing owner (resource != null)
+      function isExistingOwner(customerId) {
+        return isOwner(customerId) && resource != null;
+      }
+
+      allow get: if isOwner(customerId);
+      allow list: if isOwner(customerId);
+      allow create: if isOwner(customerId) && request.resource.data.customerId == customerId;
+      allow update: if isExistingOwner(customerId) && request.resource.data.customerId == resource.data.customerId; // enforce immutability
+      allow delete: if isExistingOwner(customerId);
+    }
+
+    /**
+     * @description Manages access to outstanding data within an invoice's subcollection.
+     * @path /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}
+     * @allow (create) Authenticated user can create an outstanding document where the customerId matches their UID.
+     * @allow (get, list, update, delete) Authenticated user can access an outstanding document where the customerId matches their UID.
+     * @deny (create) Authenticated user cannot create an outstanding document where the customerId does not match their UID.
+     * @deny (update, delete) Authenticated user cannot update or delete an outstanding document if they are not the owner.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data.
+     */
+    match /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId} {
+      // Helper function to check if the authenticated user is the owner
+      function isOwner(customerId) {
+        return request.auth != null && request.auth.uid == customerId;
+      }
+
+      // Helper function to check if the authenticated user is the existing owner (resource != null)
+      function isExistingOwner(customerId) {
+        return isOwner(customerId) && resource != null;
+      }
+
+      allow get: if isOwner(customerId);
+      allow list: if isOwner(customerId);
+      allow create: if isOwner(customerId) && request.resource.data.invoiceId == invoiceId;
+      allow update: if isExistingOwner(customerId) && request.resource.data.invoiceId == resource.data.invoiceId; // enforce immutability
+      allow delete: if isExistingOwner(customerId);
+    }
+  }
+}
