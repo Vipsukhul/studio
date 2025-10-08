@@ -1,3 +1,4 @@
+
 import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
@@ -23,9 +24,6 @@ const nextConfig: NextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https'
-      },
-      {
         protocol: 'https',
         hostname: 'picsum.photos',
         port: '',
@@ -37,8 +35,9 @@ const nextConfig: NextConfig = {
     buildActivity: false,
   },
   experimental: {
-    allowedDevOrigins: ["*.cloudworkstations.dev"],
+    // allowedDevOrigins is now a top-level property
   },
+  allowedDevOrigins: ["*.cloudworkstations.dev"],
 };
 
 export default nextConfig;
