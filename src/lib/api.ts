@@ -1,12 +1,11 @@
+
 'use server';
 
 import { customers, invoiceTrackerData, kpis, monthlyTrends, outstandingByAge, regionDistribution } from './data';
 import type { Customer } from './types';
 import * as xlsx from 'xlsx';
 
-const API_DELAY = 100; // Reduced delay for quicker updates
-
-let inMemoryDataStore: Customer[] = [...customers];
+const API_DELAY = 100;
 
 // Mock API functions
 export async function login(credentials: { email: string; password: string }) {
@@ -88,11 +87,7 @@ export async function getDataSheetData(filters?: { region?: string; customer?: s
 
 export async function updateInvoiceStatus(customerId: string, status: Customer['remarks']) {
     console.log(`Updating status for customer ${customerId} to ${status}`);
-    // In a real database, you'd perform an update query.
-    // Here, we'll update our in-memory store.
-    inMemoryDataStore = inMemoryDataStore.map(customer => 
-      customer.customerCode === customerId ? { ...customer, remarks: status } : customer
-    );
+    // This is a mock. In a real DB, you'd perform an update.
     return new Promise((resolve) => {
         setTimeout(() => {
             resolve({ message: 'Status updated' });
