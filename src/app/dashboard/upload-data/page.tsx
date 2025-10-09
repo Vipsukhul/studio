@@ -60,10 +60,10 @@ export default function UploadDataPage() {
     setIsLoading(true);
     
     try {
-      const result = await processAndUploadFile(file);
+      const result = await processAndUploadFile(file, month);
       toast({
           title: 'Upload Successful',
-          description: `${result.count} records for ${month} were processed.`,
+          description: `${result.count} records for ${month} were processed. A notification has been sent.`,
       });
       setFile(null);
     } catch (error) {

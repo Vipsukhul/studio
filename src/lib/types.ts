@@ -94,3 +94,15 @@ export interface EngineerPerformance {
   newOutstandingAssigned: number;
   netChange: number;
 }
+
+export interface Notification {
+  id: number;
+  from: {
+    name: string;
+    role: string;
+  };
+  to: string; // "all", "Manager", "Country Manager"
+  message: string;
+  timestamp: string;
+  isRead: boolean;
+}

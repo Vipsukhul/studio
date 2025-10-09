@@ -22,6 +22,7 @@ import {
   Settings,
   Sheet as SheetIcon,
   Upload,
+  Bell,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
@@ -32,7 +33,8 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/dashboard/invoice-tracker', label: 'Invoice Tracker', icon: LineChart },
   { href: '/dashboard/data-sheet', label: 'Data Sheet', icon: SheetIcon },
-  { href: '/dashboard/upload-data', label: 'Upload Data', icon: Upload },
+  { href: '/dashboard/upload-data', label: 'Upload Data', icon: Upload, roles: ['Country Manager', 'Admin'] },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
@@ -44,21 +46,29 @@ export default function DashboardLayout({
   const router = useRouter();
   const { toast } = useToast();
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
-    // This will run on the client and update when the image URL changes.
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
+
     const handleStorageChange = () => {
       const storedUrl = localStorage.getItem('profileImageUrl');
       setProfileImageUrl(storedUrl);
     };
     
-    handleStorageChange(); // Initial load
+    handleStorageChange();
 
     window.addEventListener('storage', handleStorageChange);
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
+  
+  const filteredNavItems = navItems.filter(item => {
+    if (!item.roles) return true;
+    return item.roles.includes(userRole || '');
+  });
 
   const handleLogout = async () => {
     toast({
@@ -82,7 +92,7 @@ export default function DashboardLayout({
           </div>
           <div className="flex-1">
             <nav className="grid items-start px-2 text-sm font-medium lg:px-4">
-              {navItems.map((item) => (
+              {filteredNavItems.map((item) => (
                 <NavItem key={item.href} {...item} />
               ))}
             </nav>
@@ -111,7 +121,7 @@ export default function DashboardLayout({
                 </Link>
               </SheetHeader>
               <nav className="grid gap-2 text-lg font-medium">
-                {navItems.map((item) => (
+                {filteredNavItems.map((item) => (
                   <NavItem key={item.href} {...item} mobile />
                 ))}
               </nav>
@@ -120,6 +130,12 @@ export default function DashboardLayout({
           <div className="w-full flex-1">
             {/* Can add a global search here */}
           </div>
+           <Link href="/dashboard/notifications">
+            <Button variant="ghost" size="icon" className="rounded-full relative">
+                <Bell className="h-5 w-5" />
+                <span className="sr-only">Notifications</span>
+            </Button>
+          </Link>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">

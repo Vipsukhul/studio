@@ -11,6 +11,7 @@ import {
   engineerPerformance,
 } from './data';
 import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, EngineerPerformance } from './types';
+import { createNotification } from './notifications';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -76,6 +77,18 @@ export async function updateCustomerRemark(customerId: string, newRemark: Custom
   const customerIndex = customers.findIndex(c => c.customerCode === customerId);
   if (customerIndex !== -1) {
     customers[customerIndex].remarks = newRemark;
+    
+    // Notification logic
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'Manager') {
+        const customer = customers[customerIndex];
+        createNotification({
+            from: { name: 'Manager', role: 'Manager' },
+            to: 'Country Manager',
+            message: `Manager updated remark for ${customer.customerName} to "${newRemark}".`
+        });
+    }
+
     return { success: true };
   }
   throw new Error('Customer not found');
@@ -92,6 +105,18 @@ export async function updateCustomerNotes(customerId: string, newNotes: string):
   const customerIndex = customers.findIndex(c => c.customerCode === customerId);
   if (customerIndex !== -1) {
     customers[customerIndex].notes = newNotes;
+    
+    // Notification logic
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'Engineer') {
+        const customer = customers[customerIndex];
+        createNotification({
+            from: { name: 'Engineer', role: 'Engineer' },
+            to: 'Manager',
+            message: `Engineer added new notes for ${customer.customerName} in the ${customer.region} region.`
+        });
+    }
+
     return { success: true };
   }
   throw new Error('Customer not found');
@@ -104,7 +129,7 @@ export async function updateCustomerNotes(customerId: string, newNotes: string):
  * Here, we'll process it on the client-side.
  * @param file - The Excel file to process.
  */
-export async function processAndUploadFile(file: File): Promise<{ count: number; data: any[] }> {
+export async function processAndUploadFile(file: File, month: string): Promise<{ count: number; data: any[] }> {
   await delay(1000); // Simulate upload and processing time
 
   return new Promise((resolve, reject) => {
@@ -122,7 +147,12 @@ export async function processAndUploadFile(file: File): Promise<{ count: number;
         const jsonData: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: null });
         
         console.log('Simulating data processing and saving:', jsonData);
-        // Here you would typically send jsonData to your backend API.
+        
+        createNotification({
+            from: { name: 'Country Manager', role: 'Country Manager' },
+            to: 'all',
+            message: `The data sheet for ${month} has been updated with ${jsonData.length} records.`
+        });
         
         resolve({ count: jsonData.length, data: jsonData });
       } catch (error) {
@@ -158,6 +188,18 @@ export async function updateAssignedEngineer(customerId: string, engineerName: s
     const customerIndex = customers.findIndex(c => c.customerCode === customerId);
     if (customerIndex !== -1) {
         customers[customerIndex].assignedEngineer = engineerName;
+        
+        // Notification logic
+        const userRole = localStorage.getItem('userRole');
+        if (userRole === 'Manager') {
+            const customer = customers[customerIndex];
+            createNotification({
+                from: { name: 'Manager', role: 'Manager' },
+                to: 'Country Manager',
+                message: `Manager assigned ${engineerName} to ${customer.customerName}.`
+            });
+        }
+        
         return { success: true };
     }
     throw new Error('Customer not found');
