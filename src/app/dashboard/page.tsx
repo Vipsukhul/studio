@@ -2,14 +2,14 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
 import { OutstandingRecoveryChart } from '@/components/charts/outstanding-recovery-chart';
-import { monthOptions } from '@/lib/data';
+import { monthOptions, regionOptions } from '@/lib/data';
 import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
 import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
@@ -54,6 +54,7 @@ export default function DashboardPage() {
   const [recoveryData, setRecoveryData] = useState<OutstandingRecoveryTrend[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState('Apr-25');
+  const [region, setRegion] = useState('All');
 
   useEffect(() => {
     async function fetchData() {
@@ -78,6 +79,20 @@ export default function DashboardPage() {
   }
 
   const { kpis, outstandingByAge, regionDistribution, monthlyTrends } = dashboardData;
+
+  const filteredAgeData = region === 'All'
+    ? outstandingByAge
+    : outstandingByAge.filter(item => item.region === region);
+    
+  const grandTotal = filteredAgeData.reduce((acc, curr) => {
+    acc['0-30'] += curr['0-30'];
+    acc['31-90'] += curr['31-90'];
+    acc['91-180'] += curr['91-180'];
+    acc['181-365'] += curr['181-365'];
+    acc['>365'] += curr['>365'];
+    acc.total += curr.total;
+    return acc;
+  }, { '0-30': 0, '31-90': 0, '91-180': 0, '181-365': 0, '>365': 0, total: 0 });
 
   const ageChartConfig = {
     '0-30': { label: '0-30 Days', color: 'hsl(var(--chart-1))' },
@@ -138,7 +153,7 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
-              <AgeBarChart data={outstandingByAge} />
+              <AgeBarChart data={filteredAgeData} />
             </ChartContainer>
           </CardContent>
         </Card>
@@ -179,7 +194,21 @@ export default function DashboardPage() {
       
       <Card>
         <CardHeader>
-          <CardTitle>Ageing Summary by Region</CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle>Ageing Summary by Region</CardTitle>
+            <div className="w-[180px]">
+              <Select value={region} onValueChange={setRegion}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regionOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <Table>
@@ -187,15 +216,15 @@ export default function DashboardPage() {
               <TableRow>
                 <TableHead>Region</TableHead>
                 <TableHead className="text-right">0-30 Days</TableHead>
-                <TableHead className="text-right">30-90 Days</TableHead>
-                <TableHead className="text-right">90-180 Days</TableHead>
-                <TableHead className="text-right">180-365 Days</TableHead>
+                <TableHead className="text-right">31-90 Days</TableHead>
+                <TableHead className="text-right">91-180 Days</TableHead>
+                <TableHead className="text-right">181-365 Days</TableHead>
                 <TableHead className="text-right">>1 Year</TableHead>
                 <TableHead className="text-right font-bold">Total</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {outstandingByAge.map((row) => (
+              {filteredAgeData.map((row) => (
                 <TableRow key={row.region}>
                   <TableCell className="font-medium">{row.region}</TableCell>
                   <TableCell className="text-right">{row['0-30'].toLocaleString('en-IN')}</TableCell>
@@ -207,6 +236,17 @@ export default function DashboardPage() {
                 </TableRow>
               ))}
             </TableBody>
+             <TableFooter>
+                <TableRow className="font-bold bg-muted/50">
+                    <TableCell>Grand Total</TableCell>
+                    <TableCell className="text-right">{grandTotal['0-30'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">{grandTotal['31-90'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">{grandTotal['91-180'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">{grandTotal['181-365'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">{grandTotal['>365'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">{grandTotal.total.toLocaleString('en-IN')}</TableCell>
+                </TableRow>
+            </TableFooter>
           </Table>
         </CardContent>
       </Card>
