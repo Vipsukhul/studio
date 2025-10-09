@@ -48,7 +48,15 @@ export default function LoginPage() {
     // Simulate a login request
     setTimeout(() => {
       // For regular users. Admins should use /admin/login
-      if (email === 'manager@example.com' && password === 'password') {
+      if (email === 'vipsukhul@gmail.com' && password === 'password') {
+        toast({
+            title: 'Login Successful',
+            description: "Welcome back! You're being redirected to your dashboard.",
+        });
+        localStorage.setItem('userRole', 'Country Manager');
+        setUser({email: 'vipsukhul@gmail.com'});
+        router.push('/dashboard');
+      } else if (email === 'manager@example.com' && password === 'password') {
         toast({
             title: 'Login Successful',
             description: "Welcome back! You're being redirected to your dashboard.",
@@ -92,7 +100,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Login</CardTitle>
-          <CardDescription>Enter your credentials below to login. (Hint: manager@example.com / password)</CardDescription>
+          <CardDescription>Enter your credentials below to login. (Hint: vipsukhul@gmail.com / password)</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="grid gap-4">
