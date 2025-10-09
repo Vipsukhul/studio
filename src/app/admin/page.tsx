@@ -1,8 +1,13 @@
 'use client';
 
+import * as React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, ShieldCheck, Webhook, FileText, Info, AlertTriangle, CircleX, TrendingUp } from 'lucide-react';
+import { Users, ShieldCheck, Webhook, FileText, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
+import { getEngineerPerformanceData } from '@/lib/api';
+import type { EngineerPerformance } from '@/lib/types';
+import { ChartContainer } from '@/components/ui/chart';
+import { EngineerPerformanceChart } from '@/components/charts/engineer-performance-chart';
 
 const adminSections = [
   {
@@ -29,15 +34,27 @@ const adminSections = [
     icon: FileText,
     href: '/admin/logs',
   },
-  {
-    title: 'Engineer Performance',
-    description: 'Track engineer-wise outstanding metrics.',
-    icon: TrendingUp,
-    href: '/admin/engineer-performance',
-  },
 ];
 
 export default function AdminPage() {
+  const [performanceData, setPerformanceData] = React.useState<EngineerPerformance[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    async function loadData() {
+      setLoading(true);
+      const data = await getEngineerPerformanceData();
+      setPerformanceData(data);
+      setLoading(false);
+    }
+    loadData();
+  }, []);
+
+    const chartConfig = {
+        collected: { label: 'Collected', color: 'hsl(var(--chart-1))' },
+        new: { label: 'New Assigned', color: 'hsl(var(--chart-2))' },
+    } as const;
+
   return (
     <>
       <h1 className="text-3xl font-headline font-bold">Admin Dashboard</h1>
@@ -62,6 +79,28 @@ export default function AdminPage() {
           </Link>
         ))}
       </div>
+      
+       <Card className="mt-6">
+          <CardHeader>
+             <Link href="/admin/engineer-performance" className="group">
+                <CardTitle className="group-hover:text-primary transition-colors">Engineer Performance</CardTitle>
+                <CardDescription className="group-hover:text-primary transition-colors">
+                  Overview of outstanding amounts collected vs. newly assigned. Click to see details.
+                </CardDescription>
+             </Link>
+          </CardHeader>
+          <CardContent>
+            {loading ? (
+                <div className="flex items-center justify-center h-[400px]">
+                    <div className="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+                </div>
+            ) : (
+                <ChartContainer config={chartConfig} className="min-h-[400px] w-full">
+                    <EngineerPerformanceChart data={performanceData} />
+                </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
     </>
   );
 }
