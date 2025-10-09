@@ -13,7 +13,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal } from "lucide-react";
+import { MoreHorizontal, PlusCircle } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import {
   AlertDialog,
@@ -26,7 +26,20 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from "@/hooks/use-toast";
+import { regionOptions } from '@/lib/data';
 
 
 const initialUsers = [
@@ -70,6 +83,92 @@ const initialUsers = [
 
 type User = typeof initialUsers[0];
 
+function AddUserDialog({ onAddUser, children }: { onAddUser: (user: User) => void, children: React.ReactNode }) {
+    const [name, setName] = React.useState('');
+    const [email, setEmail] = React.useState('');
+    const [role, setRole] = React.useState('');
+    const [region, setRegion] = React.useState('');
+    const [open, setOpen] = React.useState(false);
+    const { toast } = useToast();
+
+    const handleAddUser = () => {
+        if (!name || !email || !role || !region) {
+            toast({
+                variant: 'destructive',
+                title: 'Missing Fields',
+                description: 'Please fill out all fields to add a new user.',
+            });
+            return;
+        }
+        const newUser: User = {
+            name,
+            email,
+            role,
+            region,
+            status: 'Active',
+            lastLogin: new Date().toISOString().split('T')[0],
+            initials: name.split(' ').map(n => n[0]).join(''),
+        };
+        onAddUser(newUser);
+        toast({
+            title: 'User Added',
+            description: `${name} has been added to the system.`,
+        });
+        setOpen(false);
+        // Reset form
+        setName('');
+        setEmail('');
+        setRole('');
+        setRegion('');
+    };
+
+    return (
+        <Dialog open={open} onOpenChange={setOpen}>
+            <DialogTrigger asChild>{children}</DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Add New User</DialogTitle>
+                    <DialogDescription>
+                        Enter the details below to create a new user account.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="name" className="text-right">Name</Label>
+                        <Input id="name" value={name} onChange={e => setName(e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="email" className="text-right">Email</Label>
+                        <Input id="email" type="email" value={email} onChange={e => setEmail(e.target.value)} className="col-span-3" />
+                    </div>
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="role" className="text-right">Role</Label>
+                        <Input id="role" value={role} onChange={e => setRole(e.target.value)} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="region" className="text-right">Region</Label>
+                        <Select value={region} onValueChange={setRegion}>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Select a region" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {regionOptions.filter(r => r.value !== 'All').map(option => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+                <DialogFooter>
+                    <Button onClick={handleAddUser}>Add User</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+    );
+}
+
 export default function UserManagementPage() {
     const [users, setUsers] = React.useState(initialUsers);
     const { toast } = useToast();
@@ -95,10 +194,21 @@ export default function UserManagementPage() {
             description: `The user with email ${userEmail} has been deleted.`,
         });
     };
+    
+    const handleAddUser = (newUser: User) => {
+        setUsers(prevUsers => [newUser, ...prevUsers]);
+    };
 
   return (
     <>
-      <h1 className="text-3xl font-headline font-bold">User Management</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-3xl font-headline font-bold">User Management</h1>
+        <AddUserDialog onAddUser={handleAddUser}>
+             <Button>
+                <PlusCircle className="mr-2 h-4 w-4" /> Add User
+            </Button>
+        </AddUserDialog>
+      </div>
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
