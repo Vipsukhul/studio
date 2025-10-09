@@ -262,43 +262,45 @@ export default function DashboardPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Region</TableHead>
-                <TableHead className="text-right">0-30 Days</TableHead>
-                <TableHead className="text-right">31-90 Days</TableHead>
-                <TableHead className="text-right">91-180 Days</TableHead>
-                <TableHead className="text-right">181-365 Days</TableHead>
-                <TableHead className="text-right">>1 Year</TableHead>
-                <TableHead className="text-right font-bold">Total</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredAgeData.map((row) => (
-                <TableRow key={row.region}>
-                  <TableCell className="font-medium">{row.region}</TableCell>
-                  <TableCell className="text-right">{row['0-30'].toLocaleString('en-IN')}</TableCell>
-                  <TableCell className="text-right">{row['31-90'].toLocaleString('en-IN')}</TableCell>
-                  <TableCell className="text-right">{row['91-180'].toLocaleString('en-IN')}</TableCell>
-                  <TableCell className="text-right">{row['181-365'].toLocaleString('en-IN')}</TableCell>
-                  <TableCell className="text-right">{row['>365'].toLocaleString('en-IN')}</TableCell>
-                  <TableCell className="text-right font-bold">{row.total.toLocaleString('en-IN')}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Region</TableHead>
+                  <TableHead className="text-right">0-30 Days</TableHead>
+                  <TableHead className="text-right">31-90 Days</TableHead>
+                  <TableHead className="text-right">91-180 Days</TableHead>
+                  <TableHead className="text-right">181-365 Days</TableHead>
+                  <TableHead className="text-right">>1 Year</TableHead>
+                  <TableHead className="text-right font-bold">Total</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-             <TableFooter>
-                <TableRow className="font-bold bg-muted/50">
-                    <TableCell>Grand Total</TableCell>
-                    <TableCell className="text-right">{grandTotal['0-30'].toLocaleString('en-IN')}</TableCell>
-                    <TableCell className="text-right">{grandTotal['31-90'].toLocaleString('en-IN')}</TableCell>
-                    <TableCell className="text-right">{grandTotal['91-180'].toLocaleString('en-IN')}</TableCell>
-                    <TableCell className="text-right">{grandTotal['181-365'].toLocaleString('en-IN')}</TableCell>
-                    <TableCell className="text-right">{grandTotal['>365'].toLocaleString('en-IN')}</TableCell>
-                    <TableCell className="text-right">{grandTotal.total.toLocaleString('en-IN')}</TableCell>
-                </TableRow>
-            </TableFooter>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {filteredAgeData.map((row) => (
+                  <TableRow key={row.region}>
+                    <TableCell className="font-medium">{row.region}</TableCell>
+                    <TableCell className="text-right">{row['0-30'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">{row['31-90'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">{row['91-180'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">{row['181-365'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right">{row['>365'].toLocaleString('en-IN')}</TableCell>
+                    <TableCell className="text-right font-bold">{row.total.toLocaleString('en-IN')}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+              <TableFooter>
+                  <TableRow className="font-bold bg-muted/50">
+                      <TableCell>Grand Total</TableCell>
+                      <TableCell className="text-right">{grandTotal['0-30'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right">{grandTotal['31-90'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right">{grandTotal['91-180'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right">{grandTotal['181-365'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right">{grandTotal['>365'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right">{grandTotal.total.toLocaleString('en-IN')}</TableCell>
+                  </TableRow>
+              </TableFooter>
+            </Table>
+          </div>
         </CardContent>
       </Card>
     </>
