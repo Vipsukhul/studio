@@ -12,11 +12,14 @@ import { regionOptions } from '@/lib/data';
 import { Eye, EyeOff, UploadCloud } from 'lucide-react';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { uploadImageToCloudinary } from '@/lib/api';
+import { Textarea } from '@/components/ui/textarea';
 
 
 export default function SettingsPage() {
   const [name, setName] = useState('Current User');
   const [email, setEmail] = useState('test@example.com');
+  const [contact, setContact] = useState('123-456-7890');
+  const [address, setAddress] = useState('123 Main St, Anytown, USA');
   const [region, setRegion] = useState('North');
   const [role, setRole] = useState('');
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(`https://picsum.photos/seed/user/128/128`);
@@ -71,6 +74,7 @@ export default function SettingsPage() {
     
     // Simulate updating user profile
     setTimeout(() => {
+      console.log('Updated profile:', { name, email, contact, address, region });
       toast({
         title: 'Profile Updated',
         description: "Your account information has been successfully updated.",
@@ -127,6 +131,26 @@ export default function SettingsPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="contact">Contact Number</Label>
+                <Input
+                  id="contact"
+                  type="tel"
+                  value={contact}
+                  onChange={(e) => setContact(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="address">Address</Label>
+                <Textarea
+                  id="address"
+                  value={address}
+                  onChange={(e) => setAddress(e.target.value)}
+                  disabled={isLoading}
+                  placeholder="Enter your full address"
                 />
               </div>
               <div className="grid gap-2">
