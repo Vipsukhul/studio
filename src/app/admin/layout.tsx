@@ -16,29 +16,27 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTr
 import { cn } from '@/lib/utils';
 import {
   Home,
-  LineChart,
   LogOut,
   Menu,
+  PanelLeft,
   Settings,
-  Sheet as SheetIcon,
-  Shield,
-  Upload,
+  Users,
+  Webhook,
+  LayoutDashboard
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
 import { useToast } from '@/hooks/use-toast';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/dashboard/invoice-tracker', label: 'Invoice Tracker', icon: LineChart },
-  { href: '/dashboard/data-sheet', label: 'Data Sheet', icon: SheetIcon },
-  { href: '/dashboard/upload-data', label: 'Upload Data', icon: Upload },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard },
+  { href: '/admin/users', label: 'User Management', icon: Users },
+  { href: '/admin/dashboard', label: 'Dashboard Mgt.', icon: Settings },
+  { href: '/admin/api', label: 'API Management', icon: Webhook },
+  { href: '/dashboard', label: 'Back to App', icon: PanelLeft },
 ];
 
-const adminNavItem = { href: '/admin', label: 'Admin', icon: Shield };
-
-export default function DashboardLayout({
+export default function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
@@ -54,16 +52,16 @@ export default function DashboardLayout({
     router.replace('/');
   };
 
-  const userInitial = 'U';
+  const userInitial = 'A';
 
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-sidebar md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+            <Link href="/admin" className="flex items-center gap-2 font-semibold">
               <Logo className="h-6 w-6 text-sidebar-primary" />
-              <span className="font-headline text-sidebar-foreground">Outstanding Tracker</span>
+              <span className="font-headline text-sidebar-foreground">Admin Panel</span>
             </Link>
           </div>
           <div className="flex-1">
@@ -71,11 +69,7 @@ export default function DashboardLayout({
               {navItems.map((item) => (
                 <NavItem key={item.href} {...item} />
               ))}
-               <NavItem {...adminNavItem} />
             </nav>
-          </div>
-          <div className="mt-auto p-4">
-            {/* Future content like a card can go here */}
           </div>
         </div>
       </div>
@@ -90,40 +84,35 @@ export default function DashboardLayout({
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col bg-sidebar">
              <SheetHeader>
-                <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
-                <SheetDescription className="sr-only">A list of links to navigate the application.</SheetDescription>
-                 <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold mb-4">
+                <SheetTitle className="sr-only">Admin Menu</SheetTitle>
+                <SheetDescription className="sr-only">A list of links to navigate the admin section.</SheetDescription>
+                 <Link href="/admin" className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <Logo className="h-6 w-6 text-sidebar-primary" />
-                  <span className="font-headline text-sidebar-foreground">Tracker</span>
+                  <span className="font-headline text-sidebar-foreground">Admin</span>
                 </Link>
               </SheetHeader>
               <nav className="grid gap-2 text-lg font-medium">
-                {[...navItems, adminNavItem].map((item) => (
+                {navItems.map((item) => (
                   <NavItem key={item.href} {...item} mobile />
                 ))}
               </nav>
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
-            {/* Can add a global search here */}
+            <h1 className="text-xl font-semibold">Admin</h1>
           </div>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src={`https://picsum.photos/seed/user/32/32`} />
+                  <AvatarImage src={`https://picsum.photos/seed/admin/32/32`} />
                   <AvatarFallback>{userInitial}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <Link href="/dashboard/settings" passHref>
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-              </Link>
-              <DropdownMenuItem>Support</DropdownMenuItem>
+              <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
@@ -143,7 +132,7 @@ export default function DashboardLayout({
 
 function NavItem({ href, label, icon: Icon, mobile = false }: { href: string; label: string; icon: React.ElementType; mobile?: boolean }) {
   const pathname = usePathname();
-  const isActive = pathname.startsWith(href) && (href !== '/dashboard' || pathname === '/dashboard');
+  const isActive = pathname.startsWith(href) && (href !== '/admin' || pathname === '/admin');
   const linkClasses = cn(
     "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/80 transition-all hover:text-sidebar-accent-foreground hover:bg-sidebar-accent",
     isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
