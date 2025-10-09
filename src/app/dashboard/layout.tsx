@@ -23,14 +23,11 @@ import {
   Sheet as SheetIcon,
   Upload,
   Bell,
-  Building,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { departmentOptions } from '@/lib/data';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -50,24 +47,14 @@ export default function DashboardLayout({
   const { toast } = useToast();
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [userRole, setUserRole] = useState<string | null>(null);
-  const [department, setDepartment] = useState('Batching Plant');
-
+  
   useEffect(() => {
     const role = localStorage.getItem('userRole');
     setUserRole(role);
     
-    const storedDepartment = localStorage.getItem('department');
-    if (storedDepartment) {
-      setDepartment(storedDepartment);
-    }
-
     const handleStorageChange = () => {
       const storedUrl = localStorage.getItem('profileImageUrl');
       setProfileImageUrl(storedUrl);
-      const storedDept = localStorage.getItem('department');
-       if (storedDept) {
-        setDepartment(storedDept);
-      }
     };
     
     handleStorageChange();
@@ -77,13 +64,6 @@ export default function DashboardLayout({
       window.removeEventListener('storage', handleStorageChange);
     };
   }, []);
-  
-  const handleDepartmentChange = (newDepartment: string) => {
-    setDepartment(newDepartment);
-    localStorage.setItem('department', newDepartment);
-    // Optionally, force a reload or use a more sophisticated state management to update children
-    window.dispatchEvent(new Event('storage'));
-  };
 
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
@@ -151,19 +131,7 @@ export default function DashboardLayout({
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
-             <div className="w-full max-w-sm items-center flex">
-              <Building className="h-5 w-5 mr-2 text-muted-foreground" />
-              <Select value={department} onValueChange={handleDepartmentChange}>
-                <SelectTrigger className="w-[220px] bg-background border-border">
-                  <SelectValue placeholder="Select Department" />
-                </SelectTrigger>
-                <SelectContent>
-                  {departmentOptions.map(option => (
-                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+             {/* The department selector was here */}
           </div>
            <Link href="/dashboard/notifications">
             <Button variant="ghost" size="icon" className="rounded-full relative">

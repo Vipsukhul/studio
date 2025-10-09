@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDown, ArrowUp, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, Building, Users } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
 import { OutstandingRecoveryChart } from '@/components/charts/outstanding-recovery-chart';
-import { monthOptions, regionOptions } from '@/lib/data';
+import { monthOptions, regionOptions, departmentOptions } from '@/lib/data';
 import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
 import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
@@ -93,6 +93,12 @@ export default function DashboardPage() {
     }
   }, [month, department]);
 
+  const handleDepartmentChange = (newDepartment: string) => {
+    setDepartment(newDepartment);
+    localStorage.setItem('department', newDepartment);
+    window.dispatchEvent(new Event('storage'));
+  };
+
   if (loading || !dashboardData || !recoveryData || !isClient) {
     return (
       <div className="flex items-center justify-center h-full">
@@ -147,19 +153,34 @@ export default function DashboardPage() {
 
   return (
     <>
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
-        <div className="w-[180px]">
-          <Select value={month} onValueChange={setMonth}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select Month" />
-            </SelectTrigger>
-            <SelectContent>
-              {monthOptions.map(option => (
-                <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+        <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+                <Building className="h-5 w-5 text-muted-foreground" />
+                <Select value={department} onValueChange={handleDepartmentChange}>
+                    <SelectTrigger className="w-[180px]">
+                        <SelectValue placeholder="Select Department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {departmentOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="w-[180px]">
+              <Select value={month} onValueChange={setMonth}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
         </div>
       </div>
 
@@ -175,9 +196,9 @@ export default function DashboardPage() {
             <CardTitle>Region vs. Ageing</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
+            {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
               <AgeBarChart data={filteredAgeData} />
-            </ChartContainer>
+            </ChartContainer>}
           </CardContent>
         </Card>
         <Card className="lg:col-span-3">
@@ -185,9 +206,9 @@ export default function DashboardPage() {
             <CardTitle>Region-wise Distribution</CardTitle>
           </CardHeader>
           <CardContent>
-            <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
+            {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
                 <RegionPieChart data={regionDistribution} />
-            </ChartContainer>
+            </ChartContainer>}
           </CardContent>
         </Card>
       </div>
@@ -198,9 +219,9 @@ export default function DashboardPage() {
                 <CardTitle>Month-wise Outstanding Trend</CardTitle>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
+                {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
                     <MonthlyLineChart data={monthlyTrends} />
-                </ChartContainer>
+                </ChartContainer>}
             </CardContent>
         </Card>
         <Card>
@@ -208,9 +229,9 @@ export default function DashboardPage() {
                 <CardTitle>New vs. Recovered Outstanding</CardTitle>
             </CardHeader>
             <CardContent>
-                <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full">
+                {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full">
                     <OutstandingRecoveryChart data={recoveryData} />
-                </ChartContainer>
+                </ChartContainer>}
             </CardContent>
         </Card>
       </div>
