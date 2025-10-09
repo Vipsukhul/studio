@@ -389,7 +389,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border overflow-x-auto">
+      <div className="rounded-md border">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
