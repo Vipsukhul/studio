@@ -12,22 +12,29 @@ import { Logo } from '@/components/logo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { regionOptions } from '@/lib/data';
 
+const roleOptions = [
+    { value: 'Country Manager', label: 'Country Manager' },
+    { value: 'Manager', label: 'Manager' },
+    { value: 'Engineer', label: 'Engineer' },
+];
+
 export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [region, setRegion] = useState('');
+  const [role, setRole] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!region) {
+    if (!region || !role) {
         toast({
             variant: 'destructive',
             title: 'Incomplete Form',
-            description: 'Please select your region.',
+            description: 'Please select your region and role.',
         });
         return;
     }
@@ -35,7 +42,7 @@ export default function SignupPage() {
     
     // Simulate signup
     setTimeout(() => {
-        console.log('New user:', { name, email, region });
+        console.log('New user:', { name, email, region, role });
         toast({
           title: 'Signup Successful',
           description: "Your account has been created. Redirecting to login...",
@@ -92,6 +99,21 @@ export default function SignupPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
+            </div>
+             <div className="grid gap-2">
+                <Label htmlFor="role">Role</Label>
+                <Select value={role} onValueChange={setRole} required>
+                    <SelectTrigger id="role" disabled={isLoading}>
+                        <SelectValue placeholder="Select your role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {roleOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
             <div className="grid gap-2">
                 <Label htmlFor="region">Region</Label>

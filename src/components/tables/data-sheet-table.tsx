@@ -55,7 +55,7 @@ import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getE
 
 import type { Customer, Invoice, Engineer } from "@/lib/types"
 
-const InvoiceDetails = ({ customer, onInvoiceUpdate }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void }) => {
+const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean }) => {
     const { toast } = useToast();
 
     const handleDisputeChange = async (invoiceNumber: string, newStatus: string) => {
@@ -96,6 +96,7 @@ const InvoiceDetails = ({ customer, onInvoiceUpdate }: { customer: Customer, onI
                  <Select
                     value={invoice.status === 'dispute' ? 'dispute' : 'not-disputed'}
                     onValueChange={(value) => handleDisputeChange(invoice.invoiceNumber, value)}
+                    disabled={isReadOnly}
                  >
                     <SelectTrigger className='w-28'>
                         <SelectValue />
@@ -124,11 +125,16 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
+  const [userRole, setUserRole] = React.useState<string | null>(null);
   const { toast } = useToast();
 
   React.useEffect(() => {
     setTableData(data);
+    const role = localStorage.getItem('userRole');
+    setUserRole(role);
   }, [data]);
+
+  const isReadOnly = userRole === 'Engineer';
 
   const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
     toast({ title: 'Updating status...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
@@ -206,6 +212,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         <Select
             value={row.original.assignedEngineer}
             onValueChange={(value) => handleEngineerChange(row.original.customerCode, value)}
+            disabled={isReadOnly}
         >
             <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Assign an engineer" />
@@ -263,6 +270,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
           <Select
             value={row.original.remarks}
             onValueChange={(value) => handleRemarkChange(row.original.customerCode, value as Customer['remarks'])}
+            disabled={isReadOnly}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Set remark" />
@@ -303,6 +311,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
                 className="min-w-[200px]"
+                readOnly={isReadOnly}
             />;
         }
     },
@@ -463,7 +472,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-4">
-            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} />}
+            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} isReadOnly={isReadOnly} />}
           </div>
         </DialogContent>
       </Dialog>

@@ -45,21 +45,31 @@ export default function LoginPage() {
 
     // Simulate a login request
     setTimeout(() => {
-      if (email === 'vipsukhul@gmail.com' && password === 'password') {
+      // For regular users. Admins should use /admin/login
+      if (email === 'manager@example.com' && password === 'password') {
         toast({
             title: 'Login Successful',
             description: "Welcome back! You're being redirected to your dashboard.",
         });
-        setUser({email: 'vipsukhul@gmail.com'});
+        localStorage.setItem('userRole', 'Manager');
+        setUser({email: 'manager@example.com'});
+        router.push('/dashboard');
+      } else if (email === 'engineer@example.com' && password === 'password') {
+        toast({
+            title: 'Login Successful',
+            description: "Welcome back! You're being redirected to your dashboard.",
+        });
+        localStorage.setItem('userRole', 'Engineer');
+        setUser({email: 'engineer@example.com'});
         router.push('/dashboard');
       } else {
         toast({
           variant: 'destructive',
           title: 'Login Failed',
-          description: 'Invalid email or password.',
+          description: 'Invalid email or password for a user account.',
         });
+        setIsLoading(false);
       }
-      setIsLoading(false);
     }, 1500);
   };
 
@@ -80,7 +90,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Login</CardTitle>
-          <CardDescription>Enter your credentials below to login. (Hint: vipsukhul@gmail.com / password)</CardDescription>
+          <CardDescription>Enter your credentials below to login. (Hint: manager@example.com / password)</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="grid gap-4">
