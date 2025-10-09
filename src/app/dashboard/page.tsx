@@ -60,12 +60,17 @@ export default function DashboardPage() {
   const [region, setRegion] = useState('All');
   const [department, setDepartment] = useState('Batching Plant');
   const [isClient, setIsClient] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClient(true);
     const storedDepartment = localStorage.getItem('department');
+    const storedRole = localStorage.getItem('userRole');
     if (storedDepartment) {
         setDepartment(storedDepartment);
+    }
+    if (storedRole) {
+        setUserRole(storedRole);
     }
      const handleStorageChange = () => {
         const storedDept = localStorage.getItem('department');
@@ -156,19 +161,21 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
         <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-                <Building className="h-5 w-5 text-muted-foreground" />
-                <Select value={department} onValueChange={handleDepartmentChange}>
-                    <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="Select Department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                    {departmentOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                    </SelectContent>
-                </Select>
-            </div>
+            {userRole === 'Country Manager' && (
+                <div className="flex items-center gap-2">
+                    <Building className="h-5 w-5 text-muted-foreground" />
+                    <Select value={department} onValueChange={handleDepartmentChange}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select Department" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {departmentOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+            )}
             <div className="w-[180px]">
               <Select value={month} onValueChange={setMonth}>
                 <SelectTrigger>
