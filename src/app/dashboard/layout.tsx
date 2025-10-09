@@ -21,7 +21,6 @@ import {
   Menu,
   Settings,
   Sheet as SheetIcon,
-  Shield,
   Upload,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
@@ -35,8 +34,6 @@ const navItems = [
   { href: '/dashboard/upload-data', label: 'Upload Data', icon: Upload },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
-
-const adminNavItem = { href: '/admin', label: 'Admin', icon: Shield };
 
 export default function DashboardLayout({
   children,
@@ -71,7 +68,6 @@ export default function DashboardLayout({
               {navItems.map((item) => (
                 <NavItem key={item.href} {...item} />
               ))}
-               <NavItem {...adminNavItem} />
             </nav>
           </div>
           <div className="mt-auto p-4">
@@ -98,7 +94,7 @@ export default function DashboardLayout({
                 </Link>
               </SheetHeader>
               <nav className="grid gap-2 text-lg font-medium">
-                {[...navItems, adminNavItem].map((item) => (
+                {navItems.map((item) => (
                   <NavItem key={item.href} {...item} mobile />
                 ))}
               </nav>
