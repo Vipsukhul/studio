@@ -23,7 +23,7 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{kpi.label}</CardTitle>
-        {kpi.label === 'Disputed Invoices' && <ArrowUp className="h-4 w-4 text-destructive" />}
+        {kpi.change && (isIncrease ? <ArrowUp className="h-4 w-4 text-destructive" /> : <ArrowDown className="h-4 w-4 text-green-600" />) }
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{kpi.value}</div>
@@ -55,6 +55,11 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState('Apr-25');
   const [region, setRegion] = useState('All');
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     async function fetchData() {
@@ -70,7 +75,7 @@ export default function DashboardPage() {
     fetchData();
   }, [month]);
 
-  if (loading || !dashboardData || !recoveryData) {
+  if (loading || !dashboardData || !recoveryData || !isClient) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
