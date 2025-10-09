@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDown, ArrowUp, CircleX } from 'lucide-react';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
@@ -16,15 +16,14 @@ import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
 import { ResponsiveContainer } from 'recharts';
 
 function KpiCard({ kpi }: { kpi: Kpi }) {
-  const isErrorKpi = kpi.label === 'System Errors';
   const isIncrease = kpi.changeType === 'increase';
-  const badgeVariant = isErrorKpi ? (isIncrease ? 'destructive' : 'default') : (isIncrease ? 'destructive' : 'default');
+  const badgeVariant = isIncrease ? 'destructive' : 'default';
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{kpi.label}</CardTitle>
-        {isErrorKpi && <CircleX className="h-4 w-4 text-destructive" />}
+        {kpi.label === 'Disputed Invoices' && <ArrowUp className="h-4 w-4 text-destructive" />}
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{kpi.value}</div>

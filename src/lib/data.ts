@@ -22,12 +22,12 @@ export const kpis: Kpi[] = [
     changeType: 'increase',
     description: 'cleared this month',
   },
-  {
-    label: 'System Errors',
-    value: '3',
-    change: '+1',
+   {
+    label: 'Disputed Invoices',
+    value: '15',
+    change: '+3',
     changeType: 'increase',
-    description: 'in last 24h',
+    description: 'currently active',
   },
 ];
 
