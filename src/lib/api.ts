@@ -22,8 +22,19 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 export async function getDashboardData(month: string) {
   await delay(500);
   console.log(`Fetching data for month: ${month}`);
+  
+  const totalCustomers = customers.length;
+  const customersKpi: Kpi = {
+    label: 'Total Customers',
+    value: totalCustomers.toString(),
+    description: 'active accounts',
+  };
+
+  // Avoid duplicating the KPI if it already exists
+  const existingKpis = kpis.filter(k => k.label !== 'Total Customers');
+  
   return {
-    kpis,
+    kpis: [...existingKpis, customersKpi],
     outstandingByAge,
     regionDistribution,
     monthlyTrends,
@@ -190,4 +201,51 @@ export async function getOutstandingRecoveryTrend(): Promise<OutstandingRecovery
 export async function getEngineerPerformanceData(): Promise<EngineerPerformance[]> {
   await delay(500);
   return engineerPerformance;
+}
+
+/**
+ * Simulates uploading an image to Cloudinary.
+ * In a real app, you would use your Cloudinary credentials here.
+ * @param file The image file to upload.
+ * @returns The URL of the uploaded image.
+ */
+export async function uploadImageToCloudinary(file: File): Promise<string> {
+  // IMPORTANT: Replace with your Cloudinary details.
+  // You can get these from your Cloudinary dashboard.
+  // It's recommended to use "unsigned" uploads for client-side operations
+  // for better security.
+  const CLOUDINARY_CLOUD_NAME = 'demo'; // <-- REPLACE with your cloud name
+  const CLOUDINARY_UPLOAD_PRESET = 'docs_upload_example'; // <-- REPLACE with your upload preset
+
+  const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  
+  console.log('Simulating upload to Cloudinary...');
+  // Since we are using a demo cloud, we will simulate the upload to avoid actual uploads.
+  // In your real application, you would perform the fetch request below.
+  
+  /*
+  const response = await fetch(url, {
+    method: 'POST',
+    body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error('Failed to upload image');
+  }
+
+  const data = await response.json();
+  return data.secure_url;
+  */
+
+  // --- SIMULATION ---
+  await delay(1500); // Simulate network delay
+  // Create a temporary local URL for the uploaded image for demonstration.
+  const localImageUrl = URL.createObjectURL(file);
+  console.log('Simulated upload complete. Image URL:', localImageUrl);
+  return localImageUrl;
+  // --- END SIMULATION ---
 }

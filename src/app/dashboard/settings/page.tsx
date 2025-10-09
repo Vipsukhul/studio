@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
+import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -8,17 +9,52 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { regionOptions } from '@/lib/data';
-import { Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff, UploadCloud } from 'lucide-react';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { uploadImageToCloudinary } from '@/lib/api';
+
 
 export default function SettingsPage() {
   const [name, setName] = useState('Current User');
   const [email, setEmail] = useState('test@example.com');
   const [region, setRegion] = useState('North');
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(`https://picsum.photos/seed/user/128/128`);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+
+  const onDrop = useCallback(async (acceptedFiles: File[]) => {
+    const file = acceptedFiles[0];
+    if (file) {
+      setIsLoading(true);
+      try {
+        const imageUrl = await uploadImageToCloudinary(file);
+        setProfileImageUrl(imageUrl);
+        // Persist this URL to your backend for the user
+        localStorage.setItem('profileImageUrl', imageUrl);
+        toast({
+          title: 'Image Uploaded',
+          description: 'Your new profile picture has been set.',
+        });
+      } catch (error) {
+        toast({
+          variant: 'destructive',
+          title: 'Upload Failed',
+          description: 'Could not upload the image. Please try again.',
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    }
+  }, [toast]);
+
+  const { getRootProps, getInputProps, isDragActive } = useDropzone({
+    onDrop,
+    accept: { 'image/*': ['.jpeg', '.png', '.gif', '.jpg'] },
+    multiple: false,
+  });
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,14 +73,34 @@ export default function SettingsPage() {
   return (
     <>
       <h1 className="text-3xl font-headline font-bold">Settings</h1>
-      <div className="grid gap-6">
+      <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
             <CardTitle>My Profile</CardTitle>
-            <CardDescription>Update your personal information and region.</CardDescription>
+            <CardDescription>Update your personal information and profile picture.</CardDescription>
           </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="grid gap-6 max-w-lg">
+          <CardContent>
+            <form onSubmit={handleSubmit} className="grid gap-6 max-w-lg">
+                <div className="flex items-center gap-6">
+                    <Avatar className="h-24 w-24">
+                        <AvatarImage src={profileImageUrl || ''} />
+                        <AvatarFallback>{name.charAt(0)}</AvatarFallback>
+                    </Avatar>
+                    <div {...getRootProps()} className="w-full flex items-center justify-center border-2 border-dashed rounded-md p-6 cursor-pointer hover:border-primary transition-colors">
+                        <input {...getInputProps()} />
+                        <div className="text-center">
+                            <UploadCloud className="h-8 w-8 mx-auto text-muted-foreground" />
+                            {isDragActive ? (
+                                <p className="mt-2 text-sm text-primary">Drop the image here...</p>
+                            ) : (
+                                <p className="mt-2 text-sm text-muted-foreground">
+                                    <span className="font-semibold text-primary">Click to upload</span> or drag and drop
+                                </p>
+                            )}
+                            <p className="text-xs text-muted-foreground">PNG, JPG, GIF up to 10MB</p>
+                        </div>
+                    </div>
+                </div>
               <div className="grid gap-2">
                 <Label htmlFor="name">Name</Label>
                 <Input
@@ -82,8 +138,8 @@ export default function SettingsPage() {
               <Button type="submit" disabled={isLoading}>
                 {isLoading ? 'Saving...' : 'Save Changes'}
               </Button>
-            </CardContent>
-          </form>
+            </form>
+          </CardContent>
         </Card>
         
         <Card>

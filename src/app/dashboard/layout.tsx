@@ -26,6 +26,7 @@ import {
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
 import { useToast } from '@/hooks/use-toast';
+import { useEffect, useState } from 'react';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -42,6 +43,22 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { toast } = useToast();
+  const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    // This will run on the client and update when the image URL changes.
+    const handleStorageChange = () => {
+      const storedUrl = localStorage.getItem('profileImageUrl');
+      setProfileImageUrl(storedUrl);
+    };
+    
+    handleStorageChange(); // Initial load
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+    };
+  }, []);
 
   const handleLogout = async () => {
     toast({
@@ -107,7 +124,7 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src={`https://picsum.photos/seed/user/32/32`} />
+                  <AvatarImage src={profileImageUrl || `https://picsum.photos/seed/user/32/32`} />
                   <AvatarFallback>{userInitial}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
