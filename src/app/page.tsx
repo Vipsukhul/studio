@@ -45,12 +45,12 @@ export default function LoginPage() {
 
     // Simulate a login request
     setTimeout(() => {
-      if (email === 'test@example.com' && password === 'password') {
+      if (email === 'vipsukhul@gmail.com' && password === 'password') {
         toast({
             title: 'Login Successful',
             description: "Welcome back! You're being redirected to your dashboard.",
         });
-        setUser({email: 'test@example.com'});
+        setUser({email: 'vipsukhul@gmail.com'});
         router.push('/dashboard');
       } else {
         toast({
@@ -80,7 +80,7 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm">
         <CardHeader>
           <CardTitle className="text-2xl font-headline">Login</CardTitle>
-          <CardDescription>Enter your credentials below to login. (Hint: test@example.com / password)</CardDescription>
+          <CardDescription>Enter your credentials below to login. (Hint: vipsukhul@gmail.com / password)</CardDescription>
         </CardHeader>
         <form onSubmit={handleSubmit}>
           <CardContent className="grid gap-4">
