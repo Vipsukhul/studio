@@ -8,10 +8,14 @@ import type { EngineerPerformance } from '@/lib/types';
 import { EngineerPerformanceChart } from '@/components/charts/engineer-performance-chart';
 import { ChartContainer } from '@/components/ui/chart';
 import { ArrowDown, ArrowUp } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+
+const ITEMS_PER_PAGE = 5;
 
 export default function EngineerPerformancePage() {
   const [performanceData, setPerformanceData] = React.useState<EngineerPerformance[]>([]);
   const [loading, setLoading] = React.useState(true);
+  const [currentPage, setCurrentPage] = React.useState(1);
 
   React.useEffect(() => {
     async function loadData() {
@@ -27,6 +31,11 @@ export default function EngineerPerformancePage() {
     collected: { label: 'Collected', color: 'hsl(var(--chart-1))' },
     new: { label: 'New Assigned', color: 'hsl(var(--chart-2))' },
   } as const;
+
+  const totalPages = Math.ceil(performanceData.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const currentData = performanceData.slice(startIndex, endIndex);
 
   if (loading) {
     return (
@@ -74,8 +83,8 @@ export default function EngineerPerformancePage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {performanceData.length > 0 ? (
-                performanceData.map((engineer) => (
+              {currentData.length > 0 ? (
+                currentData.map((engineer) => (
                   <TableRow key={engineer.name}>
                     <TableCell className="font-medium">{engineer.name}</TableCell>
                     <TableCell>{engineer.region}</TableCell>
@@ -102,6 +111,24 @@ export default function EngineerPerformancePage() {
               )}
             </TableBody>
           </Table>
+           <div className="flex items-center justify-end space-x-2 py-4">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((prev) => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              Previous
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </>
