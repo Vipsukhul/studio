@@ -19,7 +19,7 @@ import {
   LogOut,
   Menu,
   PanelLeft,
-  Settings,
+  ShieldCheck,
   Users,
   Webhook,
   LayoutDashboard
@@ -31,7 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 const navItems = [
   { href: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard },
   { href: '/admin/users', label: 'User Management', icon: Users },
-  { href: '/admin/dashboard', label: 'Dashboard Mgt.', icon: Settings },
+  { href: '/admin/management', label: 'Admin Management', icon: ShieldCheck },
   { href: '/admin/api', label: 'API Management', icon: Webhook },
   { href: '/dashboard', label: 'Back to App', icon: PanelLeft },
 ];

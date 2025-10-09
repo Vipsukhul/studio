@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, Settings, Webhook } from 'lucide-react';
+import { Users, ShieldCheck, Webhook } from 'lucide-react';
 import Link from 'next/link';
 
 const adminSections = [
@@ -12,10 +12,10 @@ const adminSections = [
     href: '/admin/users',
   },
   {
-    title: 'Dashboard Management',
-    description: 'Configure settings for the main user dashboard.',
-    icon: Settings,
-    href: '/admin/dashboard',
+    title: 'Admin Management',
+    description: 'Configure settings for the admin portal.',
+    icon: ShieldCheck,
+    href: '/admin/management',
   },
   {
     title: 'API Management',
