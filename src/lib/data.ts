@@ -9,13 +9,6 @@ export const kpis: Kpi[] = [
     description: 'vs. last month',
   },
   {
-    label: 'New Outstanding',
-    value: '₹18,90,123',
-    change: '-1.8%',
-    changeType: 'decrease',
-    description: 'in this period',
-  },
-  {
     label: 'Recovered Amount',
     value: '₹25,40,500',
     change: '+12.1%',
@@ -28,6 +21,11 @@ export const kpis: Kpi[] = [
     change: '+3',
     changeType: 'increase',
     description: 'currently active',
+  },
+  {
+    label: 'Total Customers',
+    value: '7',
+    description: 'active accounts',
   },
 ];
 

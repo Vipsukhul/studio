@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDown, ArrowUp } from 'lucide-react';
+import { ArrowDown, ArrowUp, Users } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
@@ -23,22 +23,26 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{kpi.label}</CardTitle>
-        {kpi.change && (isIncrease ? <ArrowUp className="h-4 w-4 text-destructive" /> : <ArrowDown className="h-4 w-4 text-green-600" />) }
+        {kpi.label === 'Total Customers' ? <Users className="h-4 w-4 text-muted-foreground" /> : (
+            kpi.change && (isIncrease ? <ArrowUp className="h-4 w-4 text-destructive" /> : <ArrowDown className="h-4 w-4 text-green-600" />)
+        )}
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{kpi.value}</div>
-        <div className="flex items-center text-xs text-muted-foreground">
-          {kpi.change && (
-            <Badge
-              variant={badgeVariant}
-              className="flex items-center gap-1 rounded-full"
-            >
-              {isIncrease ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
-              {kpi.change}
-            </Badge>
-          )}
-          <span className="ml-2">{kpi.description}</span>
-        </div>
+        { kpi.description &&
+            <div className="flex items-center text-xs text-muted-foreground">
+            {kpi.change && (
+                <Badge
+                variant={badgeVariant}
+                className="flex items-center gap-1 rounded-full"
+                >
+                {isIncrease ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />}
+                {kpi.change}
+                </Badge>
+            )}
+            <span className="ml-2">{kpi.description}</span>
+            </div>
+        }
       </CardContent>
     </Card>
   );
