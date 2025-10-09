@@ -30,6 +30,7 @@ import { Footer } from '@/components/footer';
 import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -141,6 +142,7 @@ export default function DashboardLayout({
           <div className="w-full flex-1">
              {/* The department selector was here */}
           </div>
+           <ThemeToggle />
            <Link href="/dashboard/notifications">
             <Button variant="ghost" size="icon" className="rounded-full relative">
                 <Bell className="h-5 w-5" />

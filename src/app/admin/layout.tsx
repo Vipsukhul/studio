@@ -32,6 +32,7 @@ import { Footer } from '@/components/footer';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const navItems = [
   { href: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard },
@@ -115,6 +116,7 @@ export default function AdminLayout({
           <div className="w-full flex-1">
             <h1 className="text-xl font-semibold">Admin</h1>
           </div>
+           <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
