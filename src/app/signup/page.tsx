@@ -22,6 +22,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [contact, setContact] = useState('');
   const [region, setRegion] = useState('');
   const [role, setRole] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -42,7 +43,7 @@ export default function SignupPage() {
     
     // Simulate signup
     setTimeout(() => {
-        console.log('New user:', { name, email, region, role });
+        console.log('New user:', { name, email, region, role, contact });
         toast({
           title: 'Signup Successful',
           description: "Your account has been created. Redirecting to login...",
@@ -86,6 +87,18 @@ export default function SignupPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
+              />
+            </div>
+             <div className="grid gap-2">
+              <Label htmlFor="contact">Contact Number</Label>
+              <Input
+                id="contact"
+                type="tel"
+                placeholder="Your phone number"
+                required
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
                 disabled={isLoading}
               />
             </div>
