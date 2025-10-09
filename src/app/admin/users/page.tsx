@@ -1,5 +1,6 @@
 'use client';
 
+import * as React from 'react';
 import {
   Table,
   TableBody,
@@ -14,8 +15,21 @@ import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuIte
 import { Button } from "@/components/ui/button";
 import { MoreHorizontal } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import { useToast } from "@/hooks/use-toast";
 
-const users = [
+
+const initialUsers = [
   {
     name: 'Vipul Sukhul',
     email: 'vipsukhul@gmail.com',
@@ -54,7 +68,34 @@ const users = [
   },
 ];
 
+type User = typeof initialUsers[0];
+
 export default function UserManagementPage() {
+    const [users, setUsers] = React.useState(initialUsers);
+    const { toast } = useToast();
+
+    const handleViewDetails = (user: User) => {
+        toast({
+            title: 'View Details',
+            description: `Viewing details for ${user.name}. (Functionality to be implemented)`,
+        });
+    };
+
+    const handleEditUser = (user: User) => {
+        toast({
+            title: 'Edit User',
+            description: `Editing user ${user.name}. (Functionality to be implemented)`,
+        });
+    };
+
+    const handleDeleteUser = (userEmail: string) => {
+        setUsers(users.filter(user => user.email !== userEmail));
+        toast({
+            title: 'User Deleted',
+            description: `The user with email ${userEmail} has been deleted.`,
+        });
+    };
+
   return (
     <>
       <h1 className="text-3xl font-headline font-bold">User Management</h1>
@@ -97,18 +138,37 @@ export default function UserManagementPage() {
                   </TableCell>
                   <TableCell>{new Date(user.lastLogin).toLocaleDateString()}</TableCell>
                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Edit User</DropdownMenuItem>
-                          <DropdownMenuItem className="text-destructive">Delete User</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <AlertDialog>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleViewDetails(user)}>View Details</DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleEditUser(user)}>Edit User</DropdownMenuItem>
+                               <AlertDialogTrigger asChild>
+                                <DropdownMenuItem className="text-destructive">Delete User</DropdownMenuItem>
+                               </AlertDialogTrigger>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                This action cannot be undone. This will permanently delete the user
+                                account and remove their data from our servers.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancel</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDeleteUser(user.email)}>
+                                Delete
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                     </TableCell>
                 </TableRow>
               ))}
