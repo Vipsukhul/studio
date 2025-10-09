@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -51,6 +52,15 @@ const initialUsers = [
     status: 'Active',
     lastLogin: '2024-07-29',
     initials: 'VS',
+  },
+  {
+    name: 'Supriy Sukhadeve',
+    email: 'supriysukhadeve12@gmail.com',
+    role: 'Admin',
+    region: 'North',
+    status: 'Active',
+    lastLogin: '2024-07-29',
+    initials: 'SS',
   },
   {
     name: 'Jane Doe',
