@@ -11,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { regionOptions } from '@/lib/data';
+import { Eye, EyeOff } from 'lucide-react';
 
 const roleOptions = [
     { value: 'Country Manager', label: 'Country Manager' },
@@ -22,6 +23,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [contact, setContact] = useState('');
   const [region, setRegion] = useState('');
   const [role, setRole] = useState('');
@@ -104,14 +106,24 @@ export default function SignupPage() {
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-              />
+              <div className="relative">
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  className="pr-10"
+                />
+                 <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                >
+                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                </button>
+              </div>
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="role">Role</Label>

@@ -8,11 +8,15 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { regionOptions } from '@/lib/data';
+import { Eye, EyeOff } from 'lucide-react';
 
 export default function SettingsPage() {
   const [name, setName] = useState('Current User');
   const [email, setEmail] = useState('test@example.com');
   const [region, setRegion] = useState('North');
+  const [showCurrentPassword, setShowCurrentPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
@@ -90,15 +94,42 @@ export default function SettingsPage() {
           <CardContent className="grid gap-6 max-w-lg">
              <div className="grid gap-2">
                 <Label htmlFor="current-password">Current Password</Label>
-                <Input id="current-password" type="password" disabled={isLoading} />
+                <div className="relative">
+                  <Input id="current-password" type={showCurrentPassword ? 'text' : 'password'} disabled={isLoading} className="pr-10" />
+                  <button
+                    type="button"
+                    onClick={() => setShowCurrentPassword(!showCurrentPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                  >
+                    {showCurrentPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
                <div className="grid gap-2">
                 <Label htmlFor="new-password">New Password</Label>
-                <Input id="new-password" type="password" disabled={isLoading} />
+                <div className="relative">
+                  <Input id="new-password" type={showNewPassword ? 'text' : 'password'} disabled={isLoading} className="pr-10" />
+                  <button
+                    type="button"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                  >
+                    {showNewPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
                <div className="grid gap-2">
                 <Label htmlFor="confirm-password">Confirm New Password</Label>
-                <Input id="confirm-password" type="password" disabled={isLoading} />
+                <div className="relative">
+                  <Input id="confirm-password" type={showConfirmPassword ? 'text' : 'password'} disabled={isLoading} className="pr-10" />
+                   <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                  >
+                    {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
               </div>
               <Button type="button" disabled={isLoading}>
                 {isLoading ? 'Updating...' : 'Update Password'}
