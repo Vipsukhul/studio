@@ -1,4 +1,4 @@
-import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, Engineer, Invoice, OutstandingRecoveryTrend } from './types';
+import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, Engineer, Invoice, OutstandingRecoveryTrend, LogEntry } from './types';
 
 export const kpis: Kpi[] = [
   {
@@ -23,11 +23,11 @@ export const kpis: Kpi[] = [
     description: 'cleared this month',
   },
   {
-    label: 'Cleared Invoices',
-    value: '142',
-    change: '+8',
+    label: 'System Errors',
+    value: '3',
+    change: '+1',
     changeType: 'increase',
-    description: 'vs. new disputed',
+    description: 'in last 24h',
   },
 ];
 
@@ -108,4 +108,16 @@ export const engineers: Engineer[] = [
     { id: 'ENG06', name: 'B. Chatterjee', region: 'East' },
     { id: 'ENG07', name: 'P. Patel', region: 'West' },
     { id: 'ENG08', name: 'V. Mehta', region: 'West' },
+];
+
+export const logs: LogEntry[] = [
+  { id: 1, level: 'ERROR', timestamp: new Date(Date.now() - 3600000 * 0.5).toISOString(), message: 'Failed to process payment for invoice INV-78901: Connection timed out', source: 'BillingService' },
+  { id: 2, level: 'WARN', timestamp: new Date(Date.now() - 3600000 * 1).toISOString(), message: 'API response time from external vendor exceeded 500ms', source: 'APIMonitor' },
+  { id: 3, level: 'INFO', timestamp: new Date(Date.now() - 3600000 * 1.2).toISOString(), message: 'User admin@example.com logged in successfully', source: 'AuthService' },
+  { id: 4, level: 'INFO', timestamp: new Date(Date.now() - 3600000 * 2).toISOString(), message: 'Data export for "May-25" completed by user manager@example.com', source: 'DataExport' },
+  { id: 5, level: 'ERROR', timestamp: new Date(Date.now() - 3600000 * 3).toISOString(), message: 'Database connection failed: Authentication error', source: 'DBConnector' },
+  { id: 6, level: 'WARN', timestamp: new Date(Date.now() - 3600000 * 4).toISOString(), message: 'Disk space is nearing capacity (92% used)', source: 'SystemMonitor' },
+  { id: 7, level: 'INFO', timestamp: new Date(Date.now() - 3600000 * 5).toISOString(), message: 'New user "test.user@example.com" was created', source: 'UserManagement' },
+  { id: 8, level: 'ERROR', timestamp: new Date(Date.now() - 3600000 * 6).toISOString(), message: 'Failed to send email notification for overdue invoices', source: 'NotificationService' },
+  { id: 9, level: 'INFO', timestamp: new Date(Date.now() - 3600000 * 7).toISOString(), message: 'System backup started', source: 'BackupService' },
 ];

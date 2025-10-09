@@ -78,3 +78,11 @@ export interface OutstandingRecoveryTrend {
   new: number;
   recovered: number;
 }
+
+export interface LogEntry {
+  id: number;
+  level: 'INFO' | 'WARN' | 'ERROR';
+  timestamp: string;
+  message: string;
+  source: string;
+}
