@@ -23,6 +23,7 @@ import {
   Sheet as SheetIcon,
   Upload,
   Bell,
+  Download,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
@@ -81,6 +82,13 @@ export default function DashboardLayout({
     router.replace('/');
   };
 
+  const handleInstall = () => {
+    toast({
+      title: 'Installation',
+      description: 'PWA install functionality to be implemented.',
+    });
+  }
+
   const userInitial = 'U';
 
   return (
@@ -127,6 +135,10 @@ export default function DashboardLayout({
                 {filteredNavItems.map((item) => (
                   <NavItem key={item.href} {...item} mobile />
                 ))}
+                  <button onClick={handleInstall} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/80 transition-all hover:text-sidebar-accent-foreground hover:bg-sidebar-accent", "text-lg")}>
+                    <Download className="h-4 w-4" />
+                    Install App
+                </button>
               </nav>
             </SheetContent>
           </Sheet>
