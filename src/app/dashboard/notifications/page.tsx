@@ -48,12 +48,12 @@ export default function NotificationsPage() {
                             <div className="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-primary"></div>
                         </div>
                     ) : notifications.length > 0 ? (
-                        <div className="space-y-4">
+                        <div className="space-y-2">
                             {notifications.map((notif) => (
                                 <div
                                     key={notif.id}
                                     className={cn(
-                                        "flex items-start gap-4 p-4 rounded-lg border cursor-pointer transition-colors",
+                                        "flex items-start gap-4 p-4 rounded-lg cursor-pointer transition-colors border-b",
                                         !notif.isRead ? "bg-card hover:bg-muted/80" : "bg-muted/50 text-muted-foreground hover:bg-muted"
                                     )}
                                     onClick={() => handleNotificationClick(notif.id)}
@@ -62,17 +62,15 @@ export default function NotificationsPage() {
                                         <AvatarImage src={`https://picsum.photos/seed/${notif.from.name}/40/40`} />
                                         <AvatarFallback>{notif.from.name.charAt(0)}</AvatarFallback>
                                     </Avatar>
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between">
-                                            <p className="font-semibold text-foreground">
-                                                {notif.from.name}
-                                                <span className="text-xs font-normal text-muted-foreground ml-2">({notif.from.role})</span>
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true })}
-                                            </p>
-                                        </div>
-                                        <p className="text-sm mt-1">{notif.message}</p>
+                                    <div className="flex-1 grid gap-1">
+                                        <p className="font-semibold text-foreground">
+                                            {notif.from.name}
+                                            <span className="text-xs font-normal text-muted-foreground ml-2">({notif.from.role})</span>
+                                        </p>
+                                        <p className="text-sm">{notif.message}</p>
+                                         <p className="text-xs text-muted-foreground text-right">
+                                            {formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true })}
+                                        </p>
                                     </div>
                                     {!notif.isRead && (
                                         <div className="w-2.5 h-2.5 bg-primary rounded-full mt-2 animate-pulse" title="Unread"></div>
