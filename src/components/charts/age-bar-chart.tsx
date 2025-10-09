@@ -28,7 +28,7 @@ export function AgeBarChart({ data }: { data: OutstandingByAge[] }) {
           content={<ChartTooltipContent indicator="dot" />}
         />
         <Legend content={<ChartLegendContent />} />
-        <Bar dataKey="0-30" stackId="a" fill="var(--color-0-30)" name="0-30 Days" radius={[4, 4, 0, 0]} />
+        <Bar dataKey="0-30" stackId="a" fill="var(--color-0-30)" name="0-30 Days" radius={[0, 0, 0, 0]} />
         <Bar dataKey="31-90" stackId="a" fill="var(--color-31-90)" name="31-90 Days" />
         <Bar dataKey="91-180" stackId="a" fill="var(--color-91-180)" name="91-180 Days" />
         <Bar dataKey="181-365" stackId="a" fill="var(--color-181-365)" name="181-365 Days" />
