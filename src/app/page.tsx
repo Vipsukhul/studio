@@ -12,6 +12,7 @@ import { Logo } from '@/components/logo';
 import { Eye, EyeOff } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { departmentOptions } from '@/lib/data';
+import { InstallPwaDialog } from '@/components/install-pwa-dialog';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -24,6 +25,7 @@ export default function LoginPage() {
   
   const [user, setUser] = useState<object | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
+  const [showInstallDialog, setShowInstallDialog] = useState(false);
 
   useEffect(() => {
     const checkUser = setTimeout(() => {
@@ -52,8 +54,8 @@ export default function LoginPage() {
         });
         localStorage.setItem('userRole', role);
         localStorage.setItem('department', department);
-        setUser({email: userEmail});
-        router.push('/dashboard');
+        // Don't set user, which causes redirection. Instead, show dialog.
+        setShowInstallDialog(true);
       };
 
       if (email === 'vipsukhul@gmail.com' && password === 'password') {
@@ -72,6 +74,11 @@ export default function LoginPage() {
       }
     }, 1500);
   };
+  
+  const handleDialogClose = () => {
+    setShowInstallDialog(false);
+    router.push('/dashboard');
+  }
 
   if (isUserLoading) {
     return (
@@ -82,88 +89,91 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
-      <div className="flex items-center gap-3 mb-8">
-        <Logo className="h-10 w-10 text-primary" />
-        <h1 className="text-3xl font-headline font-bold text-foreground">Outstanding Tracker</h1>
-      </div>
-      <Card className="w-full max-w-sm">
-        <CardHeader>
-          <CardTitle className="text-2xl font-headline">Login</CardTitle>
-          <CardDescription>Enter your credentials below to login. (Hint: vipsukhul@gmail.com / password)</CardDescription>
-        </CardHeader>
-        <form onSubmit={handleSubmit}>
-          <CardContent className="grid gap-4">
-            <div className="grid gap-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="m@example.com"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-              />
-            </div>
-            <div className="grid gap-2">
-              <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
-                <Link
-                  href="/forgot-password"
-                  className="ml-auto inline-block text-sm underline"
-                >
-                  Forgot your password?
+    <>
+      <div className="flex flex-col items-center justify-center min-h-screen bg-background p-4">
+        <div className="flex items-center gap-3 mb-8">
+          <Logo className="h-10 w-10 text-primary" />
+          <h1 className="text-3xl font-headline font-bold text-foreground">Outstanding Tracker</h1>
+        </div>
+        <Card className="w-full max-w-sm">
+          <CardHeader>
+            <CardTitle className="text-2xl font-headline">Login</CardTitle>
+            <CardDescription>Enter your credentials below to login. (Hint: vipsukhul@gmail.com / password)</CardDescription>
+          </CardHeader>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="grid gap-4">
+              <div className="grid gap-2">
+                <Label htmlFor="email">Email</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="m@example.com"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="grid gap-2">
+                <div className="flex items-center">
+                  <Label htmlFor="password">Password</Label>
+                  <Link
+                    href="/forgot-password"
+                    className="ml-auto inline-block text-sm underline"
+                  >
+                    Forgot your password?
+                  </Link>
+                </div>
+                <div className="relative">
+                  <Input
+                    id="password"
+                    type={showPassword ? 'text' : 'password'}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading}
+                    className="pr-10"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
+                  >
+                    {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
+                  </button>
+                </div>
+              </div>
+              <div className="grid gap-2">
+                  <Label htmlFor="department">Department</Label>
+                  <Select value={department} onValueChange={setDepartment} required>
+                      <SelectTrigger id="department" disabled={isLoading}>
+                          <SelectValue placeholder="Select your department" />
+                      </SelectTrigger>
+                      <SelectContent>
+                          {departmentOptions.map(option => (
+                              <SelectItem key={option.value} value={option.value}>
+                                  {option.label}
+                              </SelectItem>
+                          ))}
+                      </SelectContent>
+                  </Select>
+              </div>
+            </CardContent>
+            <CardFooter className="flex flex-col gap-4">
+              <Button type="submit" className="w-full" disabled={isLoading}>
+                {isLoading ? 'Signing In...' : 'Sign In'}
+              </Button>
+              <div className="text-center text-sm">
+                Don&apos;t have an account?{' '}
+                <Link href="/signup" className="underline">
+                  Sign up
                 </Link>
               </div>
-              <div className="relative">
-                <Input
-                  id="password"
-                  type={showPassword ? 'text' : 'password'}
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading}
-                  className="pr-10"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 flex items-center pr-3 text-muted-foreground"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                </button>
-              </div>
-            </div>
-            <div className="grid gap-2">
-                <Label htmlFor="department">Department</Label>
-                <Select value={department} onValueChange={setDepartment} required>
-                    <SelectTrigger id="department" disabled={isLoading}>
-                        <SelectValue placeholder="Select your department" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {departmentOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>
-                                {option.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-          </CardContent>
-          <CardFooter className="flex flex-col gap-4">
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing In...' : 'Sign In'}
-            </Button>
-            <div className="text-center text-sm">
-              Don&apos;t have an account?{' '}
-              <Link href="/signup" className="underline">
-                Sign up
-              </Link>
-            </div>
-          </CardFooter>
-        </form>
-      </Card>
-    </div>
+            </CardFooter>
+          </form>
+        </Card>
+      </div>
+      <InstallPwaDialog open={showInstallDialog} onOpenChange={handleDialogClose} />
+    </>
   );
 }

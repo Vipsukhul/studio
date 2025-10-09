@@ -30,6 +30,8 @@ import {
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
 import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
+import { InstallPwaDialog } from '@/components/install-pwa-dialog';
 
 const navItems = [
   { href: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard },
@@ -48,6 +50,8 @@ export default function AdminLayout({
 }) {
   const router = useRouter();
   const { toast } = useToast();
+  const [showInstallDialog, setShowInstallDialog] = useState(false);
+
 
   const handleLogout = async () => {
     toast({
@@ -57,16 +61,10 @@ export default function AdminLayout({
     router.replace('/');
   };
 
-  const handleInstall = () => {
-    toast({
-      title: 'Installation',
-      description: 'PWA install functionality to be implemented.',
-    });
-  }
-
   const userInitial = 'A';
 
   return (
+    <>
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-sidebar md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
@@ -107,7 +105,7 @@ export default function AdminLayout({
                 {navItems.map((item) => (
                   <NavItem key={item.href} {...item} mobile />
                 ))}
-                 <button onClick={handleInstall} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/80 transition-all hover:text-sidebar-accent-foreground hover:bg-sidebar-accent", "text-lg")}>
+                 <button onClick={() => setShowInstallDialog(true)} className={cn("flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/80 transition-all hover:text-sidebar-accent-foreground hover:bg-sidebar-accent", "text-lg")}>
                     <Download className="h-4 w-4" />
                     Install App
                 </button>
@@ -143,6 +141,8 @@ export default function AdminLayout({
         <Footer />
       </div>
     </div>
+    <InstallPwaDialog open={showInstallDialog} onOpenChange={setShowInstallDialog} />
+    </>
   );
 }
 
