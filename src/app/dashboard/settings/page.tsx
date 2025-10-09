@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,12 +18,21 @@ export default function SettingsPage() {
   const [name, setName] = useState('Current User');
   const [email, setEmail] = useState('test@example.com');
   const [region, setRegion] = useState('North');
+  const [role, setRole] = useState('');
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(`https://picsum.photos/seed/user/128/128`);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  
+  useEffect(() => {
+    const storedRole = localStorage.getItem('userRole');
+    if (storedRole) {
+      setRole(storedRole);
+    }
+  }, []);
+
 
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     const file = acceptedFiles[0];
@@ -119,6 +128,16 @@ export default function SettingsPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   disabled={isLoading}
                 />
+              </div>
+              <div className="grid gap-2">
+                  <Label htmlFor="role">Role</Label>
+                  <Input
+                    id="role"
+                    value={role}
+                    readOnly
+                    disabled
+                    className="bg-muted"
+                  />
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="region">Region</Label>
