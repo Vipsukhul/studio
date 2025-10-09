@@ -15,6 +15,7 @@ import {
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
 import {
+  FileText,
   Home,
   LogOut,
   Menu,
@@ -33,6 +34,7 @@ const navItems = [
   { href: '/admin/users', label: 'User Management', icon: Users },
   { href: '/admin/management', label: 'Admin Management', icon: ShieldCheck },
   { href: '/admin/api', label: 'API Management', icon: Webhook },
+  { href: '/admin/logs', label: 'Logs', icon: FileText },
   { href: '/dashboard', label: 'Back to App', icon: PanelLeft },
 ];
 

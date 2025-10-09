@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, ShieldCheck, Webhook } from 'lucide-react';
+import { Users, ShieldCheck, Webhook, FileText } from 'lucide-react';
 import Link from 'next/link';
 
 const adminSections = [
@@ -22,6 +22,12 @@ const adminSections = [
     description: 'Control and monitor internal and external APIs.',
     icon: Webhook,
     href: '/admin/api',
+  },
+  {
+    title: 'System Logs',
+    description: 'View and monitor system logs.',
+    icon: FileText,
+    href: '/admin/logs',
   },
 ];
 
