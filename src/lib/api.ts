@@ -8,8 +8,9 @@ import {
   customers,
   engineers,
   outstandingRecoveryTrend,
+  engineerPerformance,
 } from './data';
-import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend } from './types';
+import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, EngineerPerformance } from './types';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -181,4 +182,12 @@ export async function updateInvoiceDisputeStatus(customerId: string, invoiceNumb
 export async function getOutstandingRecoveryTrend(): Promise<OutstandingRecoveryTrend[]> {
   await delay(500);
   return outstandingRecoveryTrend;
+}
+
+/**
+ * Simulates fetching engineer performance data.
+ */
+export async function getEngineerPerformanceData(): Promise<EngineerPerformance[]> {
+  await delay(500);
+  return engineerPerformance;
 }

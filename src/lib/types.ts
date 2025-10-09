@@ -86,3 +86,11 @@ export interface LogEntry {
   message: string;
   source: string;
 }
+
+export interface EngineerPerformance {
+  name: string;
+  region: string;
+  outstandingCollected: number;
+  newOutstandingAssigned: number;
+  netChange: number;
+}

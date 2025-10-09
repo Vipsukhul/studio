@@ -1,4 +1,4 @@
-import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, Engineer, Invoice, OutstandingRecoveryTrend, LogEntry } from './types';
+import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, Engineer, Invoice, OutstandingRecoveryTrend, LogEntry, EngineerPerformance } from './types';
 
 export const kpis: Kpi[] = [
   {
@@ -120,4 +120,15 @@ export const logs: LogEntry[] = [
   { id: 7, level: 'INFO', timestamp: new Date(Date.now() - 3600000 * 5).toISOString(), message: 'New user "test.user@example.com" was created', source: 'UserManagement' },
   { id: 8, level: 'ERROR', timestamp: new Date(Date.now() - 3600000 * 6).toISOString(), message: 'Failed to send email notification for overdue invoices', source: 'NotificationService' },
   { id: 9, level: 'INFO', timestamp: new Date(Date.now() - 3600000 * 7).toISOString(), message: 'System backup started', source: 'BackupService' },
+];
+
+export const engineerPerformance: EngineerPerformance[] = [
+    { name: 'R. Sharma', region: 'North', outstandingCollected: 450000, newOutstandingAssigned: 320000, netChange: 130000 },
+    { name: 'S. Gupta', region: 'North', outstandingCollected: 380000, newOutstandingAssigned: 410000, netChange: -30000 },
+    { name: 'S. Iyer', region: 'South', outstandingCollected: 520000, newOutstandingAssigned: 280000, netChange: 240000 },
+    { name: 'K. Rao', region: 'South', outstandingCollected: 410000, newOutstandingAssigned: 390000, netChange: 20000 },
+    { name: 'A. Das', region: 'East', outstandingCollected: 290000, newOutstandingAssigned: 310000, netChange: -20000 },
+    { name: 'B. Chatterjee', region: 'East', outstandingCollected: 330000, newOutstandingAssigned: 290000, netChange: 40000 },
+    { name: 'P. Patel', region: 'West', outstandingCollected: 610000, newOutstandingAssigned: 450000, netChange: 160000 },
+    { name: 'V. Mehta', region: 'West', outstandingCollected: 580000, newOutstandingAssigned: 510000, netChange: 70000 },
 ];

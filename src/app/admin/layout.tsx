@@ -23,7 +23,8 @@ import {
   ShieldCheck,
   Users,
   Webhook,
-  LayoutDashboard
+  LayoutDashboard,
+  TrendingUp,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
@@ -35,6 +36,7 @@ const navItems = [
   { href: '/admin/management', label: 'Admin Management', icon: ShieldCheck },
   { href: '/admin/api', label: 'API Management', icon: Webhook },
   { href: '/admin/logs', label: 'Logs', icon: FileText },
+  { href: '/admin/engineer-performance', label: 'Engineer Performance', icon: TrendingUp },
   { href: '/dashboard', label: 'Back to App', icon: PanelLeft },
 ];
 

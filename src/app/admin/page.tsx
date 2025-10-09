@@ -1,7 +1,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Users, ShieldCheck, Webhook, FileText, Info, AlertTriangle, CircleX } from 'lucide-react';
+import { Users, ShieldCheck, Webhook, FileText, Info, AlertTriangle, CircleX, TrendingUp } from 'lucide-react';
 import Link from 'next/link';
 
 const adminSections = [
@@ -28,6 +28,12 @@ const adminSections = [
     description: 'View and monitor system logs.',
     icon: FileText,
     href: '/admin/logs',
+  },
+  {
+    title: 'Engineer Performance',
+    description: 'Track engineer-wise outstanding metrics.',
+    icon: TrendingUp,
+    href: '/admin/engineer-performance',
   },
 ];
 
