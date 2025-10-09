@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -53,7 +54,7 @@ export default function NotificationsPage() {
                                 <div
                                     key={notif.id}
                                     className={cn(
-                                        "flex items-start gap-4 p-4 rounded-lg cursor-pointer transition-colors border-b",
+                                        "flex items-start gap-4 p-2 rounded-lg cursor-pointer transition-colors border-b",
                                         !notif.isRead ? "bg-card hover:bg-muted/80" : "bg-muted/50 text-muted-foreground hover:bg-muted"
                                     )}
                                     onClick={() => handleNotificationClick(notif.id)}
