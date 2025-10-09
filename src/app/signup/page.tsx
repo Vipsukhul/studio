@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regionOptions } from '@/lib/data';
+import { regionOptions, departmentOptions } from '@/lib/data';
 import { Eye, EyeOff } from 'lucide-react';
 
 const roleOptions = [
@@ -27,17 +27,18 @@ export default function SignupPage() {
   const [contact, setContact] = useState('');
   const [region, setRegion] = useState('');
   const [role, setRole] = useState('');
+  const [department, setDepartment] = useState('Batching Plant');
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!region || !role) {
+    if (!region || !role || !department) {
         toast({
             variant: 'destructive',
             title: 'Incomplete Form',
-            description: 'Please select your region and role.',
+            description: 'Please select your region, role, and department.',
         });
         return;
     }
@@ -45,7 +46,7 @@ export default function SignupPage() {
     
     // Simulate signup
     setTimeout(() => {
-        console.log('New user:', { name, email, region, role, contact });
+        console.log('New user:', { name, email, region, role, contact, department });
         toast({
           title: 'Signup Successful',
           description: "Your account has been created. Redirecting to login...",
@@ -124,6 +125,21 @@ export default function SignupPage() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+            </div>
+            <div className="grid gap-2">
+                <Label htmlFor="department">Department</Label>
+                <Select value={department} onValueChange={setDepartment} required>
+                    <SelectTrigger id="department" disabled={isLoading}>
+                        <SelectValue placeholder="Select your department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {departmentOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
              <div className="grid gap-2">
                 <Label htmlFor="role">Role</Label>

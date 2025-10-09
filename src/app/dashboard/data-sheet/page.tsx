@@ -9,16 +9,33 @@ import { getCustomers } from '@/lib/api';
 export default function DataSheetPage() {
   const [customersData, setCustomersData] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [department, setDepartment] = useState('Batching Plant');
+
+   useEffect(() => {
+    const storedDepartment = localStorage.getItem('department');
+    if (storedDepartment) {
+        setDepartment(storedDepartment);
+    }
+     const handleStorageChange = () => {
+        const storedDept = localStorage.getItem('department');
+        if (storedDept) {
+            setDepartment(storedDept);
+        }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   useEffect(() => {
     async function loadData() {
+      if (!department) return;
       setLoading(true);
-      const data = await getCustomers();
+      const data = await getCustomers(department);
       setCustomersData(data);
       setLoading(false);
     }
     loadData();
-  }, []);
+  }, [department]);
 
   if (loading) {
     return (
@@ -35,7 +52,7 @@ export default function DataSheetPage() {
         <CardHeader>
           <CardTitle>Customer Data</CardTitle>
           <CardDescription>
-            Detailed view of all customer outstanding data. Click a row to see invoice details.
+            Detailed view of all customer outstanding data for the <span className="font-semibold">{department}</span> department. Click a row to see invoice details.
           </CardDescription>
         </CardHeader>
         <CardContent>

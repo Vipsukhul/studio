@@ -13,7 +13,6 @@ import { monthOptions, regionOptions } from '@/lib/data';
 import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
 import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
-import { ResponsiveContainer } from 'recharts';
 
 function KpiCard({ kpi }: { kpi: Kpi }) {
   const isIncrease = kpi.changeType === 'increase';
@@ -59,25 +58,40 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [month, setMonth] = useState('Apr-25');
   const [region, setRegion] = useState('All');
+  const [department, setDepartment] = useState('Batching Plant');
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
+    const storedDepartment = localStorage.getItem('department');
+    if (storedDepartment) {
+        setDepartment(storedDepartment);
+    }
+     const handleStorageChange = () => {
+        const storedDept = localStorage.getItem('department');
+        if (storedDept) {
+            setDepartment(storedDept);
+        }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   useEffect(() => {
     async function fetchData() {
       setLoading(true);
       const [mainData, recoveryTrendData] = await Promise.all([
-        getDashboardData(month),
-        getOutstandingRecoveryTrend()
+        getDashboardData(month, department),
+        getOutstandingRecoveryTrend(department)
       ]);
       setDashboardData(mainData);
       setRecoveryData(recoveryTrendData);
       setLoading(false);
     }
-    fetchData();
-  }, [month]);
+    if (department) {
+        fetchData();
+    }
+  }, [month, department]);
 
   if (loading || !dashboardData || !recoveryData || !isClient) {
     return (

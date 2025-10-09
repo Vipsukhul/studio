@@ -10,24 +10,23 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import { Eye, EyeOff } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { departmentOptions } from '@/lib/data';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [department, setDepartment] = useState('Batching Plant');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
   
-  // Simulate user state
   const [user, setUser] = useState<object | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate checking for a logged-in user
     const checkUser = setTimeout(() => {
-      // To test the logged-in state, you can manually set a value in localStorage
-      // For now, we'll assume the user is not logged in.
       setIsUserLoading(false);
     }, 1000);
 
@@ -45,33 +44,24 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    // Simulate a login request
     setTimeout(() => {
-      // For regular users. Admins should use /admin/login
+      const loginSuccess = (role: string, userEmail: string) => {
+        toast({
+            title: 'Login Successful',
+            description: "Welcome back! You're being redirected to your dashboard.",
+        });
+        localStorage.setItem('userRole', role);
+        localStorage.setItem('department', department);
+        setUser({email: userEmail});
+        router.push('/dashboard');
+      };
+
       if (email === 'vipsukhul@gmail.com' && password === 'password') {
-        toast({
-            title: 'Login Successful',
-            description: "Welcome back! You're being redirected to your dashboard.",
-        });
-        localStorage.setItem('userRole', 'Country Manager');
-        setUser({email: 'vipsukhul@gmail.com'});
-        router.push('/dashboard');
+        loginSuccess('Country Manager', 'vipsukhul@gmail.com');
       } else if (email === 'manager@example.com' && password === 'password') {
-        toast({
-            title: 'Login Successful',
-            description: "Welcome back! You're being redirected to your dashboard.",
-        });
-        localStorage.setItem('userRole', 'Manager');
-        setUser({email: 'manager@example.com'});
-        router.push('/dashboard');
+        loginSuccess('Manager', 'manager@example.com');
       } else if (email === 'engineer@example.com' && password === 'password') {
-        toast({
-            title: 'Login Successful',
-            description: "Welcome back! You're being redirected to your dashboard.",
-        });
-        localStorage.setItem('userRole', 'Engineer');
-        setUser({email: 'engineer@example.com'});
-        router.push('/dashboard');
+        loginSuccess('Engineer', 'engineer@example.com');
       } else {
         toast({
           variant: 'destructive',
@@ -144,6 +134,21 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
+            </div>
+            <div className="grid gap-2">
+                <Label htmlFor="department">Department</Label>
+                <Select value={department} onValueChange={setDepartment} required>
+                    <SelectTrigger id="department" disabled={isLoading}>
+                        <SelectValue placeholder="Select your department" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {departmentOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>
+                                {option.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4">

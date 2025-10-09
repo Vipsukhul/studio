@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -6,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import type { Invoice, InvoiceTrackerData, Customer } from '@/lib/types';
+import type { InvoiceTrackerData, Customer } from '@/lib/types';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { regionOptions } from '@/lib/data';
 import { getInvoiceTrackerData, getCustomers } from '@/lib/api';
@@ -22,35 +21,50 @@ export default function InvoiceTrackerPage() {
   const [data, setData] = useState<InvoiceTrackerData[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState('All');
+  const [department, setDepartment] = useState('Batching Plant');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [detailedInvoices, setDetailedInvoices] = useState<DetailedInvoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
 
-  useEffect(() => {
-    async function loadInitialData() {
-      const customerData = await getCustomers();
-      setCustomers(customerData);
+   useEffect(() => {
+    const storedDepartment = localStorage.getItem('department');
+    if (storedDepartment) {
+        setDepartment(storedDepartment);
     }
-    loadInitialData();
+     const handleStorageChange = () => {
+        const storedDept = localStorage.getItem('department');
+        if (storedDept) {
+            setDepartment(storedDept);
+        }
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   useEffect(() => {
+    async function loadInitialData() {
+        if (!department) return;
+      const customerData = await getCustomers(department);
+      setCustomers(customerData);
+    }
+    loadInitialData();
+  }, [department]);
+
+  useEffect(() => {
     async function fetchData() {
+        if (!department) return;
       setLoading(true);
-      const result = await getInvoiceTrackerData(region);
+      const result = await getInvoiceTrackerData(region, department);
       setData(result);
       setLoading(false);
     }
     fetchData();
-  }, [region]);
+  }, [region, department]);
 
   const handleRowClick = (monthYear: string) => {
     setSelectedMonth(monthYear);
     
-    // Simulate fetching detailed data for the selected month.
-    // In a real app, you would make an API call with the monthYear and region.
-    // Here, we'll just sample from the existing mock customer invoices.
     const allInvoices: DetailedInvoice[] = [];
     customers.forEach(customer => {
       customer.invoices?.forEach(invoice => {
@@ -63,7 +77,6 @@ export default function InvoiceTrackerPage() {
       });
     });
     
-    // For demonstration, we'll just take the first 10 invoices.
     setDetailedInvoices(allInvoices.slice(0, 10));
     setIsDialogOpen(true);
   };
@@ -90,7 +103,7 @@ export default function InvoiceTrackerPage() {
         <CardHeader>
           <CardTitle>Region-wise Invoice Summary</CardTitle>
           <CardDescription>
-            Comparing previous and current month invoice data. Click a row for details.
+            Comparing previous and current month invoice data for the <span className='font-semibold'>{department}</span> department. Click a row for details.
           </CardDescription>
         </CardHeader>
         <CardContent>

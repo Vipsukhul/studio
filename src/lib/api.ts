@@ -19,49 +19,59 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 /**
  * Simulates fetching all dashboard data.
  * @param month - The selected month (for simulation purposes).
+ * @param department - The selected department.
  */
-export async function getDashboardData(month: string) {
+export async function getDashboardData(month: string, department: string) {
   await delay(500);
-  console.log(`Fetching data for month: ${month}`);
+  console.log(`Fetching data for month: ${month} and department: ${department}`);
   
-  const totalCustomers = customers.length;
+  const filteredCustomers = customers.filter(c => c.department === department);
+  const totalCustomers = filteredCustomers.length;
+  
   const customersKpi: Kpi = {
     label: 'Total Customers',
     value: totalCustomers.toString(),
-    description: 'active accounts',
+    description: `in ${department}`,
   };
 
-  // Avoid duplicating the KPI if it already exists
   const existingKpis = kpis.filter(k => k.label !== 'Total Customers');
   
+  // Simple filtering for demonstration. In a real app, this would be more complex.
+  const filteredOutstandingByAge = outstandingByAge.filter(item => item.department === department);
+  const filteredRegionDistribution = regionDistribution; // Not department-specific in mock data
+  const filteredMonthlyTrends = monthlyTrends; // Not department-specific in mock data
+
   return {
     kpis: [...existingKpis, customersKpi],
-    outstandingByAge,
-    regionDistribution,
-    monthlyTrends,
+    outstandingByAge: filteredOutstandingByAge,
+    regionDistribution: filteredRegionDistribution,
+    monthlyTrends: filteredMonthlyTrends,
   };
 }
 
 /**
- * Simulates fetching invoice tracker data, with region filtering.
+ * Simulates fetching invoice tracker data, with region and department filtering.
  * @param region - The region to filter by.
+ * @param department - The department to filter by.
  */
-export async function getInvoiceTrackerData(region: string): Promise<InvoiceTrackerData[]> {
+export async function getInvoiceTrackerData(region: string, department: string): Promise<InvoiceTrackerData[]> {
   await delay(500);
+  let filteredData = invoiceTrackerData.filter(d => d.department === department);
   if (region === 'All') {
-    return invoiceTrackerData;
+    return filteredData;
   }
-  // This is a simple simulation. In a real app, you'd filter the data.
-  // For now, we'll just return a subset to show the filtering is happening.
-  return invoiceTrackerData.slice(0, 1);
+  // This is a simple simulation. In a real app, you'd filter by region on the backend.
+  // For now, we'll return a subset if a region is selected.
+  return filteredData.slice(0, 1);
 }
 
 /**
- * Simulates fetching the list of all customers.
+ * Simulates fetching the list of all customers, filtered by department.
+ * @param department - The department to filter by.
  */
-export async function getCustomers(): Promise<Customer[]> {
+export async function getCustomers(department: string): Promise<Customer[]> {
   await delay(500);
-  return customers;
+  return customers.filter(c => c.department === department);
 }
 
 /**
@@ -73,12 +83,10 @@ export async function getCustomers(): Promise<Customer[]> {
 export async function updateCustomerRemark(customerId: string, newRemark: Customer['remarks']): Promise<{ success: boolean }> {
   await delay(300);
   console.log(`Updating remark for customer ${customerId} to "${newRemark}"`);
-  // Find the customer and update the mock data.
   const customerIndex = customers.findIndex(c => c.customerCode === customerId);
   if (customerIndex !== -1) {
     customers[customerIndex].remarks = newRemark;
     
-    // Notification logic
     const userRole = localStorage.getItem('userRole');
     if (userRole === 'Manager') {
         const customer = customers[customerIndex];
@@ -106,7 +114,6 @@ export async function updateCustomerNotes(customerId: string, newNotes: string):
   if (customerIndex !== -1) {
     customers[customerIndex].notes = newNotes;
     
-    // Notification logic
     const userRole = localStorage.getItem('userRole');
     if (userRole === 'Engineer') {
         const customer = customers[customerIndex];
@@ -169,12 +176,13 @@ export async function processAndUploadFile(file: File, month: string): Promise<{
 }
 
 /**
- * Simulates fetching engineers by region.
+ * Simulates fetching engineers by region and department.
  * @param region - The region to filter engineers by.
+ * @param department - The department to filter by.
  */
-export async function getEngineersByRegion(region: string): Promise<Engineer[]> {
+export async function getEngineersByRegionAndDepartment(region: string, department: string): Promise<Engineer[]> {
     await delay(100);
-    return engineers.filter(e => e.region === region);
+    return engineers.filter(e => e.region === region && e.department === department);
 }
 
 /**
@@ -189,7 +197,6 @@ export async function updateAssignedEngineer(customerId: string, engineerName: s
     if (customerIndex !== -1) {
         customers[customerIndex].assignedEngineer = engineerName;
         
-        // Notification logic
         const userRole = localStorage.getItem('userRole');
         if (userRole === 'Manager') {
             const customer = customers[customerIndex];
@@ -231,18 +238,20 @@ export async function updateInvoiceDisputeStatus(customerId: string, invoiceNumb
 
 /**
  * Simulates fetching the outstanding vs. recovery trend data.
+ * @param department - The department to filter by.
  */
-export async function getOutstandingRecoveryTrend(): Promise<OutstandingRecoveryTrend[]> {
+export async function getOutstandingRecoveryTrend(department: string): Promise<OutstandingRecoveryTrend[]> {
   await delay(500);
-  return outstandingRecoveryTrend;
+  return outstandingRecoveryTrend.filter(item => item.department === department);
 }
 
 /**
  * Simulates fetching engineer performance data.
+ * @param department - The department to filter by.
  */
-export async function getEngineerPerformanceData(): Promise<EngineerPerformance[]> {
+export async function getEngineerPerformanceData(department: string): Promise<EngineerPerformance[]> {
   await delay(500);
-  return engineerPerformance;
+  return engineerPerformance.filter(item => item.department === department);
 }
 
 /**
@@ -266,8 +275,6 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
   
   console.log('Simulating upload to Cloudinary...');
-  // Since we are using a demo cloud, we will simulate the upload to avoid actual uploads.
-  // In your real application, you would perform the fetch request below.
   
   /*
   const response = await fetch(url, {
@@ -283,11 +290,8 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
   return data.secure_url;
   */
 
-  // --- SIMULATION ---
   await delay(1500); // Simulate network delay
-  // Create a temporary local URL for the uploaded image for demonstration.
   const localImageUrl = URL.createObjectURL(file);
   console.log('Simulated upload complete. Image URL:', localImageUrl);
   return localImageUrl;
-  // --- END SIMULATION ---
 }

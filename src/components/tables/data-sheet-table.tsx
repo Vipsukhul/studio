@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -51,7 +50,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus } from '@/lib/api';
+import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegionAndDepartment, updateInvoiceDisputeStatus } from '@/lib/api';
 
 import type { Customer, Invoice, Engineer } from "@/lib/types"
 
@@ -126,6 +125,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [userRole, setUserRole] = React.useState<string | null>(null);
+
   const { toast } = useToast();
 
   React.useEffect(() => {
@@ -202,11 +202,12 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
 
   const AssignedToCell = ({ row }: { row: any }) => {
     const customerRegion = row.original.region;
+    const customerDepartment = row.original.department;
     const [engineers, setEngineers] = React.useState<Engineer[]>([]);
 
     React.useEffect(() => {
-        getEngineersByRegion(customerRegion).then(setEngineers);
-    }, [customerRegion]);
+        getEngineersByRegionAndDepartment(customerRegion, customerDepartment).then(setEngineers);
+    }, [customerRegion, customerDepartment]);
 
     return (
         <Select
