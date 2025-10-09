@@ -31,10 +31,48 @@ export default function AdminLogsPage() {
     .filter(log => levelFilter === 'all' || log.level === levelFilter)
     .filter(log => log.message.toLowerCase().includes(messageFilter.toLowerCase()));
 
+  const logStats = [
+    {
+        level: 'Info',
+        count: logs.filter(l => l.level === 'INFO').length,
+        icon: Info,
+        color: 'text-blue-500',
+    },
+    {
+        level: 'Warnings',
+        count: logs.filter(l => l.level === 'WARN').length,
+        icon: AlertTriangle,
+        color: 'text-yellow-500',
+    },
+    {
+        level: 'Errors',
+        count: logs.filter(l => l.level === 'ERROR').length,
+        icon: CircleX,
+        color: 'text-red-500',
+    }
+  ];
+
   return (
     <>
       <h1 className="text-3xl font-headline font-bold">System Logs</h1>
-      <Card>
+      <p className="text-muted-foreground">View and monitor events from across the application.</p>
+
+      <div className="mt-6 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+        {logStats.map((stat) => (
+            <Card key={stat.level}>
+                <CardHeader className="flex flex-row items-center justify-between pb-2">
+                    <CardTitle className="text-sm font-medium">{stat.level}</CardTitle>
+                    <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                </CardHeader>
+                <CardContent>
+                    <div className="text-2xl font-bold">{stat.count}</div>
+                    <p className="text-xs text-muted-foreground">total records</p>
+                </CardContent>
+            </Card>
+        ))}
+      </div>
+      
+      <Card className="mt-6">
         <CardHeader>
           <CardTitle>Application Logs</CardTitle>
           <CardDescription>
