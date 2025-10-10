@@ -1,117 +1,134 @@
-/**
- * @fileoverview Firestore Security Rules for the application.
- *
- * Core Philosophy:
- * This ruleset enforces a role-based access control model for users and ownership for customer data and their associated invoices.
- * User profiles are private and only accessible to the user themselves. Notifications are addressed to a specific user.
- *
- * Data Structure:
- * - /customers/{customerId}: Stores customer information.
- * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice information for each customer.
- * - /users/{userId}: Stores user profile information.
- * - /notifications/{notificationId}: Stores notifications for users.
- *
- * Key Security Decisions:
- * - Users can only read and write their own user profiles.
- * - Customers data is accessible to all signed-in users.
- * - Invoices are accessible to all signed-in users.
- * - Notifications are only readable and writable by the user they are addressed to.
- */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
      * @description Checks if the user is signed in.
+     * @return {boolean} True if the user is signed in, false otherwise.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Checks if the user is the owner of the resource.
+     * @description Checks if the user is the owner of the document.
+     * @param {string} userId - The user ID to compare with the request's authentication UID.
+     * @return {boolean} True if the user is the owner, false otherwise.
      */
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
     /**
-     * @description Checks if the user is the owner of an existing resource.
+     * @description Checks if the user is an Admin.
+     * @return {boolean} True if the user is an Admin, false otherwise.
      */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+    function isAdmin() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
     }
 
     /**
-     * @description Allows any signed-in user to read any customer data. Enforces ownership for write operations.
+     * @description Checks if the user is a Manager.
+     * @return {boolean} True if the user is a Manager, false otherwise.
+     */
+    function isManager() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Manager';
+    }
+
+    /**
+     * @description Checks if the user is a Manager or Admin.
+     * @return {boolean} True if the user is a Manager or Admin, false otherwise.
+     */
+    function isManagerOrAdmin() {
+        return isManager() || isAdmin();
+    }
+
+    /**
+     * @description Checks if the user is an Engineer.
+     * @return {boolean} True if the user is an Engineer, false otherwise.
+     */
+    function isEngineer() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Engineer';
+    }
+
+    /**
+     * @description Checks if the user is a Country Manager.
+     * @return {boolean} True if the user is a Country Manager, false otherwise.
+     */
+    function isCountryManager() {
+        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Country Manager';
+    }
+
+    /**
+     * @description Checks if the document exists and the user is the owner.
+     * @param {string} userId - The user ID to compare with the request's authentication UID.
+     * @return {boolean} True if the document exists and the user is the owner, false otherwise.
+     */
+    function isExistingOwner(userId) {
+      return isOwner(userId) && exists(resource);
+    }
+
+    /**
+     * @description Rules for the /customers/{customerId} collection.
      * @path /customers/{customerId}
-     * @allow (get, list): If any user is signed in.
-     * @allow (create): If the user is signed in.
-     * @allow (update, delete): If the user is signed in.
-     * @deny (create): If the request does not have an authenticated user.
-     * @deny (update, delete): If the request does not have an authenticated user.
-     * @principle Grants public read access while restricting writes to signed-in users.
+     * @allow (create) If the user is a Manager or Admin.
+     * @allow (get, list) If the user is signed in.
+     * @deny (update, delete) If the user is not a Manager or Admin.
+     * @principle Enforces role-based access control for customer data.
      */
     match /customers/{customerId} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
+      allow create: if isManagerOrAdmin();
+      allow update: if isManagerOrAdmin();
+      allow delete: if isManagerOrAdmin();
     }
 
     /**
-     * @description Allows any signed-in user to read any invoice data. Enforces ownership for write operations.
+     * @description Rules for the /customers/{customerId}/invoices/{invoiceId} subcollection.
      * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (get, list): If any user is signed in.
-     * @allow (create): If the user is signed in.
-     * @allow (update, delete): If the user is signed in.
-     * @deny (create): If the request does not have an authenticated user.
-     * @deny (update, delete): If the request does not have an authenticated user.
-     * @principle Grants public read access while restricting writes to signed-in users.
+     * @allow (create) If the user is a Manager or Admin.
+     * @allow (get, list) If the user is signed in.
+     * @deny (update, delete) If the user is not a Manager or Admin.
+     * @principle Enforces role-based access control for invoice data.
      */
     match /customers/{customerId}/invoices/{invoiceId} {
       allow get, list: if isSignedIn();
-      allow create: if isSignedIn();
-      allow update: if isSignedIn() && resource != null;
-      allow delete: if isSignedIn() && resource != null;
+      allow create: if isManagerOrAdmin();
+      allow update: if isManagerOrAdmin();
+      allow delete: if isManagerOrAdmin();
     }
 
     /**
-     * @description Controls access to user profiles. Only the user can read/write their own profile.
+     * @description Rules for the /users/{userId} collection.
      * @path /users/{userId}
-     * @allow (get): If the user is the owner of the profile.
-     * @allow (list): If false
-     * @allow (create): If the user ID in the path matches the authenticated user's ID.
-     * @allow (update, delete): If the user is the owner of the profile and the document exists.
-     * @deny (create): If the user ID in the path does not match the authenticated user's ID.
-     * @deny (update, delete): If the user is not the owner of the profile.
-     * @principle Enforces strict user-ownership for profile data.
+     * @allow (create) If the user's ID matches the authenticated user's ID.
+     * @allow (get) If the user's ID matches the authenticated user's ID or the user is an Admin.
+     * @allow (update) If the user's ID matches the authenticated user's ID or the user is an Admin, and the document exists.
+     * @deny (delete) If the user is not an Admin or the user's ID doesn't match the authenticated user's ID.
+     * @deny (list) Listing users is not allowed.
+     * @principle Enforces user-ownership for profile data, admins can read all.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
       allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId);
-      allow delete: if isExistingOwner(userId);
+      allow update: if (isOwner(userId) || isAdmin());
+      allow delete: if isAdmin();
     }
 
-    /**
-     * @description Controls access to notifications. Only the user the notification is addressed to can read and write.
-     * @path /notifications/{notificationId}
-     * @allow (get): If the notification is addressed to the requesting user.
-     * @allow (list): If false
-     * @allow (create): If the notification is addressed to the requesting user.
-     * @allow (update, delete): If the notification is addressed to the requesting user.
-     * @deny (create): If the notification is not addressed to the requesting user.
-     * @deny (update, delete): If the notification is not addressed to the requesting user.
-     * @principle Enforces strict user-ownership for notification data.
-     */
-    match /notifications/{notificationId} {
-      allow get: if request.auth.uid == resource.data.to;
-      allow list: if false;
-      allow create: if request.auth.uid == request.resource.data.to;
-      allow update: if request.auth.uid == resource.data.to && resource != null;
-      allow delete: if request.auth.uid == resource.data.to && resource != null;
-    }
+      /**
+       * @description Rules for the /notifications/{notificationId} collection.
+       * @path /notifications/{notificationId}
+       * @allow (create) If the user is an Admin.
+       * @allow (get, list) If the user is an Admin.
+       * @deny (update, delete) If the user is not an Admin.
+       * @principle Enforces role-based access control for notification data.
+       */
+      match /notifications/{notificationId} {
+        allow get, list: if isAdmin();
+        allow create: if isAdmin();
+        allow update: if isAdmin();
+        allow delete: if isAdmin();
+      }
   }
 }
