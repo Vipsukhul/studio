@@ -147,8 +147,9 @@ export default function DashboardLayout({
   
   if (!userProfile) {
      return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+      <div className="flex flex-col items-center justify-center h-screen gap-4">
+        <p className="text-lg text-muted-foreground">Could not load user profile. Please try logging in again.</p>
+        <Button onClick={() => router.push('/')}>Go to Login</Button>
       </div>
     );
   }

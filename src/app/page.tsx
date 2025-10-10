@@ -55,11 +55,7 @@ export default function LoginPage() {
 
   // If loading or already logged in, don't render the form
   if (isUserLoading || user) {
-    return (
-        <div className="flex items-center justify-center h-screen">
-          <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
-        </div>
-    );
+     return null;
   }
 
   return (
