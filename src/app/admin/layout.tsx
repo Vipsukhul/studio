@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { GoToTop } from '@/components/ui/go-to-top';
 
 const navItems = [
   { href: '/admin', label: 'Admin Dashboard', icon: LayoutDashboard },
@@ -144,6 +145,7 @@ export default function AdminLayout({
       </div>
     </div>
     <InstallPwaDialog open={showInstallDialog} onOpenChange={setShowInstallDialog} />
+    <GoToTop />
     </>
   );
 }

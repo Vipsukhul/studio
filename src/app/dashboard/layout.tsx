@@ -31,6 +31,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { GoToTop } from '@/components/ui/go-to-top';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -181,6 +182,7 @@ export default function DashboardLayout({
       </div>
     </div>
     <InstallPwaDialog open={showInstallDialog} onOpenChange={setShowInstallDialog} />
+    <GoToTop />
     </>
   );
 }
