@@ -5,14 +5,15 @@ import {
   regionDistribution,
   monthlyTrends,
   invoiceTrackerData,
-  customers,
+  customers as mockCustomers,
   engineers,
   outstandingRecoveryTrend,
   engineerPerformance,
-  users,
+  users as mockUsers,
 } from './data';
 import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, EngineerPerformance, User } from './types';
 import { createNotification } from './notifications';
+import { Firestore, collection, getDocs, doc, updateDoc, setDoc } from 'firebase/firestore';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -22,12 +23,12 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
  * @param month - The selected month (for simulation purposes).
  * @param department - The selected department.
  */
-export async function getDashboardData(month: string, department: string, financialYear: string) {
+export async function getDashboardData(month: string, department: string, financialYear: string, firestore: Firestore) {
   await delay(500);
   console.log(`Fetching data for month: ${month}, department: ${department}, and FY: ${financialYear}`);
   
-  const filteredCustomers = customers.filter(c => c.department === department);
-  const totalCustomers = filteredCustomers.length;
+  const customers = await getCustomers(department, financialYear, firestore);
+  const totalCustomers = customers.length;
   
   const customersKpi: Kpi = {
     label: 'Total Customers',
@@ -68,13 +69,15 @@ export async function getInvoiceTrackerData(region: string, department: string, 
 }
 
 /**
- * Simulates fetching the list of all customers, filtered by department.
+ * Fetches the list of all customers from Firestore, filtered by department.
  * @param department - The department to filter by.
  */
-export async function getCustomers(department: string, financialYear: string): Promise<Customer[]> {
-  await delay(500);
+export async function getCustomers(department: string, financialYear: string, firestore: Firestore): Promise<Customer[]> {
   console.log(`Fetching customers for department: ${department} and FY: ${financialYear}`);
-  return customers.filter(c => c.department === department);
+  const customersCol = collection(firestore, 'customers');
+  const customerSnapshot = await getDocs(customersCol);
+  const customerList = customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
+  return customerList.filter(c => c.department === department);
 }
 
 /**
@@ -83,26 +86,22 @@ export async function getCustomers(department: string, financialYear: string): P
  * @param customerId - The ID of the customer to update.
  * @param newRemark - The new remark to set.
  */
-export async function updateCustomerRemark(customerId: string, newRemark: Customer['remarks']): Promise<{ success: boolean }> {
-  await delay(300);
+export async function updateCustomerRemark(firestore: Firestore, customerId: string, newRemark: Customer['remarks']): Promise<{ success: boolean }> {
   console.log(`Updating remark for customer ${customerId} to "${newRemark}"`);
-  const customerIndex = customers.findIndex(c => c.customerCode === customerId);
-  if (customerIndex !== -1) {
-    customers[customerIndex].remarks = newRemark;
-    
-    const userRole = localStorage.getItem('userRole');
-    if (userRole === 'Manager') {
-        const customer = customers[customerIndex];
-        createNotification({
-            from: { name: 'Manager', role: 'Manager' },
-            to: 'Country Manager',
-            message: `Manager updated remark for ${customer.customerName} to "${newRemark}".`
-        });
-    }
+  const customerRef = doc(firestore, 'customers', customerId);
+  await updateDoc(customerRef, { remarks: newRemark });
 
-    return { success: true };
+  const userRole = localStorage.getItem('userRole');
+  if (userRole === 'Manager') {
+      const customerName = 'Customer ' + customerId; // Simplified for now
+      createNotification(firestore, {
+          from: { name: 'Manager', role: 'Manager' },
+          to: 'Country Manager',
+          message: `Manager updated remark for ${customerName} to "${newRemark}".`
+      });
   }
-  throw new Error('Customer not found');
+
+  return { success: true };
 }
 
 /**
@@ -110,26 +109,22 @@ export async function updateCustomerRemark(customerId: string, newRemark: Custom
  * @param customerId - The ID of the customer to update.
  * @param newNotes - The new notes to set.
  */
-export async function updateCustomerNotes(customerId: string, newNotes: string): Promise<{ success: boolean }> {
-  await delay(300);
+export async function updateCustomerNotes(firestore: Firestore, customerId: string, newNotes: string): Promise<{ success: boolean }> {
   console.log(`Updating notes for customer ${customerId} to "${newNotes}"`);
-  const customerIndex = customers.findIndex(c => c.customerCode === customerId);
-  if (customerIndex !== -1) {
-    customers[customerIndex].notes = newNotes;
-    
-    const userRole = localStorage.getItem('userRole');
-    if (userRole === 'Engineer') {
-        const customer = customers[customerIndex];
-        createNotification({
-            from: { name: 'Engineer', role: 'Engineer' },
-            to: 'Manager',
-            message: `Engineer added new notes for ${customer.customerName} in the ${customer.region} region.`
-        });
-    }
-
-    return { success: true };
+  const customerRef = doc(firestore, 'customers', customerId);
+  await updateDoc(customerRef, { notes: newNotes });
+  
+  const userRole = localStorage.getItem('userRole');
+  if (userRole === 'Engineer') {
+      const customerName = 'Customer ' + customerId; // Simplified for now
+      createNotification(firestore, {
+          from: { name: 'Engineer', role: 'Engineer' },
+          to: 'Manager',
+          message: `Engineer added new notes for ${customerName}.`
+      });
   }
-  throw new Error('Customer not found');
+
+  return { success: true };
 }
 
 
@@ -139,7 +134,7 @@ export async function updateCustomerNotes(customerId: string, newNotes: string):
  * Here, we'll process it on the client-side.
  * @param file - The Excel file to process.
  */
-export async function processAndUploadFile(file: File, month: string): Promise<{ count: number; data: any[] }> {
+export async function processAndUploadFile(firestore: Firestore, file: File, month: string): Promise<{ count: number; data: any[] }> {
   await delay(1000); // Simulate upload and processing time
 
   return new Promise((resolve, reject) => {
@@ -158,7 +153,7 @@ export async function processAndUploadFile(file: File, month: string): Promise<{
         
         console.log('Simulating data processing and saving:', jsonData);
         
-        createNotification({
+        createNotification(firestore, {
             from: { name: 'Country Manager', role: 'Country Manager' },
             to: 'all',
             message: `The data sheet for ${month} has been updated with ${jsonData.length} records.`
@@ -193,26 +188,22 @@ export async function getEngineersByRegionAndDepartment(region: string, departme
  * @param customerId - The ID of the customer to update.
  * @param engineerName - The name of the engineer to assign.
  */
-export async function updateAssignedEngineer(customerId: string, engineerName: string): Promise<{ success: boolean }> {
-    await delay(300);
+export async function updateAssignedEngineer(firestore: Firestore, customerId: string, engineerName: string): Promise<{ success: boolean }> {
     console.log(`Assigning engineer ${engineerName} to customer ${customerId}`);
-    const customerIndex = customers.findIndex(c => c.customerCode === customerId);
-    if (customerIndex !== -1) {
-        customers[customerIndex].assignedEngineer = engineerName;
-        
-        const userRole = localStorage.getItem('userRole');
-        if (userRole === 'Manager') {
-            const customer = customers[customerIndex];
-            createNotification({
-                from: { name: 'Manager', role: 'Manager' },
-                to: 'Country Manager',
-                message: `Manager assigned ${engineerName} to ${customer.customerName}.`
-            });
-        }
-        
-        return { success: true };
+    const customerRef = doc(firestore, 'customers', customerId);
+    await updateDoc(customerRef, { assignedEngineer: engineerName });
+    
+    const userRole = localStorage.getItem('userRole');
+    if (userRole === 'Manager') {
+        const customerName = 'Customer ' + customerId;
+        createNotification(firestore, {
+            from: { name: 'Manager', role: 'Manager' },
+            to: 'Country Manager',
+            message: `Manager assigned ${engineerName} to ${customerName}.`
+        });
     }
-    throw new Error('Customer not found');
+    
+    return { success: true };
 }
 
 /**
@@ -221,20 +212,11 @@ export async function updateAssignedEngineer(customerId: string, engineerName: s
  * @param invoiceNumber The invoice number
  * @param newStatus The new dispute status
  */
-export async function updateInvoiceDisputeStatus(customerId: string, invoiceNumber: string, newStatus: 'dispute' | 'paid' | 'unpaid'): Promise<{ success: boolean }> {
-  await delay(300);
+export async function updateInvoiceDisputeStatus(firestore: Firestore, customerId: string, invoiceNumber: string, newStatus: 'dispute' | 'paid' | 'unpaid'): Promise<{ success: boolean }> {
   console.log(`Updating invoice ${invoiceNumber} for customer ${customerId} to status "${newStatus}"`);
   
-  const customerIndex = customers.findIndex(c => c.customerCode === customerId);
-  if (customerIndex === -1) throw new Error('Customer not found');
-  
-  const customer = customers[customerIndex];
-  if (!customer.invoices) throw new Error('Customer has no invoices');
-
-  const invoiceIndex = customer.invoices.findIndex(i => i.invoiceNumber === invoiceNumber);
-  if (invoiceIndex === -1) throw new Error('Invoice not found');
-
-  customers[customerIndex].invoices![invoiceIndex].status = newStatus;
+  const invoiceRef = doc(firestore, 'customers', customerId, 'invoices', invoiceNumber);
+  await setDoc(invoiceRef, { status: newStatus }, { merge: true });
   
   return { success: true };
 }
@@ -304,7 +286,9 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
 /**
  * Simulates fetching all users (managers and engineers).
  */
-export async function getUsers(): Promise<User[]> {
-  await delay(300);
-  return users;
+export async function getUsers(firestore: Firestore): Promise<User[]> {
+  const usersCol = collection(firestore, 'users');
+  const userSnapshot = await getDocs(usersCol);
+  const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+  return userList;
 }

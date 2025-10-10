@@ -9,6 +9,7 @@ import type { InvoiceTrackerData, Customer } from '@/lib/types';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { regionOptions } from '@/lib/data';
 import { getInvoiceTrackerData, getCustomers } from '@/lib/api';
+import { useFirestore } from '@/firebase';
 
 type DetailedInvoice = {
   invoiceNumber: string;
@@ -18,6 +19,7 @@ type DetailedInvoice = {
 }
 
 export default function InvoiceTrackerPage() {
+  const firestore = useFirestore();
   const [data, setData] = useState<InvoiceTrackerData[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState('All');
@@ -46,12 +48,12 @@ export default function InvoiceTrackerPage() {
 
   useEffect(() => {
     async function loadInitialData() {
-        if (!department || !financialYear) return;
-      const customerData = await getCustomers(department, financialYear);
+        if (!department || !financialYear || !firestore) return;
+      const customerData = await getCustomers(department, financialYear, firestore);
       setCustomers(customerData);
     }
     loadInitialData();
-  }, [department, financialYear]);
+  }, [department, financialYear, firestore]);
 
   useEffect(() => {
     async function fetchData() {

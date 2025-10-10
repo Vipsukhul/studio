@@ -8,6 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { getUsers } from '@/lib/api';
 import type { User } from '@/lib/types';
 import { Building, Mail, MapPin, Phone } from 'lucide-react';
+import { useFirestore } from '@/firebase';
 
 interface RegionHierarchy {
   [region: string]: {
@@ -17,6 +18,7 @@ interface RegionHierarchy {
 }
 
 export default function TeamHierarchyPage() {
+  const firestore = useFirestore();
   const [hierarchy, setHierarchy] = React.useState<RegionHierarchy>({});
   const [loading, setLoading] = React.useState(true);
   const [department, setDepartment] = React.useState('Batching Plant');
@@ -35,8 +37,9 @@ export default function TeamHierarchyPage() {
 
   React.useEffect(() => {
     async function loadData() {
+      if (!firestore) return;
       setLoading(true);
-      const users = await getUsers();
+      const users = await getUsers(firestore);
       const filteredUsers = users.filter(user => user.department === department);
       
       const groupedData: RegionHierarchy = filteredUsers.reduce((acc, user) => {
@@ -56,7 +59,7 @@ export default function TeamHierarchyPage() {
       setLoading(false);
     }
     loadData();
-  }, [department]);
+  }, [department, firestore]);
 
   if (loading) {
     return (

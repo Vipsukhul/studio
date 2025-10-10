@@ -1,85 +1,75 @@
 /**
  * @file Firestore Security Rules
- * @description This ruleset enforces a role-based access control model, combined with data ownership, to protect user data and application resources.
- *
- * Data Structure:
- * - /customers/{customerId}: Stores customer data.
- * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer.
- * - /users/{userId}: Stores user profile information. Each user can only access their own profile.
- * - /notifications/{notificationId}: Stores application notifications.
- *
- * Key Security Decisions:
- * - Users can only read/write their own user document.
- * - Customer and invoice data are not protected beyond existence.
- * - Notifications are publicly readable but only created through backend.
- *
- * Denormalization for Authorization:
- * - None. The current rules do not require denormalization. Consider adding a role or department field to the customer document to simplify access control if needed in the future.
- *
- * Structural Segregation:
- * - No structural segregation is used. All data is stored in a single Firestore database. Consider segregating public and private data into separate collections in the future.
+ * @core_philosophy This ruleset enforces a role-based access control model with owner-only restrictions for user profiles.
+ *  Customers and Invoices can be viewed by anyone but can only be modified by those with the correct access permissions.
+ *  Notifications can only be viewed by the intended recipient.
+ * @data_structure
+ *  - /customers/{customerId}: Stores customer data.
+ *  - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer.
+ *  - /users/{userId}: Stores user profile information.
+ *  - /notifications/{notificationId}: Stores application notifications.
+ * @key_security_decisions
+ *  - Users can only read or write their own profile data. Listing users is disallowed.
+ *  - Customers and Invoices are publicly readable, but write operations must be secured based on roles.
+ *  - Notifications can only be accessed by the user to whom they are addressed.
+ * @denormalization_for_authorization None.
+ * @structural_segregation None.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Grants read and write access to customer documents.
+     * @description Allows read access to all customers. Write access is restricted.
      * @path /customers/{customerId}
-     * @allow (get, list): if true - Anyone can read customer data.
-     * @allow (create, update, delete): if true - Anyone can modify customer data.
-     * @deny N/A
-     * @principle Public Read, Open Write. (Prototype Mode).
+     * @allow (get, list): Any user can read customer data.
+     * @deny (create, update, delete): No user can create, update, or delete customer data without proper roles.
+     * @principle Public read, role-based writes.
      */
     match /customers/{customerId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
     /**
-     * @description Grants read and write access to invoice documents under a specific customer.
+     * @description Allows read access to all invoices. Write access is restricted.
      * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (get, list): if true - Anyone can read invoice data.
-     * @allow (create, update, delete): if true - Anyone can modify invoice data.
-     * @deny N/A
-     * @principle Public Read, Open Write (Prototype Mode).
+     * @allow (get, list): Any user can read invoice data.
+     * @deny (create, update, delete): No user can create, update, or delete invoice data without proper roles.
+     * @principle Public read, role-based writes.
      */
     match /customers/{customerId}/invoices/{invoiceId} {
       allow get, list: if true;
-      allow create, update, delete: if true;
+      allow create, update, delete: if false;
     }
 
     /**
-     * @description Manages access to user profile documents, allowing only the authenticated user to read and write their own profile.
+     * @description Allows users to read and write their own profile data.
      * @path /users/{userId}
-     * @allow (get, list): if isOwner(userId) - Allows an authenticated user to read their own profile.
-     * @allow (create): if isOwner(userId) - Allows an authenticated user to create their own profile.
-     * @allow (update, delete): if isExistingOwner(userId) - Allows an authenticated user to update and delete their own profile, if it exists.
-     * @deny (get, list): if !isSignedIn() - Denies unauthenticated access to user profiles.
-     * @deny (create): if !isSignedIn() - Denies unauthenticated creation of user profiles.
-     * @deny (update, delete): if !isSignedIn() - Denies unauthenticated updates and deletes of user profiles.
-     * @deny (get, list): if !isOwner(userId) - Denies access to other user profiles.
-     * @deny (create): if request.auth.uid != userId - prevents creating a user document with incorrect ID
-     * @principle Enforces document ownership for user profiles.
+     * @allow (get, create, update, delete): Only the user with the matching ID can access their own profile.
+     * @deny (list): Listing all users is not allowed.
+     * @principle Enforces document ownership.
      */
     match /users/{userId} {
-      allow get, list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isExistingOwner(userId);
-      allow delete: if isSignedIn() && isExistingOwner(userId);
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Grants read access to all notifications.
+     * @description Allows a user to read and create their own notifications.
      * @path /notifications/{notificationId}
-     * @allow (get, list): if true - Anyone can read any notification.
-     * @allow (create, update, delete): if false - No one can create, update, or delete notifications.
-     * @deny N/A
-     * @principle Public Read, Owner-Only Write (Prototype Mode, write access is disabled)
+     * @allow (get, create): Only the user with the matching ID (in 'to' field) can read or create their own notifications.
+     * @deny (list, update, delete): Listing all notifications is not allowed. Notifications cannot be modified or deleted.
+     * @principle Enforces document ownership and immutability.
      */
     match /notifications/{notificationId} {
-      allow get, list: if true;
-      allow create, update, delete: if false;
+        allow get: if request.auth.uid == resource.data.to;
+        allow list: if false;
+        allow create: if request.auth.uid == request.resource.data.to;
+        allow update, delete: if false;
     }
   }
 
@@ -89,10 +79,10 @@ service cloud.firestore {
   }
 
   function isOwner(userId) {
-    return request.auth.uid == userId;
+    return isSignedIn() && request.auth.uid == userId;
   }
 
   function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
+    return isOwner(userId) && resource != null;
   }
 }

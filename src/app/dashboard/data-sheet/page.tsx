@@ -5,8 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DataSheetTable } from "@/components/tables/data-sheet-table";
 import type { Customer } from "@/lib/types";
 import { getCustomers } from '@/lib/api';
+import { useFirestore } from '@/firebase';
 
 export default function DataSheetPage() {
+  const firestore = useFirestore();
   const [customersData, setCustomersData] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [department, setDepartment] = useState('Batching Plant');
@@ -30,14 +32,14 @@ export default function DataSheetPage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!department || !financialYear) return;
+      if (!department || !financialYear || !firestore) return;
       setLoading(true);
-      const data = await getCustomers(department, financialYear);
+      const data = await getCustomers(department, financialYear, firestore);
       setCustomersData(data);
       setLoading(false);
     }
     loadData();
-  }, [department, financialYear]);
+  }, [department, financialYear, firestore]);
 
   if (loading) {
     return (

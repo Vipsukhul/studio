@@ -1,11 +1,10 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { collection, query, where, orderBy } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+import { collection, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { markNotificationAsRead } from '@/lib/notifications';
 import type { Notification } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
@@ -33,9 +32,13 @@ export default function NotificationsPage() {
     const { data: notifications, isLoading: loading } = useCollection<Notification>(notificationsQuery);
 
     const handleNotificationClick = async (notificationId?: string) => {
-        if (!notificationId) return;
-        // The useCollection hook will update the UI automatically
-        await markNotificationAsRead(notificationId);
+        if (!notificationId || !firestore) return;
+        const notificationRef = doc(firestore, 'notifications', notificationId);
+        try {
+            await updateDoc(notificationRef, { isRead: true });
+        } catch (error) {
+            console.error("Error marking notification as read:", error);
+        }
     };
 
     return (
