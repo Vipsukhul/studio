@@ -2,7 +2,7 @@
 import * as xlsx from 'xlsx';
 import {
   kpis,
-  outstandingByAge,
+  outstandingByAge as outstandingByage,
   regionDistribution,
   monthlyTrends,
   invoiceTrackerData,
@@ -170,7 +170,7 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
                         customerName: row['Party Nam'],
                         region: row.Region,
                         outstandingAmount: 0,
-                        department: 'Batching Plant',
+                        department: 'Batching Plant', // Assuming default, can be from another column if available
                         agePeriod: row.Age,
                     },
                     invoices: []
@@ -178,15 +178,22 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
             }
 
             const current = customersDataMap.get(codeStr)!;
-            const outstandingAmount = parseFloat(row['July.Outstg.Amt'] || 0);
+            
+            // Safely parse outstanding amount, default to 0 if invalid
+            const outstandingAmtValue = row['July.Outstg.Amt'];
+            const outstandingAmount = !isNaN(parseFloat(outstandingAmtValue)) ? parseFloat(outstandingAmtValue) : 0;
             
             current.customer.outstandingAmount! += outstandingAmount;
 
             const invoiceNumber = row['Inv. No'];
             if (invoiceNumber) {
+                 // Safely parse invoice amount, default to 0 if invalid
+                const invAmtValue = row['Inv.Amt'];
+                const invoiceAmount = !isNaN(parseFloat(invAmtValue)) ? parseFloat(invAmtValue) : 0;
+
                 current.invoices.push({
                     invoiceNumber: invoiceNumber.toString(),
-                    invoiceAmount: parseFloat(row['Inv.Amt'] || 0),
+                    invoiceAmount: invoiceAmount,
                     invoiceDate: new Date().toISOString(),
                     status: 'unpaid',
                 });
@@ -352,5 +359,7 @@ export async function getUsers(firestore: Firestore): Promise<User[]> {
   return userList;
 }
 
+
+    
 
     
