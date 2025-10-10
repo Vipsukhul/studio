@@ -1,4 +1,3 @@
-
 import type { Notification } from './types';
 
 // In-memory array to store notifications for the current session.
@@ -26,7 +25,8 @@ export function createNotification(notificationData: Omit<Notification, 'id' | '
  * @returns An array of notifications.
  */
 export function getNotifications(): Notification[] {
-    return notifications;
+    // Return a copy to prevent direct mutation of the internal array
+    return [...notifications];
 }
 
 /**

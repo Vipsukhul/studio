@@ -51,20 +51,17 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
 import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegionAndDepartment, updateInvoiceDisputeStatus } from '@/lib/api';
-import { useFirestore } from '@/firebase';
 
 import type { Customer, Invoice, Engineer } from "@/lib/types"
 
 const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean }) => {
     const { toast } = useToast();
-    const firestore = useFirestore();
 
     const handleDisputeChange = async (invoiceNumber: string, newStatus: string) => {
-        if (!firestore) return;
         const status = newStatus === 'dispute' ? 'dispute' : 'unpaid';
         toast({ title: 'Updating invoice...', description: `Setting status for invoice ${invoiceNumber} to ${status}.`});
         try {
-            await updateInvoiceDisputeStatus(firestore, customer.id!, invoiceNumber, status);
+            await updateInvoiceDisputeStatus(customer.id!, invoiceNumber, status);
             onInvoiceUpdate(invoiceNumber, status);
             toast({ title: 'Success', description: 'Invoice status updated.'});
         } catch(error) {
@@ -128,7 +125,6 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [userRole, setUserRole] = React.useState<string | null>(null);
-  const firestore = useFirestore();
 
   const { toast } = useToast();
 
@@ -141,10 +137,9 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const isReadOnly = userRole === 'Engineer';
 
   const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
-    if (!firestore) return;
     toast({ title: 'Updating status...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
     try {
-      await updateCustomerRemark(firestore, customerId, newRemark);
+      await updateCustomerRemark(customerId, newRemark);
       setTableData((prevData) =>
         prevData.map((customer) =>
           customer.id === customerId
@@ -159,9 +154,8 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   };
 
   const handleNotesChange = async (customerId: string, newNotes: string) => {
-    if (!firestore) return;
     try {
-      await updateCustomerNotes(firestore, customerId, newNotes);
+      await updateCustomerNotes(customerId, newNotes);
       setTableData((prevData) =>
         prevData.map((customer) =>
           customer.id === customerId
@@ -176,9 +170,8 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   };
 
   const handleEngineerChange = async (customerId: string, newEngineer: string) => {
-    if (!firestore) return;
     try {
-      await updateAssignedEngineer(firestore, customerId, newEngineer);
+      await updateAssignedEngineer(customerId, newEngineer);
       setTableData((prevData) =>
         prevData.map((customer) =>
           customer.id === customerId ? { ...customer, assignedEngineer: newEngineer } : customer

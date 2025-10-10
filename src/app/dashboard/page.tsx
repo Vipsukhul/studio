@@ -13,7 +13,6 @@ import { generateMonthOptions, regionOptions, departmentOptions, financialYearOp
 import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
 import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
-import { useFirestore } from '@/firebase';
 
 const kpiIcons = {
     'Total Outstanding': IndianRupee,
@@ -66,7 +65,6 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
 }
 
 export default function DashboardPage() {
-  const firestore = useFirestore();
   const [dashboardData, setDashboardData] = useState<{
     kpis: Kpi[];
     outstandingByAge: OutstandingByAge[];
@@ -119,10 +117,9 @@ export default function DashboardPage() {
 
   useEffect(() => {
     async function fetchData() {
-      if (!firestore) return;
       setLoading(true);
       const [mainData, recoveryTrendData] = await Promise.all([
-        getDashboardData(month, department, financialYear, firestore),
+        getDashboardData(month, department, financialYear),
         getOutstandingRecoveryTrend(department, financialYear)
       ]);
       setDashboardData(mainData);
@@ -132,7 +129,7 @@ export default function DashboardPage() {
     if (department && financialYear) {
         fetchData();
     }
-  }, [month, department, financialYear, firestore]);
+  }, [month, department, financialYear]);
 
   const handleDepartmentChange = (newDepartment: string) => {
     setDepartment(newDepartment);

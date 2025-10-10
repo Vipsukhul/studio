@@ -1,4 +1,3 @@
-
 import * as xlsx from 'xlsx';
 import {
   kpis,
@@ -9,12 +8,10 @@ import {
   customers as mockCustomers,
   engineers,
   outstandingRecoveryTrend,
-  engineerPerformance,
   users as mockUsers,
 } from './data';
-import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, LogEntry, EngineerPerformance, User } from './types';
+import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, User } from './types';
 import { createNotification } from './notifications';
-import { Firestore, collection, getDocs, doc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -24,11 +21,11 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
  * @param month - The selected month (for simulation purposes).
  * @param department - The selected department.
  */
-export async function getDashboardData(month: string, department: string, financialYear: string, firestore: Firestore) {
+export async function getDashboardData(month: string, department: string, financialYear: string) {
   await delay(500);
   console.log(`Fetching data for month: ${month}, department: ${department}, and FY: ${financialYear}`);
   
-  const customers = await getCustomers(department, financialYear, firestore);
+  const customers = await getCustomers(department, financialYear);
   const totalCustomers = customers.length;
   
   const customersKpi: Kpi = {
@@ -39,10 +36,9 @@ export async function getDashboardData(month: string, department: string, financ
 
   const existingKpis = kpis.filter(k => k.label !== 'Total Customers');
   
-  // Simple filtering for demonstration. In a real app, this would be more complex.
   const filteredOutstandingByAge = outstandingByage.filter(item => item.department === department);
-  const filteredRegionDistribution = regionDistribution; // Not department-specific in mock data
-  const filteredMonthlyTrends = monthlyTrends; // Not department-specific in mock data
+  const filteredRegionDistribution = regionDistribution; 
+  const filteredMonthlyTrends = monthlyTrends;
 
   return {
     kpis: [...existingKpis, customersKpi],
@@ -64,33 +60,17 @@ export async function getInvoiceTrackerData(region: string, department: string, 
   if (region === 'All') {
     return filteredData;
   }
-  // This is a simple simulation. In a real app, you'd filter by region on the backend.
-  // For now, we'll return a subset if a region is selected.
   return filteredData.slice(0, 1);
 }
 
 /**
- * Fetches the list of all customers from Firestore, filtered by department.
+ * Fetches the list of all customers from mock data, filtered by department.
  * @param department - The department to filter by.
  */
-export async function getCustomers(department: string, financialYear: string, firestore: Firestore): Promise<Customer[]> {
+export async function getCustomers(department: string, financialYear: string): Promise<Customer[]> {
+  await delay(200);
   console.log(`Fetching customers for department: ${department} and FY: ${financialYear}`);
-  const customersCol = collection(firestore, 'customers');
-  const customerSnapshot = await getDocs(customersCol);
-  const customerList: Customer[] = [];
-
-  for (const customerDoc of customerSnapshot.docs) {
-    const customerData = { id: customerDoc.id, ...customerDoc.data() } as Customer;
-    // This is a simplified department check. A real app might need more complex logic
-    // if a customer can belong to multiple departments.
-    if (customerData.department === department || !customerData.department) {
-        const invoicesCol = collection(firestore, 'customers', customerDoc.id, 'invoices');
-        const invoicesSnapshot = await getDocs(invoicesCol);
-        customerData.invoices = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
-        customerList.push(customerData);
-    }
-  }
-  return customerList;
+  return mockCustomers.filter(c => c.department === department).map(c => ({...c, id: c.customerCode}));
 }
 
 /**
@@ -99,11 +79,13 @@ export async function getCustomers(department: string, financialYear: string, fi
  * @param customerId - The ID of the customer to update.
  * @param newRemark - The new remark to set.
  */
-export async function updateCustomerRemark(firestore: Firestore, customerId: string, newRemark: Customer['remarks']): Promise<{ success: boolean }> {
+export async function updateCustomerRemark(customerId: string, newRemark: Customer['remarks']): Promise<{ success: boolean }> {
   console.log(`Updating remark for customer ${customerId} to "${newRemark}"`);
-  const customerRef = doc(firestore, 'customers', customerId);
-  await updateDoc(customerRef, { remarks: newRemark });
-
+  const customerIndex = mockCustomers.findIndex(c => c.customerCode === customerId);
+  if(customerIndex !== -1) {
+    mockCustomers[customerIndex].remarks = newRemark;
+  }
+  
   createNotification({
       from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
       to: 'Manager',
@@ -118,10 +100,12 @@ export async function updateCustomerRemark(firestore: Firestore, customerId: str
  * @param customerId - The ID of the customer to update.
  * @param newNotes - The new notes to set.
  */
-export async function updateCustomerNotes(firestore: Firestore, customerId: string, newNotes: string): Promise<{ success: boolean }> {
+export async function updateCustomerNotes(customerId: string, newNotes: string): Promise<{ success: boolean }> {
   console.log(`Updating notes for customer ${customerId} to "${newNotes}"`);
-  const customerRef = doc(firestore, 'customers', customerId);
-  await updateDoc(customerRef, { notes: newNotes });
+  const customerIndex = mockCustomers.findIndex(c => c.customerCode === customerId);
+  if(customerIndex !== -1) {
+    mockCustomers[customerIndex].notes = newNotes;
+  }
   
   createNotification({
       from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
@@ -134,10 +118,10 @@ export async function updateCustomerNotes(firestore: Firestore, customerId: stri
 
 
 /**
- * Processes an uploaded Excel file, groups by customer, and saves the aggregated data to Firestore.
+ * Processes an uploaded Excel file, groups by customer, and simulates an upload.
  * @param file - The Excel file to process.
  */
-export function processAndUploadFile(firestore: Firestore, file: File, month: string): Promise<{ count: number; data: any[] }> {
+export function processAndUploadFile(file: File, month: string): Promise<{ count: number; data: any[] }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -156,82 +140,15 @@ export function processAndUploadFile(firestore: Firestore, file: File, month: st
             return reject(new Error("Excel file is empty or could not be parsed."));
         }
         
-        const customersDataMap = new Map<string, { customer: Partial<Customer>, invoices: Partial<Invoice>[] }>();
-
-        jsonData.forEach((row, index) => {
-            const customerCode = row.Accode;
-            if (!customerCode) {
-                console.warn(`Skipping row ${index + 2}: Missing Accode.`);
-                return;
-            }
-
-            const region = row.Region;
-            // Basic validation: skip row if Region is a number or invalid string
-            if (typeof region !== 'string' || !isNaN(parseFloat(region))) {
-              console.warn(`Skipping row ${index + 2} for Accode ${customerCode}: Invalid Region data '${region}'.`);
-              return;
-            }
-
-
-            const codeStr = customerCode.toString();
-            if (!customersDataMap.has(codeStr)) {
-                customersDataMap.set(codeStr, {
-                    customer: {
-                        customerCode: codeStr,
-                        customerName: row['Party Name'],
-                        region: region,
-                        outstandingAmount: 0,
-                        department: 'Batching Plant',
-                        agePeriod: row.Age,
-                    },
-                    invoices: []
-                });
-            }
-
-            const current = customersDataMap.get(codeStr)!;
-            
-            const outstandingAmtValue = row['July.Outstg.Amt'];
-            const outstandingAmount = !isNaN(parseFloat(outstandingAmtValue)) ? parseFloat(outstandingAmtValue) : 0;
-            
-            current.customer.outstandingAmount! += outstandingAmount;
-
-            const invoiceNumber = row['Inv.No'];
-            if (invoiceNumber) {
-                const invAmtValue = row['Inv.Amt'];
-                const invoiceAmount = !isNaN(parseFloat(invAmtValue)) ? parseFloat(invAmtValue) : 0;
-
-                current.invoices.push({
-                    invoiceNumber: invoiceNumber.toString(),
-                    invoiceAmount: invoiceAmount,
-                    invoiceDate: new Date().toISOString(),
-                    status: 'unpaid',
-                });
-            }
-        });
-
-        const batch = writeBatch(firestore);
-
-        for (const [code, data] of customersDataMap.entries()) {
-            const customerRef = doc(firestore, 'customers', code);
-            batch.set(customerRef, data.customer, { merge: true });
-
-            data.invoices.forEach(invoice => {
-                if (invoice.invoiceNumber) {
-                    const invoiceRef = doc(firestore, 'customers', code, 'invoices', invoice.invoiceNumber);
-                    batch.set(invoiceRef, invoice, { merge: true });
-                }
-            });
-        }
+        console.log("Simulating upload of parsed data:", jsonData);
         
-        await batch.commit();
-
         createNotification({
             from: { name: 'System', role: 'System' },
             to: 'all',
-            message: `The data sheet for ${month} has been updated with ${customersDataMap.size} customer records.`
+            message: `The data sheet for ${month} has been updated with ${jsonData.length} customer records.`
         });
         
-        resolve({ count: customersDataMap.size, data: Array.from(customersDataMap.values()) });
+        resolve({ count: jsonData.length, data: jsonData });
       } catch (error) {
         console.error("Error processing file:", error);
         reject(error);
@@ -261,10 +178,12 @@ export async function getEngineersByRegionAndDepartment(region: string, departme
  * @param customerId - The ID of the customer to update.
  * @param engineerName - The name of the engineer to assign.
  */
-export async function updateAssignedEngineer(firestore: Firestore, customerId: string, engineerName: string): Promise<{ success: boolean }> {
+export async function updateAssignedEngineer(customerId: string, engineerName: string): Promise<{ success: boolean }> {
     console.log(`Assigning engineer ${engineerName} to customer ${customerId}`);
-    const customerRef = doc(firestore, 'customers', customerId);
-    await updateDoc(customerRef, { assignedEngineer: engineerName });
+    const customerIndex = mockCustomers.findIndex(c => c.customerCode === customerId);
+    if(customerIndex !== -1) {
+      mockCustomers[customerIndex].assignedEngineer = engineerName;
+    }
     
     createNotification({
         from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
@@ -281,11 +200,17 @@ export async function updateAssignedEngineer(firestore: Firestore, customerId: s
  * @param invoiceNumber The invoice number
  * @param newStatus The new dispute status
  */
-export async function updateInvoiceDisputeStatus(firestore: Firestore, customerId: string, invoiceNumber: string, newStatus: 'dispute' | 'paid' | 'unpaid'): Promise<{ success: boolean }> {
+export async function updateInvoiceDisputeStatus(customerId: string, invoiceNumber: string, newStatus: 'dispute' | 'paid' | 'unpaid'): Promise<{ success: boolean }> {
   console.log(`Updating invoice ${invoiceNumber} for customer ${customerId} to status "${newStatus}"`);
   
-  const invoiceRef = doc(firestore, 'customers', customerId, 'invoices', invoiceNumber);
-  await setDoc(invoiceRef, { status: newStatus }, { merge: true });
+  const customerIndex = mockCustomers.findIndex(c => c.customerCode === customerId);
+  if(customerIndex !== -1) {
+    const customer = mockCustomers[customerIndex];
+    const invoiceIndex = customer.invoices?.findIndex(i => i.invoiceNumber === invoiceNumber);
+    if(customer.invoices && invoiceIndex !== undefined && invoiceIndex !== -1) {
+      customer.invoices[invoiceIndex].status = newStatus;
+    }
+  }
   
   createNotification({
       from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
@@ -323,35 +248,6 @@ export async function getEngineerPerformanceData(department: string = 'Batching 
  * @returns The URL of the uploaded image.
  */
 export async function uploadImageToCloudinary(file: File): Promise<string> {
-  // IMPORTANT: Replace with your Cloudinary details.
-  // You can get these from your Cloudinary dashboard.
-  // It's recommended to use "unsigned" uploads for client-side operations
-  // for better security.
-  const CLOUDINARY_CLOUD_NAME = 'demo'; // <-- REPLACE with your cloud name
-  const CLOUDINARY_UPLOAD_PRESET = 'docs_upload_example'; // <-- REPLACE with your upload preset
-
-  const url = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
-
-  const formData = new FormData();
-  formData.append('file', file);
-  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  
-  console.log('Simulating upload to Cloudinary...');
-  
-  /*
-  const response = await fetch(url, {
-    method: 'POST',
-    body: formData,
-  });
-
-  if (!response.ok) {
-    throw new Error('Failed to upload image');
-  }
-
-  const data = await response.json();
-  return data.secure_url;
-  */
-
   await delay(1500); // Simulate network delay
   const localImageUrl = URL.createObjectURL(file);
   console.log('Simulated upload complete. Image URL:', localImageUrl);
@@ -361,15 +257,7 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
 /**
  * Simulates fetching all users (managers and engineers).
  */
-export async function getUsers(firestore: Firestore): Promise<User[]> {
-  const usersCol = collection(firestore, 'users');
-  const userSnapshot = await getDocs(usersCol);
-  const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-  return userList;
+export async function getUsers(): Promise<User[]> {
+  await delay(300);
+  return mockUsers;
 }
-
-
-    
-
-    
-
