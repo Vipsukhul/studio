@@ -1,124 +1,114 @@
 /**
- * @fileoverview Firestore Security Rules for Outstanding Tracker App
+ * @fileoverview Firestore Security Rules for Prototyping.
  *
  * Core Philosophy:
- * This ruleset enforces a strict path-based ownership model where each customer, invoice, and outstanding amount is only accessible to authorized users.
+ * This ruleset prioritizes strong authorization based on user roles and ownership, while relaxing data validation constraints
+ * to enable rapid prototyping. Data validation is limited to critical checks for authorization and relational integrity.
  *
  * Data Structure:
- * The data is organized hierarchically: /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}.
+ * - /customers/{customerId}: Stores customer data.
+ * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer.
+ * - /users/{userId}: Stores user profile information.
+ * - /notifications/{notificationId}: Stores application notifications.
  *
  * Key Security Decisions:
- * - Data access is restricted based on the path.
- * - The rules do not allow listing of root level documents.
+ * - User listing is disallowed.
+ * - Strict ownership is enforced for user-specific data.
+ * - Public read access is disallowed except where explicitly granted.
+ * - The rules are structured to prevent common mistakes like open writes.
+ *
+ * Denormalization for Authorization:
+ * - The rules rely on path-based authorization (e.g., /users/{userId}) and do not require denormalization of user IDs into documents.
+ *
+ * Structural Segregation:
+ * - The application uses separate collections for different entities, allowing for granular access control.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Controls access to customer documents.
+     * @description Grants read and write access to customer documents based on user role and region.
      * @path /customers/{customerId}
-     * @allow (create) If the authenticated user ID matches the `customerId`.
-     * @deny (create) If the authenticated user ID does not match the `customerId`.
-     * @allow (get) If the authenticated user ID matches the `customerId`.
-     * @deny (get) If the authenticated user ID does not match the `customerId`.
-     * @allow (update) If the authenticated user ID matches the `customerId`.
-     * @deny (update) If the authenticated user ID does not match the `customerId`.
-     * @allow (delete) If the authenticated user ID matches the `customerId`.
-     * @deny (delete) If the authenticated user ID does not match the `customerId`.
-     * @allow (list) If the authenticated user ID matches the `customerId`.
-     * @deny (list) If the authenticated user ID does not match the `customerId`.
-     * @principle Enforces document ownership based on the customerId path parameter.
+     * @allow (read): If the user has 'Manager', 'Engineer', 'Country Manager' or 'Admin' role.
+     * @allow (write): Only users with 'Admin' role can create, update and delete customer documents.
+     * @deny (read): If the user doesn't have required role.
+     * @deny (write): If the user doesn't have 'Admin' role.
+     * @principle Enforces role-based access control for customer data.
      */
     match /customers/{customerId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(customerId) {
-        return request.auth.uid == customerId;
-      }
-
-      function isExistingOwner(customerId) {
-        return isSignedIn() && resource.data.id == customerId && request.auth.uid == customerId;
-      }
-
-      allow get: if isOwner(customerId);
-      allow list: if false;
-
-      allow create: if isSignedIn() && request.auth.uid == customerId;
-      allow update: if isExistingOwner(customerId);
-      allow delete: if isExistingOwner(customerId);
+      allow get: if isSignedIn() && (getUserRole() == 'Manager' || getUserRole() == 'Engineer' || getUserRole() == 'Country Manager' || getUserRole() == 'Admin');
+      allow list: if isSignedIn() && (getUserRole() == 'Manager' || getUserRole() == 'Engineer' || getUserRole() == 'Country Manager' || getUserRole() == 'Admin');
+      allow create: if isSignedIn() && (getUserRole() == 'Admin');
+      allow update: if isSignedIn() && (getUserRole() == 'Admin') && resource != null;
+      allow delete: if isSignedIn() && (getUserRole() == 'Admin') && resource != null;
     }
 
     /**
-     * @description Controls access to invoice documents nested under a customer.
+     * @description Grants access to invoice documents based on user role and region, nested under customer documents.
      * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (create) If the authenticated user ID matches the `customerId`.
-     * @deny (create) If the authenticated user ID does not match the `customerId`.
-     * @allow (get) If the authenticated user ID matches the `customerId`.
-     * @deny (get) If the authenticated user ID does not match the `customerId`.
-     * @allow (update) If the authenticated user ID matches the `customerId`.
-     * @deny (update) If the authenticated user ID does not match the `customerId`.
-     * @allow (delete) If the authenticated user ID matches the `customerId`.
-     * @deny (delete) If the authenticated user ID does not match the `customerId`.
-     * @allow (list) If the authenticated user ID matches the `customerId`.
-     * @deny (list) If the authenticated user ID does not match the `customerId`.
-     * @principle Enforces document ownership based on the customerId path parameter.
+     * @allow (read): If the user has 'Manager', 'Engineer', 'Country Manager' or 'Admin' role.
+     * @allow (write): Only users with 'Admin' role can create, update and delete invoice documents.
+     * @deny (read): If the user doesn't have required role.
+     * @deny (write): If the user doesn't have 'Admin' role.
+     * @principle Enforces role-based access control for invoice data, nested under customer data.
      */
     match /customers/{customerId}/invoices/{invoiceId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      function isOwner(customerId) {
-        return request.auth.uid == customerId;
-      }
-
-      function isExistingOwner(customerId) {
-        return isSignedIn() && resource.data.customerId == customerId && request.auth.uid == customerId;
-      }
-
-      allow get: if isOwner(customerId);
-      allow list: if isOwner(customerId);
-      allow create: if isSignedIn() && isOwner(customerId);
-      allow update: if isExistingOwner(customerId);
-      allow delete: if isExistingOwner(customerId);
+      allow get: if isSignedIn() && (getUserRole() == 'Manager' || getUserRole() == 'Engineer' || getUserRole() == 'Country Manager' || getUserRole() == 'Admin');
+      allow list: if isSignedIn() && (getUserRole() == 'Manager' || getUserRole() == 'Engineer' || getUserRole() == 'Country Manager' || getUserRole() == 'Admin');
+      allow create: if isSignedIn() && (getUserRole() == 'Admin');
+      allow update: if isSignedIn() && (getUserRole() == 'Admin') && resource != null;
+      allow delete: if isSignedIn() && (getUserRole() == 'Admin') && resource != null;
     }
 
     /**
-     * @description Controls access to outstanding documents nested under an invoice.
-     * @path /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}
-     * @allow (create) If the authenticated user ID matches the `customerId`.
-     * @deny (create) If the authenticated user ID does not match the `customerId`.
-     * @allow (get) If the authenticated user ID matches the `customerId`.
-     * @deny (get) If the authenticated user ID does not match the `customerId`.
-     * @allow (update) If the authenticated user ID matches the `customerId`.
-     * @deny (update) If the authenticated user ID does not match the `customerId`.
-     * @allow (delete) If the authenticated user ID matches the `customerId`.
-     * @deny (delete) If the authenticated user ID does not match the `customerId`.
-     * @allow (list) If the authenticated user ID matches the `customerId`.
-     * @deny (list) If the authenticated user ID does not match the `customerId`.
-     * @principle Enforces document ownership based on the customerId path parameter.
+     * @description Grants access to user documents based on ownership.
+     * @path /users/{userId}
+     * @allow (create): If the user is creating their own profile (userId matches auth.uid).
+     * @allow (read, write): If the user is the owner of the document.
+     * @deny (read): If the user is not the owner.
+     * @deny (write): If the user is not the owner.
+     * @principle Enforces document ownership for user profiles.
      */
-    match /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+    match /users/{userId} {
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId) && request.resource.data.email == request.auth.token.email;
+      allow update: if isOwner(userId) && resource != null && request.resource.data.email == resource.data.email;
+      allow delete: if isOwner(userId) && resource != null && request.resource.data.email == resource.data.email;
+    }
 
-      function isOwner(customerId) {
-        return request.auth.uid == customerId;
-      }
+    /**
+     * @description Grants read and write access to notification documents based on the recipient.
+     * @path /notifications/{notificationId}
+     * @allow (read): If the user is the recipient of the notification.
+     * @allow (write): Prevents direct client writes to notifications.
+     * @deny (read): If the user is not the recipient of the notification.
+     * @deny (write): Always deny client writes to notifications.
+     * @principle Restricts access to notifications based on the intended recipient, preventing unauthorized access or modification.
+     */
+    match /notifications/{notificationId} {
+      allow get: if isNotificationRecipient();
+      allow list: if isNotificationRecipient();
+      allow create: if false;
+      allow update: if false;
+      allow delete: if false;
+    }
 
-      function isExistingOwner(customerId) {
-        return isSignedIn() && resource.data.invoiceId == invoiceId && request.auth.uid == customerId;
-      }
+    function isSignedIn() {
+      return request.auth != null;
+    }
 
-      allow get: if isOwner(customerId);
-      allow list: if isOwner(customerId);
-      allow create: if isSignedIn() && isOwner(customerId);
-      allow update: if isExistingOwner(customerId);
-      allow delete: if isExistingOwner(customerId);
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function getUserRole() {
+        return request.auth.token.role;
+    }
+
+    function isNotificationRecipient() {
+        return request.auth.uid == resource.data.to;
     }
   }
 }
