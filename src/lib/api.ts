@@ -137,7 +137,7 @@ export async function updateCustomerNotes(firestore: Firestore, customerId: stri
  * Processes an uploaded Excel file, groups by customer, and saves the aggregated data to Firestore.
  * @param file - The Excel file to process.
  */
-export async function processAndUploadFile(firestore: Firestore, file: File, month: string): Promise<{ count: number; data: any[] }> {
+export function processAndUploadFile(firestore: Firestore, file: File, month: string): Promise<{ count: number; data: any[] }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -158,19 +158,28 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
         
         const customersDataMap = new Map<string, { customer: Partial<Customer>, invoices: Partial<Invoice>[] }>();
 
-        jsonData.forEach(row => {
+        jsonData.forEach((row, index) => {
             const customerCode = row.Accode;
-            if (!customerCode) return;
+            if (!customerCode) {
+                console.warn(`Skipping row ${index + 2}: Missing Accode.`);
+                return;
+            }
+
+            const region = row.Region;
+            if (typeof region !== 'string' || !isNaN(parseFloat(region))) {
+              console.warn(`Skipping row ${index + 2} for Accode ${customerCode}: Invalid Region data '${region}'.`);
+              return;
+            }
 
             const codeStr = customerCode.toString();
             if (!customersDataMap.has(codeStr)) {
                 customersDataMap.set(codeStr, {
                     customer: {
                         customerCode: codeStr,
-                        customerName: row['Party Nam'],
-                        region: row.Region,
+                        customerName: row['Party Name'],
+                        region: region,
                         outstandingAmount: 0,
-                        department: 'Batching Plant', // Assuming default, can be from another column if available
+                        department: 'Batching Plant',
                         agePeriod: row.Age,
                     },
                     invoices: []
@@ -179,15 +188,13 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
 
             const current = customersDataMap.get(codeStr)!;
             
-            // Safely parse outstanding amount, default to 0 if invalid
             const outstandingAmtValue = row['July.Outstg.Amt'];
             const outstandingAmount = !isNaN(parseFloat(outstandingAmtValue)) ? parseFloat(outstandingAmtValue) : 0;
             
             current.customer.outstandingAmount! += outstandingAmount;
 
-            const invoiceNumber = row['Inv. No'];
+            const invoiceNumber = row['Inv.No'];
             if (invoiceNumber) {
-                 // Safely parse invoice amount, default to 0 if invalid
                 const invAmtValue = row['Inv.Amt'];
                 const invoiceAmount = !isNaN(parseFloat(invAmtValue)) ? parseFloat(invAmtValue) : 0;
 
