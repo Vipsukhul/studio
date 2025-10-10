@@ -1,8 +1,10 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from '@/components/theme-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import DashboardLayout from './dashboard/layout';
 
 export const metadata: Metadata = {
   title: 'Outstanding Tracker',
@@ -29,7 +31,9 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FirebaseClientProvider>
-            {children}
+            <DashboardLayout>
+              {children}
+            </DashboardLayout>
           </FirebaseClientProvider>
           <Toaster />
         </ThemeProvider>
@@ -37,3 +41,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -34,18 +35,15 @@ import { useEffect, useState } from 'react';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { GoToTop } from '@/components/ui/go-to-top';
-import { useAuth, useUser as useFirebaseUser, useDoc, useFirestore } from '@/firebase';
-import type { User } from '@/lib/types';
-import { doc } from 'firebase/firestore';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/dashboard/invoice-tracker', label: 'Invoice Tracker', icon: LineChart },
-  { href: '/dashboard/data-sheet', label: 'Data Sheet', icon: SheetIcon },
-  { href: '/dashboard/team-hierarchy', label: 'Team Hierarchy', icon: Users },
-  { href: '/dashboard/upload-data', label: 'Upload Data', icon: Upload, roles: ['Country Manager', 'Admin'] },
-  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
-  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
+  { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/invoice-tracker', label: 'Invoice Tracker', icon: LineChart },
+  { href: '/data-sheet', label: 'Data Sheet', icon: SheetIcon },
+  { href: '/team-hierarchy', label: 'Team Hierarchy', icon: Users },
+  { href: '/upload-data', label: 'Upload Data', icon: Upload, roles: ['Country Manager', 'Admin'] },
+  { href: '/notifications', label: 'Notifications', icon: Bell },
+  { href: '/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function DashboardLayout({
@@ -55,24 +53,12 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuth();
-  const firestore = useFirestore();
-  const { user: firebaseUser, isUserLoading } = useFirebaseUser();
   
-  const userDocRef = firebaseUser ? doc(firestore, 'users', firebaseUser.uid) : null;
-  const { data: userProfile, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
-
+  const [userRole, setUserRole] = useState('Engineer'); // Mock role
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   
   useEffect(() => {
-    // This effect handles redirection if the user is definitely not logged in after loading.
-    if (!isUserLoading && !firebaseUser) {
-      router.replace('/');
-      return;
-    }
-    
-    // This effect handles profile image URL from localStorage
     const handleStorageChange = () => {
       const storedUrl = localStorage.getItem('profileImageUrl');
       setProfileImageUrl(storedUrl);
@@ -84,49 +70,22 @@ export default function DashboardLayout({
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [isUserLoading, firebaseUser, router]);
-
-  // We show loading until BOTH the auth check is complete and the profile is fetched (or fails).
-  if (isUserLoading || isProfileLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
-      </div>
-    );
-  }
-
-  // After loading, if there's no Firebase user, the useEffect above will handle redirection.
-  // We also check for userProfile here. If auth is fine but the DB profile is missing,
-  // it's an incomplete state, so we prevent rendering the dashboard.
-  if (!firebaseUser || !userProfile) {
-     return (
-      <div className="flex items-center justify-center h-screen">
-         <div className="text-center">
-            <p className="text-lg font-semibold">Authentication incomplete.</p>
-            <p className="text-muted-foreground">User profile not found. Please try logging in again.</p>
-            <Button onClick={() => router.replace('/')} className="mt-4">Go to Login</Button>
-        </div>
-      </div>
-    );
-  }
+  }, []);
   
-  const userRole = userProfile?.role;
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
     return item.roles.includes(userRole || '');
   });
 
   const handleLogout = async () => {
-    await auth.signOut();
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
     });
     localStorage.clear();
-    router.replace('/');
   };
 
-  const userInitial = userProfile?.name?.charAt(0) || 'U';
+  const userInitial = 'U';
 
   return (
     <>
@@ -134,7 +93,7 @@ export default function DashboardLayout({
       <div className="hidden border-r bg-sidebar md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
+            <Link href="/" className="flex items-center gap-2 font-semibold">
               <Logo className="h-6 w-6 text-sidebar-primary" />
               <span className="font-headline text-sidebar-foreground">Outstanding Tracker</span>
             </Link>
@@ -164,7 +123,7 @@ export default function DashboardLayout({
              <SheetHeader>
                 <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
                 <SheetDescription className="sr-only">A list of links to navigate the application.</SheetDescription>
-                 <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold mb-4">
+                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <Logo className="h-6 w-6 text-sidebar-primary" />
                   <span className="font-headline text-sidebar-foreground">Tracker</span>
                 </Link>
@@ -184,7 +143,7 @@ export default function DashboardLayout({
              {/* The department selector was here */}
           </div>
            <ThemeToggle />
-           <Link href="/dashboard/notifications">
+           <Link href="/notifications">
             <Button variant="ghost" size="icon" className="rounded-full relative">
                 <Bell className="h-5 w-5" />
                 <span className="sr-only">Notifications</span>
@@ -194,7 +153,7 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src={profileImageUrl || `https://picsum.photos/seed/${firebaseUser?.uid}/32/32`} />
+                  <AvatarImage src={profileImageUrl || `https://picsum.photos/seed/user/32/32`} />
                   <AvatarFallback>{userInitial}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
@@ -203,7 +162,7 @@ export default function DashboardLayout({
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <Link href="/dashboard/settings" passHref>
+              <Link href="/settings" passHref>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
               </Link>
               <DropdownMenuItem>Support</DropdownMenuItem>
@@ -229,7 +188,7 @@ export default function DashboardLayout({
 
 function NavItem({ href, label, icon: Icon, mobile = false }: { href: string; label: string; icon: React.ElementType; mobile?: boolean }) {
   const pathname = usePathname();
-  const isActive = pathname.startsWith(href) && (href !== '/dashboard' || pathname === '/dashboard');
+  const isActive = pathname === href;
   const linkClasses = cn(
     "flex items-center gap-3 rounded-lg px-3 py-2 text-sidebar-foreground/80 transition-all hover:text-sidebar-accent-foreground hover:bg-sidebar-accent",
     isActive && "bg-sidebar-accent text-sidebar-accent-foreground",
