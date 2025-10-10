@@ -73,24 +73,35 @@ export default function DashboardLayout({
     }
 
     const fetchUserProfile = async () => {
+      if (!firestore || !firebaseUser) return;
       setIsProfileLoading(true);
       const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-      const userDoc = await getDoc(userDocRef);
-      if (userDoc.exists()) {
-        const profile = userDoc.data() as UserProfile;
-        setUserProfile(profile);
-        localStorage.setItem('userRole', profile.role);
-        localStorage.setItem('department', profile.department);
-        window.dispatchEvent(new Event('storage')); // Notify other components of change
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Error',
-          description: 'User profile not found. Please contact support.',
+      try {
+        const userDoc = await getDoc(userDocRef);
+        if (userDoc.exists()) {
+          const profile = userDoc.data() as UserProfile;
+          setUserProfile(profile);
+          localStorage.setItem('userRole', profile.role);
+          localStorage.setItem('department', profile.department);
+          window.dispatchEvent(new Event('storage')); // Notify other components of change
+        } else {
+          toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'User profile not found. Please contact support.',
+          });
+          auth.signOut(); // Log out if profile is missing
+        }
+      } catch (error) {
+         toast({
+            variant: 'destructive',
+            title: 'Error',
+            description: 'Failed to fetch user profile.',
         });
-        auth.signOut(); // Log out if profile is missing
+        auth.signOut();
+      } finally {
+        setIsProfileLoading(false);
       }
-      setIsProfileLoading(false);
     };
 
     fetchUserProfile();
@@ -133,6 +144,15 @@ export default function DashboardLayout({
       </div>
     );
   }
+  
+  if (!userProfile) {
+     return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+      </div>
+    );
+  }
+
 
   return (
     <>

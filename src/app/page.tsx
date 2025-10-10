@@ -41,7 +41,7 @@ export default function LoginPage() {
         title: 'Login Successful',
         description: "Welcome back! Redirecting you to the dashboard.",
       });
-      // Direct and unconditional redirect on success
+      // The redirect is handled by the useEffect hook, but we ensure it happens by pushing again
       router.push('/dashboard');
     } catch (error: any) {
       toast({
