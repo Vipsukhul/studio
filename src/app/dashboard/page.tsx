@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -192,7 +193,7 @@ export default function DashboardPage() {
   } as const;
 
   return (
-    <>
+    <div className="flex flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
         <div className="flex flex-wrap items-center gap-4">
@@ -233,22 +234,22 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="lg:col-span-4">
+          <Card className="lg:col-span-4 overflow-x-auto">
             <CardHeader>
               <CardTitle>Region vs. Ageing</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] min-w-[600px] w-full">
+            <CardContent>
+              {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full min-w-[600px]">
                 <AgeBarChart data={filteredAgeData} />
               </ChartContainer>}
             </CardContent>
           </Card>
-          <Card className="lg:col-span-3">
+          <Card className="lg:col-span-3 overflow-x-auto">
             <CardHeader>
               <CardTitle>Region-wise Distribution</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] min-w-[400px] w-full">
+            <CardContent>
+              {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full min-w-[400px]">
                   <RegionPieChart data={regionDistribution} />
               </ChartContainer>}
             </CardContent>
@@ -256,29 +257,29 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+          <Card className="overflow-x-auto">
               <CardHeader>
                   <CardTitle>Month-wise Outstanding Trend</CardTitle>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                  {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] min-w-[600px] w-full">
+              <CardContent>
+                  {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full min-w-[600px]">
                       <MonthlyLineChart data={monthlyTrends} />
                   </ChartContainer>}
               </CardContent>
           </Card>
-          <Card>
+          <Card className="overflow-x-auto">
               <CardHeader>
                   <CardTitle>New vs. Recovered Outstanding</CardTitle>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                  {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] min-w-[600px] w-full">
+              <CardContent>
+                  {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full min-w-[600px]">
                       <OutstandingRecoveryChart data={recoveryData} />
                   </ChartContainer>}
               </CardContent>
           </Card>
         </div>
         
-        <Card>
+        <Card className="overflow-x-auto">
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Ageing Summary by Region</CardTitle>
@@ -296,7 +297,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
+          <CardContent>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -337,6 +338,8 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
       </div>
-    </>
+    </div>
   );
 }
+
+    
