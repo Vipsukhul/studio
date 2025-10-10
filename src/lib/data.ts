@@ -89,6 +89,12 @@ export const monthOptions = [
     { value: 'Jul-25', label: 'July 2025' },
 ];
 
+export const financialYearOptions = [
+    { value: '2024-2025', label: 'FY 2024-25' },
+    { value: '2023-2024', label: 'FY 2023-24' },
+    { value: '2022-2023', label: 'FY 2022-23' },
+];
+
 export const regionOptions = [
     { value: 'All', label: 'All Regions' },
     { value: 'North', label: 'North' },

@@ -54,6 +54,8 @@ export default function LoginPage() {
         });
         localStorage.setItem('userRole', role);
         localStorage.setItem('department', department);
+        // Default financial year
+        localStorage.setItem('financialYear', '2024-2025');
         // Don't set user, which causes redirection. Instead, show dialog.
         setShowInstallDialog(true);
       };

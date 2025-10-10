@@ -4,12 +4,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDown, ArrowUp, Building, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, Building, CalendarDays, Users } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
 import { OutstandingRecoveryChart } from '@/components/charts/outstanding-recovery-chart';
-import { monthOptions, regionOptions, departmentOptions } from '@/lib/data';
+import { monthOptions, regionOptions, departmentOptions, financialYearOptions } from '@/lib/data';
 import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
 import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
@@ -59,24 +59,24 @@ export default function DashboardPage() {
   const [month, setMonth] = useState('Apr-25');
   const [region, setRegion] = useState('All');
   const [department, setDepartment] = useState('Batching Plant');
+  const [financialYear, setFinancialYear] = useState('2024-2025');
   const [isClient, setIsClient] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
 
   useEffect(() => {
     setIsClient(true);
     const storedDepartment = localStorage.getItem('department');
+    const storedFinancialYear = localStorage.getItem('financialYear');
     const storedRole = localStorage.getItem('userRole');
-    if (storedDepartment) {
-        setDepartment(storedDepartment);
-    }
-    if (storedRole) {
-        setUserRole(storedRole);
-    }
+    if (storedDepartment) setDepartment(storedDepartment);
+    if (storedFinancialYear) setFinancialYear(storedFinancialYear);
+    if (storedRole) setUserRole(storedRole);
+
      const handleStorageChange = () => {
         const storedDept = localStorage.getItem('department');
-        if (storedDept) {
-            setDepartment(storedDept);
-        }
+        const storedFY = localStorage.getItem('financialYear');
+        if (storedDept) setDepartment(storedDept);
+        if (storedFY) setFinancialYear(storedFY);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -86,21 +86,27 @@ export default function DashboardPage() {
     async function fetchData() {
       setLoading(true);
       const [mainData, recoveryTrendData] = await Promise.all([
-        getDashboardData(month, department),
-        getOutstandingRecoveryTrend(department)
+        getDashboardData(month, department, financialYear),
+        getOutstandingRecoveryTrend(department, financialYear)
       ]);
       setDashboardData(mainData);
       setRecoveryData(recoveryTrendData);
       setLoading(false);
     }
-    if (department) {
+    if (department && financialYear) {
         fetchData();
     }
-  }, [month, department]);
+  }, [month, department, financialYear]);
 
   const handleDepartmentChange = (newDepartment: string) => {
     setDepartment(newDepartment);
     localStorage.setItem('department', newDepartment);
+    window.dispatchEvent(new Event('storage'));
+  };
+
+  const handleFinancialYearChange = (newFinancialYear: string) => {
+    setFinancialYear(newFinancialYear);
+    localStorage.setItem('financialYear', newFinancialYear);
     window.dispatchEvent(new Event('storage'));
   };
 
@@ -133,7 +139,7 @@ export default function DashboardPage() {
     '31-90': { label: '31-90 Days', color: 'hsl(var(--chart-2))' },
     '91-180': { label: '91-180 Days', color: 'hsl(var(--chart-3))' },
     '181-365': { label: '181-365 Days', color: 'hsl(var(--chart-4))' },
-    '>365': { label: '>1 Year', color: 'hsl(var(--chart-5))' },
+    '>365': { label: '>1 Year', color: 'hsl(var(--chart-3))' },
   } as const;
 
   const regionChartConfig = {
@@ -160,12 +166,12 @@ export default function DashboardPage() {
     <>
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
-        <div className="flex items-center gap-4">
+        <div className="flex flex-wrap items-center gap-4">
             {userRole === 'Country Manager' && (
                 <div className="flex items-center gap-2">
                     <Building className="h-5 w-5 text-muted-foreground" />
                     <Select value={department} onValueChange={handleDepartmentChange}>
-                        <SelectTrigger className="w-[180px]">
+                        <SelectTrigger className="w-full sm:w-[180px]">
                             <SelectValue placeholder="Select Department" />
                         </SelectTrigger>
                         <SelectContent>
@@ -176,7 +182,20 @@ export default function DashboardPage() {
                     </Select>
                 </div>
             )}
-            <div className="w-[180px]">
+             <div className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-muted-foreground" />
+                <Select value={financialYear} onValueChange={handleFinancialYearChange}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="Select FY" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {financialYearOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="w-full sm:w-[180px]">
               <Select value={month} onValueChange={setMonth}>
                 <SelectTrigger>
                   <SelectValue placeholder="Select Month" />
@@ -261,7 +280,7 @@ export default function DashboardPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
+        <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader>
               <TableRow>

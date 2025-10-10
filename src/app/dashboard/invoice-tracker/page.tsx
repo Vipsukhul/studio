@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/componentsui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import type { InvoiceTrackerData, Customer } from '@/lib/types';
 import { ArrowDown, ArrowUp } from 'lucide-react';
@@ -22,6 +22,7 @@ export default function InvoiceTrackerPage() {
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState('All');
   const [department, setDepartment] = useState('Batching Plant');
+  const [financialYear, setFinancialYear] = useState('2024-2025');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [detailedInvoices, setDetailedInvoices] = useState<DetailedInvoice[]>([]);
@@ -29,14 +30,15 @@ export default function InvoiceTrackerPage() {
 
    useEffect(() => {
     const storedDepartment = localStorage.getItem('department');
-    if (storedDepartment) {
-        setDepartment(storedDepartment);
-    }
+    const storedFinancialYear = localStorage.getItem('financialYear');
+    if (storedDepartment) setDepartment(storedDepartment);
+    if (storedFinancialYear) setFinancialYear(storedFinancialYear);
+
      const handleStorageChange = () => {
         const storedDept = localStorage.getItem('department');
-        if (storedDept) {
-            setDepartment(storedDept);
-        }
+        const storedFY = localStorage.getItem('financialYear');
+        if (storedDept) setDepartment(storedDept);
+        if (storedFY) setFinancialYear(storedFY);
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -44,23 +46,23 @@ export default function InvoiceTrackerPage() {
 
   useEffect(() => {
     async function loadInitialData() {
-        if (!department) return;
-      const customerData = await getCustomers(department);
+        if (!department || !financialYear) return;
+      const customerData = await getCustomers(department, financialYear);
       setCustomers(customerData);
     }
     loadInitialData();
-  }, [department]);
+  }, [department, financialYear]);
 
   useEffect(() => {
     async function fetchData() {
-        if (!department) return;
+        if (!department || !financialYear) return;
       setLoading(true);
-      const result = await getInvoiceTrackerData(region, department);
+      const result = await getInvoiceTrackerData(region, department, financialYear);
       setData(result);
       setLoading(false);
     }
     fetchData();
-  }, [region, department]);
+  }, [region, department, financialYear]);
 
   const handleRowClick = (monthYear: string) => {
     setSelectedMonth(monthYear);

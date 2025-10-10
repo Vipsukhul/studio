@@ -21,9 +21,9 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
  * @param month - The selected month (for simulation purposes).
  * @param department - The selected department.
  */
-export async function getDashboardData(month: string, department: string) {
+export async function getDashboardData(month: string, department: string, financialYear: string) {
   await delay(500);
-  console.log(`Fetching data for month: ${month} and department: ${department}`);
+  console.log(`Fetching data for month: ${month}, department: ${department}, and FY: ${financialYear}`);
   
   const filteredCustomers = customers.filter(c => c.department === department);
   const totalCustomers = filteredCustomers.length;
@@ -54,8 +54,9 @@ export async function getDashboardData(month: string, department: string) {
  * @param region - The region to filter by.
  * @param department - The department to filter by.
  */
-export async function getInvoiceTrackerData(region: string, department: string): Promise<InvoiceTrackerData[]> {
+export async function getInvoiceTrackerData(region: string, department: string, financialYear: string): Promise<InvoiceTrackerData[]> {
   await delay(500);
+  console.log(`Fetching invoice tracker data for region: ${region}, department: ${department}, and FY: ${financialYear}`);
   let filteredData = invoiceTrackerData.filter(d => d.department === department);
   if (region === 'All') {
     return filteredData;
@@ -69,8 +70,9 @@ export async function getInvoiceTrackerData(region: string, department: string):
  * Simulates fetching the list of all customers, filtered by department.
  * @param department - The department to filter by.
  */
-export async function getCustomers(department: string): Promise<Customer[]> {
+export async function getCustomers(department: string, financialYear: string): Promise<Customer[]> {
   await delay(500);
+  console.log(`Fetching customers for department: ${department} and FY: ${financialYear}`);
   return customers.filter(c => c.department === department);
 }
 
@@ -240,8 +242,9 @@ export async function updateInvoiceDisputeStatus(customerId: string, invoiceNumb
  * Simulates fetching the outstanding vs. recovery trend data.
  * @param department - The department to filter by.
  */
-export async function getOutstandingRecoveryTrend(department: string): Promise<OutstandingRecoveryTrend[]> {
+export async function getOutstandingRecoveryTrend(department: string, financialYear: string): Promise<OutstandingRecoveryTrend[]> {
   await delay(500);
+  console.log(`Fetching recovery trend for department: ${department} and FY: ${financialYear}`);
   return outstandingRecoveryTrend.filter(item => item.department === department);
 }
 
@@ -249,8 +252,9 @@ export async function getOutstandingRecoveryTrend(department: string): Promise<O
  * Simulates fetching engineer performance data.
  * @param department - The department to filter by.
  */
-export async function getEngineerPerformanceData(department: string): Promise<EngineerPerformance[]> {
+export async function getEngineerPerformanceData(department: string, financialYear: string): Promise<EngineerPerformance[]> {
   await delay(500);
+  console.log(`Fetching engineer performance for department: ${department} and FY: ${financialYear}`);
   return engineerPerformance.filter(item => item.department === department);
 }
 

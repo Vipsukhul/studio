@@ -20,16 +20,17 @@ export default function EngineerPerformancePage() {
   const [loading, setLoading] = React.useState(true);
   const [currentPage, setCurrentPage] = React.useState(1);
   const [department, setDepartment] = React.useState('Batching Plant');
+  const [financialYear, setFinancialYear] = React.useState('2024-2025');
 
   React.useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const data = await getEngineerPerformanceData(department);
+      const data = await getEngineerPerformanceData(department, financialYear);
       setPerformanceData(data);
       setLoading(false);
     }
     loadData();
-  }, [department]);
+  }, [department, financialYear]);
 
   const chartConfig = {
     collected: { label: 'Collected', color: 'hsl(var(--chart-1))' },
