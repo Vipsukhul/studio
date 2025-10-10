@@ -1,24 +1,11 @@
 /**
- * @fileoverview Firestore Security Rules for Prototyping.
- *
- * Core Philosophy:
- * This ruleset prioritizes strict user-ownership and role-based access control, while relaxing data validation to enable rapid prototyping.
- * It enforces that only authenticated users can access data, and restricts access based on pre-defined roles and ownership.
- *
- * Data Structure:
- * - /customers/{customerId}: Stores customer data.
- * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer.
- * - /users/{userId}: Stores user profile information.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a role-based access control model, primarily using the "Engineer" role.
+ * All data is organized into three top level collections: customers, users, and invoices.
  *
  * Key Security Decisions:
- * - User listing is disabled for security reasons.
- * - Data validation is minimized to allow for flexible data shapes during prototyping.
- * - All write operations require authentication.
- * - Role based authorization is implemented to give granular access to different users.
- *
- * Denormalization for Authorization:
- * - The `User` entity includes a `role` field to determine authorization levels.
- * - The `Customer` and `Invoice` entities do not require denormalization in this version.
+ * - Users can only read/write their own profile data.
+ * - Customer and Invoice data access is restricted to authorized Engineers and those with elevated roles.
  */
 rules_version = '2';
 service cloud.firestore {
@@ -26,109 +13,106 @@ service cloud.firestore {
 
     /**
      * @description Checks if the user is signed in.
+     * @return {boolean} True if the user is authenticated.
      */
     function isSignedIn() {
       return request.auth != null;
     }
 
     /**
-     * @description Checks if the user is the owner of the resource.
+     * @description Checks if the authenticated user's ID matches the provided userId.
+     * @param {string} userId - The user ID to compare against.
+     * @return {boolean} True if the user is the owner.
      */
     function isOwner(userId) {
       return request.auth.uid == userId;
     }
 
     /**
-     * @description Checks if the user is an existing owner of the resource.
-     */
-    function isExistingOwner(userId) {
-        return isOwner(userId) && resource.data != null;
-    }
-
-    /**
-     * @description Checks if the user has the specified role.
-     */
-    function hasRole(role) {
-        return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
-    }
-
-    /**
-     * @description Checks if the user is a Manager.
-     */
-    function isManager() {
-        return hasRole('Manager');
-    }
-
-    /**
-     * @description Checks if the user is an Engineer.
+     * @description Checks if the authenticated user has the Engineer role.
+     * @return {boolean} True if the user has the Engineer role.
      */
     function isEngineer() {
-        return hasRole('Engineer');
+        return isSignedIn() && (request.auth.token.role == 'Engineer' || request.auth.token.role == 'Manager' || request.auth.token.role == 'Country Manager' || request.auth.token.role == 'Admin');
     }
 
     /**
-     * @description Checks if the user is a Country Manager.
+     * @description Checks if the authenticated user has the Manager role.
+     * @return {boolean} True if the user has the Manager role.
+     */
+    function isManager() {
+        return isSignedIn() && (request.auth.token.role == 'Manager' || request.auth.token.role == 'Country Manager' || request.auth.token.role == 'Admin');
+    }
+
+    /**
+     * @description Checks if the authenticated user has the Country Manager role.
+     * @return {boolean} True if the user has the Country Manager role.
      */
     function isCountryManager() {
-        return hasRole('Country Manager');
+        return isSignedIn() && (request.auth.token.role == 'Country Manager' || request.auth.token.role == 'Admin');
     }
 
     /**
-     * @description Checks if the user is an Admin.
+     * @description Checks if the authenticated user has the Admin role.
+     * @return {boolean} True if the user has the Admin role.
      */
     function isAdmin() {
-        return hasRole('Admin');
+        return isSignedIn() && request.auth.token.role == 'Admin';
     }
 
     /**
-     * @description Access control rules for the /customers/{customerId} collection.
+     * @description Checks if the user is the existing owner of a resource.
+     * @param {string} userId - The user ID to compare against.
+     * @return {boolean} True if the user is the owner and the resource exists.
+     */
+    function isExistingOwner(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.userId == request.auth.uid;
+    }
+
+    /**
+     * @description Rules for the /customers/{customerId} collection.
      * @path /customers/{customerId}
-     * @allow (create) - An Admin can create a customer.
-     * @deny (create) - A user who is not an Admin cannot create a customer.
-     * @allow (get) - Any signed-in user can get a customer.
-     * @deny (get) - A user who is not signed in cannot get a customer.
+     * @allow (read) Authenticated Engineer can read a customer document.
+     * @allow (create) Authenticated Engineer can create a customer document.
+     * @deny (delete) Non-Admin user cannot delete a customer document.
      * @principle Role-based access control.
      */
     match /customers/{customerId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
+      allow get, list: if isEngineer();
+      allow create: if isEngineer();
+      allow update: if isEngineer();
       allow delete: if isAdmin();
     }
 
     /**
-     * @description Access control rules for the /customers/{customerId}/invoices/{invoiceId} collection.
+     * @description Rules for the /customers/{customerId}/invoices/{invoiceId} subcollection.
      * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (create) - An Admin can create an invoice.
-     * @deny (create) - A user who is not an Admin cannot create an invoice.
-     * @allow (get) - Any signed-in user can get an invoice.
-     * @deny (get) - A user who is not signed in cannot get an invoice.
-     * @principle Role-based access control.
+     * @allow (read) Authenticated Engineer can read an invoice document.
+     * @allow (create) Authenticated Engineer can create an invoice document.
+     * @deny (delete) Non-Admin user cannot delete an invoice document.
+     * @principle Role-based access control, data hierarchy.
      */
     match /customers/{customerId}/invoices/{invoiceId} {
-      allow get: if isSignedIn();
-      allow list: if isSignedIn();
-      allow create: if isAdmin();
-      allow update: if isAdmin();
+      allow get, list: if isEngineer();
+      allow create: if isEngineer();
+      allow update: if isEngineer();
       allow delete: if isAdmin();
     }
 
     /**
-     * @description Access control rules for the /users/{userId} collection.
+     * @description Rules for the /users/{userId} collection.
      * @path /users/{userId}
-     * @allow (create) - A user can create their own user document.
-     * @deny (create) - A user cannot create a user document for another user.
-     * @allow (get) - A user can get their own user document.
-     * @deny (get) - A user cannot get another user's document.
-     * @principle Enforces document ownership for writes.
+     * @allow (get) Owner can get their own profile.
+     * @allow (create) Owner can create their own profile (self-registration).
+     * @deny (update) Non-owner user cannot update another user's profile.
+     * @principle User-owned data, self-creation.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId) && request.auth.uid == userId;
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+        allow get: if isOwner(userId);
+        allow list: if isOwner(userId);
+        allow create: if isOwner(userId) && request.auth.uid == userId;
+        allow update: if isOwner(userId);
+        allow delete: if isAdmin();
     }
   }
 }

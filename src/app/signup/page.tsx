@@ -13,9 +13,9 @@ import { Logo } from '@/components/logo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { regionOptions, departmentOptions } from '@/lib/data';
 import { Eye, EyeOff } from 'lucide-react';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
 import type { User } from '@/lib/types';
 
 
@@ -68,7 +68,9 @@ export default function SignupPage() {
       };
 
       const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-      await setDoc(userDocRef, userProfile);
+      
+      // Use non-blocking write with proper error handling
+      setDocumentNonBlocking(userDocRef, userProfile, { merge: false });
 
       toast({
         title: 'Signup Successful',
