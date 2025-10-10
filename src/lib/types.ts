@@ -21,7 +21,6 @@ export interface Customer {
   customerCode: string;
   customerName: string;
   region: string;
-  department: 'Batching Plant' | 'Pump';
   agePeriod?: '0-30' | '31-90' | '91-180' | '181-365' | '>365';
   outstandingAmount?: number;
   invoices?: Invoice[]; // Optional, as they are a subcollection
@@ -40,7 +39,6 @@ export interface Kpi {
 
 export interface OutstandingByAge {
   region: string;
-  department: 'Batching Plant' | 'Pump';
   '0-30': number;
   '31-90': number;
   '91-180': number;
@@ -61,7 +59,6 @@ export interface MonthlyTrend {
 
 export interface InvoiceTrackerData {
   monthYear: string;
-  department: 'Batching Plant' | 'Pump';
   previousMonthInvoices: number;
   previousMonthAmount: number;
   currentMonthInvoices: number;
@@ -74,12 +71,10 @@ export interface Engineer {
   id: string;
   name: string;
   region: 'North' | 'South' | 'East' | 'West';
-  department: 'Batching Plant' | 'Pump';
 }
 
 export interface OutstandingRecoveryTrend {
   month: string;
-  department: 'Batching Plant' | 'Pump';
   new: number;
   recovered: number;
 }
@@ -95,7 +90,6 @@ export interface LogEntry {
 export interface EngineerPerformance {
   name: string;
   region: string;
-  department: 'Batching Plant' | 'Pump';
   outstandingCollected: number;
   newOutstandingAssigned: number;
   netChange: number;
@@ -119,7 +113,6 @@ export interface User {
   email: string;
   role: 'Manager' | 'Engineer' | 'Country Manager' | 'Admin';
   region: 'North' | 'South' | 'East' | 'West';
-  department: 'Batching Plant' | 'Pump';
   contact: string;
   photoURL?: string;
 }

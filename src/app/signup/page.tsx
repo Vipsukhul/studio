@@ -14,7 +14,7 @@ import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { regionOptions, departmentOptions } from '@/lib/data';
+import { regionOptions } from '@/lib/data';
 import type { User as UserProfile } from '@/lib/types';
 
 
@@ -23,7 +23,6 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
   const [region, setRegion] = useState('');
-  const [department, setDepartment] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
@@ -56,7 +55,6 @@ export default function SignupPage() {
         email,
         role: 'Engineer', // Default role for new signups
         region: region as UserProfile['region'],
-        department: department as UserProfile['department'],
         contact: '', // Add a field for contact if needed
       };
 
@@ -119,37 +117,20 @@ export default function SignupPage() {
                 disabled={isLoading}
               />
             </div>
-            <div className="grid sm:grid-cols-2 gap-4">
-               <div className="grid gap-2">
-                <Label htmlFor="region">Region</Label>
-                <Select value={region} onValueChange={setRegion} required>
-                  <SelectTrigger id="region" disabled={isLoading}>
-                    <SelectValue placeholder="Select your region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regionOptions.filter(r => r.value !== 'All').map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="department">Department</Label>
-                 <Select value={department} onValueChange={setDepartment} required>
-                  <SelectTrigger id="department" disabled={isLoading}>
-                    <SelectValue placeholder="Select your department" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {departmentOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div className="grid gap-2">
+              <Label htmlFor="region">Region</Label>
+              <Select value={region} onValueChange={setRegion} required>
+                <SelectTrigger id="region" disabled={isLoading}>
+                  <SelectValue placeholder="Select your region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regionOptions.filter(r => r.value !== 'All').map(option => (
+                    <SelectItem key={option.value} value={option.value}>
+                      {option.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div className="grid gap-2">
               <Label htmlFor="password">Password</Label>

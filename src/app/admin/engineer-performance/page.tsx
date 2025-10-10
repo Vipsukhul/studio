@@ -9,9 +9,6 @@ import { EngineerPerformanceChart } from '@/components/charts/engineer-performan
 import { ChartContainer } from '@/components/ui/chart';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { departmentOptions } from '@/lib/data';
-
 
 const ITEMS_PER_PAGE = 5;
 
@@ -19,18 +16,17 @@ export default function EngineerPerformancePage() {
   const [performanceData, setPerformanceData] = React.useState<EngineerPerformance[]>([]);
   const [loading, setLoading] = React.useState(true);
   const [currentPage, setCurrentPage] = React.useState(1);
-  const [department, setDepartment] = React.useState('Batching Plant');
   const [financialYear, setFinancialYear] = React.useState('2024-2025');
 
   React.useEffect(() => {
     async function loadData() {
       setLoading(true);
-      const data = await getEngineerPerformanceData(department, financialYear);
+      const data = await getEngineerPerformanceData(financialYear);
       setPerformanceData(data);
       setLoading(false);
     }
     loadData();
-  }, [department, financialYear]);
+  }, [financialYear]);
 
   const chartConfig = {
     collected: { label: 'Collected', color: 'hsl(var(--chart-1))' },
@@ -57,25 +53,13 @@ export default function EngineerPerformancePage() {
           <h1 className="text-3xl font-headline font-bold">Engineer Performance</h1>
           <p className="text-muted-foreground">Track and compare outstanding balance metrics for each engineer.</p>
         </div>
-        <div className="w-[220px]">
-            <Select value={department} onValueChange={setDepartment}>
-                <SelectTrigger>
-                    <SelectValue placeholder="Select Department" />
-                </SelectTrigger>
-                <SelectContent>
-                    {departmentOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-        </div>
       </div>
 
        <Card className="mt-6">
           <CardHeader>
             <CardTitle>Performance Comparison Chart</CardTitle>
             <CardDescription>
-              A visual overview of outstanding amounts collected vs. newly assigned amounts for each engineer in the <span className="font-semibold">{department}</span> department.
+              A visual overview of outstanding amounts collected vs. newly assigned amounts for each engineer.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -126,7 +110,7 @@ export default function EngineerPerformancePage() {
               ) : (
                 <TableRow>
                   <TableCell colSpan={5} className="h-24 text-center">
-                    No performance data found for this department.
+                    No performance data found.
                   </TableCell>
                 </TableRow>
               )}

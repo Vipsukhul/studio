@@ -19,10 +19,6 @@
           "type": "string",
           "description": "The geographical region of the customer."
         },
-        "department": {
-            "type": "string",
-            "enum": ["Batching Plant", "Pump"]
-        },
         "outstandingAmount": {
             "type": "number"
         },
@@ -40,8 +36,7 @@
       "required": [
         "customerCode",
         "customerName",
-        "region",
-        "department"
+        "region"
       ]
     },
     "Invoice": {
@@ -84,10 +79,9 @@
           "email": {"type": "string", "format": "email"},
           "role": {"type": "string", "enum": ["Manager", "Engineer", "Country Manager", "Admin"]},
           "region": {"type": "string", "enum": ["North", "South", "East", "West"]},
-          "department": {"type": "string", "enum": ["Batching Plant", "Pump"]},
           "contact": {"type": "string"}
       },
-      "required": ["name", "email", "role", "region", "department"]
+      "required": ["name", "email", "role", "region"]
     }
   },
   "auth": {

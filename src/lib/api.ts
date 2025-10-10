@@ -7,11 +7,10 @@ import {
   invoiceTrackerData,
   engineers,
   outstandingRecoveryTrend,
-  users as mockUsers,
 } from './data';
 import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, User } from './types';
 import { createNotification } from './notifications';
-import { getFirestore, collection, getDocs, doc, updateDoc, query, where } from 'firebase/firestore';
+import { getFirestore, collection, getDocs, doc, query } from 'firebase/firestore';
 import { initializeFirebase, updateDocumentNonBlocking } from '@/firebase';
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api';
@@ -23,26 +22,26 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 /**
  * Simulates fetching all dashboard data.
  * @param month - The selected month (for simulation purposes).
- * @param department - The selected department.
+ * @param financialYear - The selected financial year.
  */
-export async function getDashboardData(month: string, department: string, financialYear: string) {
+export async function getDashboardData(month: string, financialYear: string) {
   await delay(500);
-  console.log(`Fetching data for month: ${month}, department: ${department}, and FY: ${financialYear} from ${API_URL}/dashboard`);
+  console.log(`Fetching data for month: ${month} and FY: ${financialYear} from ${API_URL}/dashboard`);
   
-  const customers = await getCustomers(department, financialYear);
+  const customers = await getCustomers(financialYear);
   const totalCustomers = customers.length;
   
   const customersKpi: Kpi = {
     label: 'Total Customers',
     value: totalCustomers.toString(),
-    description: `in ${department}`,
+    description: `in Batching Plant`,
   };
 
   const existingKpis = kpis.filter(k => k.label !== 'Total Customers');
   
   // TODO: This data should be calculated from Firestore as well
   const mockDb = await import('./data');
-  const filteredOutstandingByAge = mockDb.outstandingByAge.filter(item => item.department === department);
+  const filteredOutstandingByAge = mockDb.outstandingByAge;
   const filteredRegionDistribution = regionDistribution; 
   const filteredMonthlyTrends = monthlyTrends;
 
@@ -55,14 +54,14 @@ export async function getDashboardData(month: string, department: string, financ
 }
 
 /**
- * Simulates fetching invoice tracker data, with region and department filtering.
+ * Simulates fetching invoice tracker data, with region filtering.
  * @param region - The region to filter by.
- * @param department - The department to filter by.
+ * @param financialYear - The selected financial year.
  */
-export async function getInvoiceTrackerData(region: string, department: string, financialYear: string): Promise<InvoiceTrackerData[]> {
+export async function getInvoiceTrackerData(region: string, financialYear: string): Promise<InvoiceTrackerData[]> {
   await delay(500);
-  console.log(`Fetching invoice tracker data for region: ${region}, department: ${department}, and FY: ${financialYear} from ${API_URL}/invoice-tracker`);
-  let filteredData = invoiceTrackerData.filter(d => d.department === department);
+  console.log(`Fetching invoice tracker data for region: ${region} and FY: ${financialYear} from ${API_URL}/invoice-tracker`);
+  let filteredData = invoiceTrackerData;
   if (region === 'All') {
     return filteredData;
   }
@@ -70,14 +69,14 @@ export async function getInvoiceTrackerData(region: string, department: string, 
 }
 
 /**
- * Fetches the list of all customers from Firestore, filtered by department.
- * @param department - The department to filter by.
+ * Fetches the list of all customers from Firestore.
+ * @param financialYear - The selected financial year.
  */
-export async function getCustomers(department: string, financialYear: string): Promise<Customer[]> {
-  console.log(`Fetching customers for department: ${department} and FY: ${financialYear} from Firestore`);
+export async function getCustomers(financialYear: string): Promise<Customer[]> {
+  console.log(`Fetching customers for FY: ${financialYear} from Firestore`);
   const { firestore } = initializeFirebase();
   const customersCol = collection(firestore, 'customers');
-  const q = query(customersCol, where("department", "==", department));
+  const q = query(customersCol);
   
   const customerSnapshot = await getDocs(q);
   const customerList = customerSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Customer));
@@ -178,14 +177,13 @@ export function processAndUploadFile(file: File, month: string): Promise<{ count
 }
 
 /**
- * Simulates fetching engineers by region and department.
+ * Simulates fetching engineers by region.
  * @param region - The region to filter engineers by.
- * @param department - The department to filter by.
  */
-export async function getEngineersByRegionAndDepartment(region: string, department: string): Promise<Engineer[]> {
+export async function getEngineersByRegion(region: string): Promise<Engineer[]> {
     await delay(100);
     console.log(`Fetching engineers from ${API_URL}/users`);
-    return engineers.filter(e => e.region === region && e.department === department);
+    return engineers.filter(e => e.region === region);
 }
 
 /**
@@ -230,24 +228,24 @@ export function updateInvoiceDisputeStatus(customerId: string, invoiceNumber: st
 
 /**
  * Simulates fetching the outstanding vs. recovery trend data.
- * @param department - The department to filter by.
+ * @param financialYear - The selected financial year.
  */
-export async function getOutstandingRecoveryTrend(department: string, financialYear: string): Promise<OutstandingRecoveryTrend[]> {
+export async function getOutstandingRecoveryTrend(financialYear: string): Promise<OutstandingRecoveryTrend[]> {
   await delay(500);
-  console.log(`Fetching recovery trend for department: ${department} and FY: ${financialYear} from ${API_URL}/dashboard`);
-  return outstandingRecoveryTrend.filter(item => item.department === department);
+  console.log(`Fetching recovery trend for FY: ${financialYear} from ${API_URL}/dashboard`);
+  return outstandingRecoveryTrend;
 }
 
 /**
  * Simulates fetching engineer performance data.
- * @param department - The department to filter by.
+ * @param financialYear - The selected financial year.
  */
-export async function getEngineerPerformanceData(department: string = 'Batching Plant', financialYear: string = '2024-2025'): Promise<EngineerPerformance[]> {
+export async function getEngineerPerformanceData(financialYear: string = '2024-2025'): Promise<EngineerPerformance[]> {
   await delay(500);
   // @ts-ignore
   const { engineerPerformance } = await import('./data');
-  console.log(`Fetching engineer performance for department: ${department} and FY: ${financialYear} from ${API_URL}/dashboard`);
-  return engineerPerformance.filter((item: any) => item.department === department);
+  console.log(`Fetching engineer performance for FY: ${financialYear} from ${API_URL}/dashboard`);
+  return engineerPerformance;
 }
 
 /**

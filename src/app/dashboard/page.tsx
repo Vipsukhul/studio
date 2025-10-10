@@ -9,7 +9,7 @@ import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
 import { OutstandingRecoveryChart } from '@/components/charts/outstanding-recovery-chart';
-import { generateMonthOptions, regionOptions, departmentOptions, financialYearOptions } from '@/lib/data';
+import { generateMonthOptions, regionOptions, financialYearOptions } from '@/lib/data';
 import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
 import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
@@ -79,15 +79,11 @@ export default function DashboardPage() {
   const [month, setMonth] = useState(monthOptions[0].value);
 
   const [region, setRegion] = useState('All');
-  const [department, setDepartment] = useState('Batching Plant');
   const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
-    const storedDepartment = localStorage.getItem('department');
     const storedFinancialYear = localStorage.getItem('financialYear');
-    
-    if (storedDepartment) setDepartment(storedDepartment);
     
     if (storedFinancialYear) {
       setFinancialYear(storedFinancialYear);
@@ -98,9 +94,7 @@ export default function DashboardPage() {
     }
 
      const handleStorageChange = () => {
-        const storedDept = localStorage.getItem('department');
         const storedFY = localStorage.getItem('financialYear');
-        if (storedDept) setDepartment(storedDept);
         if (storedFY) {
             setFinancialYear(storedFY);
             const newMonthOptions = generateMonthOptions(storedFY);
@@ -115,17 +109,17 @@ export default function DashboardPage() {
     async function fetchData() {
       setLoading(true);
       const [mainData, recoveryTrendData] = await Promise.all([
-        getDashboardData(month, department, financialYear),
-        getOutstandingRecoveryTrend(department, financialYear)
+        getDashboardData(month, financialYear),
+        getOutstandingRecoveryTrend(financialYear)
       ]);
       setDashboardData(mainData);
       setRecoveryData(recoveryTrendData);
       setLoading(false);
     }
-    if (department && financialYear) {
+    if (financialYear) {
         fetchData();
     }
-  }, [month, department, financialYear]);
+  }, [month, financialYear]);
 
   const handleFinancialYearChange = (newFinancialYear: string) => {
     setFinancialYear(newFinancialYear);

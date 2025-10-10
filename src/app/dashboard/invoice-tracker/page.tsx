@@ -21,7 +21,6 @@ export default function InvoiceTrackerPage() {
   const [data, setData] = useState<InvoiceTrackerData[] | null>(null);
   const [loading, setLoading] = useState(true);
   const [region, setRegion] = useState('All');
-  const [department, setDepartment] = useState('Batching Plant');
   const [financialYear, setFinancialYear] = useState('2024-2025');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
@@ -29,15 +28,11 @@ export default function InvoiceTrackerPage() {
   const [customers, setCustomers] = useState<Customer[]>([]);
 
    useEffect(() => {
-    const storedDepartment = localStorage.getItem('department');
     const storedFinancialYear = localStorage.getItem('financialYear');
-    if (storedDepartment) setDepartment(storedDepartment);
     if (storedFinancialYear) setFinancialYear(storedFinancialYear);
 
      const handleStorageChange = () => {
-        const storedDept = localStorage.getItem('department');
         const storedFY = localStorage.getItem('financialYear');
-        if (storedDept) setDepartment(storedDept);
         if (storedFY) setFinancialYear(storedFY);
     };
     window.addEventListener('storage', handleStorageChange);
@@ -46,23 +41,23 @@ export default function InvoiceTrackerPage() {
 
   useEffect(() => {
     async function loadInitialData() {
-        if (!department || !financialYear) return;
-      const customerData = await getCustomers(department, financialYear);
+        if (!financialYear) return;
+      const customerData = await getCustomers(financialYear);
       setCustomers(customerData);
     }
     loadInitialData();
-  }, [department, financialYear]);
+  }, [financialYear]);
 
   useEffect(() => {
     async function fetchData() {
-        if (!department || !financialYear) return;
+        if (!financialYear) return;
       setLoading(true);
-      const result = await getInvoiceTrackerData(region, department, financialYear);
+      const result = await getInvoiceTrackerData(region, financialYear);
       setData(result);
       setLoading(false);
     }
     fetchData();
-  }, [region, department, financialYear]);
+  }, [region, financialYear]);
 
   const handleRowClick = (monthYear: string) => {
     setSelectedMonth(monthYear);
@@ -105,7 +100,7 @@ export default function InvoiceTrackerPage() {
         <CardHeader>
           <CardTitle>Region-wise Invoice Summary</CardTitle>
           <CardDescription>
-            Comparing previous and current month invoice data for the <span className='font-semibold'>{department}</span> department. Click a row for details.
+            Comparing previous and current month invoice data. Click a row for details.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -51,7 +51,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegionAndDepartment, updateInvoiceDisputeStatus } from '@/lib/api';
+import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus } from '@/lib/api';
 
 import type { Customer, Invoice, Engineer } from "@/lib/types"
 
@@ -205,12 +205,11 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
 
   const AssignedToCell = ({ row }: { row: any }) => {
     const customerRegion = row.original.region;
-    const customerDepartment = row.original.department;
     const [engineers, setEngineers] = React.useState<Engineer[]>([]);
 
     React.useEffect(() => {
-        getEngineersByRegionAndDepartment(customerRegion, customerDepartment).then(setEngineers);
-    }, [customerRegion, customerDepartment]);
+        getEngineersByRegion(customerRegion).then(setEngineers);
+    }, [customerRegion]);
 
     return (
         <Select

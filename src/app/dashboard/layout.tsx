@@ -82,7 +82,6 @@ export default function DashboardLayout({
           const profile = userDoc.data() as UserProfile;
           setUserProfile(profile);
           localStorage.setItem('userRole', profile.role);
-          localStorage.setItem('department', profile.department);
           window.dispatchEvent(new Event('storage')); // Notify other components of change
         } else {
           toast({

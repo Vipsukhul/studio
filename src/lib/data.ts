@@ -53,18 +53,18 @@ export const monthlyTrends: MonthlyTrend[] = [
 ];
 
 export const invoiceTrackerData: InvoiceTrackerData[] = [
-    { monthYear: 'Apr-25', department: 'Batching Plant', previousMonthInvoices: 520, previousMonthAmount: 9800000, currentMonthInvoices: 540, currentMonthAmount: 10200000, invoiceCountChange: 20, disputedInvoices: 15 },
-    { monthYear: 'Mar-25', department: 'Batching Plant', previousMonthInvoices: 510, previousMonthAmount: 9500000, currentMonthInvoices: 520, currentMonthAmount: 9800000, invoiceCountChange: 10, disputedInvoices: 12 },
-    { monthYear: 'Feb-25', department: 'Pump', previousMonthInvoices: 500, previousMonthAmount: 9200000, currentMonthInvoices: 510, currentMonthAmount: 9500000, invoiceCountChange: 10, disputedInvoices: 10 },
+    { monthYear: 'Apr-25', previousMonthInvoices: 520, previousMonthAmount: 9800000, currentMonthInvoices: 540, currentMonthAmount: 10200000, invoiceCountChange: 20, disputedInvoices: 15 },
+    { monthYear: 'Mar-25', previousMonthInvoices: 510, previousMonthAmount: 9500000, currentMonthInvoices: 520, currentMonthAmount: 9800000, invoiceCountChange: 10, disputedInvoices: 12 },
+    { monthYear: 'Feb-25', previousMonthInvoices: 500, previousMonthAmount: 9200000, currentMonthInvoices: 510, currentMonthAmount: 9500000, invoiceCountChange: 10, disputedInvoices: 10 },
 ];
 
 export const outstandingRecoveryTrend: OutstandingRecoveryTrend[] = [
-  { month: 'Jan-24', department: 'Batching Plant', new: 1800000, recovered: 1500000 },
-  { month: 'Feb-24', department: 'Batching Plant', new: 1650000, recovered: 1700000 },
-  { month: 'Mar-24', department: 'Pump', new: 2100000, recovered: 1800000 },
-  { month: 'Apr-24', department: 'Pump', new: 1900000, recovered: 2000000 },
-  { month: 'May-24', department: 'Batching Plant', new: 2200000, recovered: 1950000 },
-  { month: 'Jun-24', department: 'Pump', new: 2050000, recovered: 2150000 },
+  { month: 'Jan-24', new: 1800000, recovered: 1500000 },
+  { month: 'Feb-24', new: 1650000, recovered: 1700000 },
+  { month: 'Mar-24', new: 2100000, recovered: 1800000 },
+  { month: 'Apr-24', new: 1900000, recovered: 2000000 },
+  { month: 'May-24', new: 2200000, recovered: 1950000 },
+  { month: 'Jun-24', new: 2050000, recovered: 2150000 },
 ];
 
 
@@ -91,7 +91,6 @@ const customerNames = [
 ];
 
 const regions = ['North', 'South', 'East', 'West'] as const;
-const departments = ['Batching Plant', 'Pump'] as const;
 const agePeriods = ['0-30', '31-90', '91-180', '181-365', '>365'] as const;
 const remarksOptions = ['none', 'under follow-up', 'dispute', 'partial payment', 'payment received'] as const;
 const engineersByRegion = {
@@ -103,7 +102,6 @@ const engineersByRegion = {
 
 export const customers: Customer[] = Array.from({ length: 50 }, (_, i) => {
     const region = regions[i % regions.length];
-    const department = departments[i % departments.length];
     const assignedEngineers = engineersByRegion[region];
     const assignedEngineer = assignedEngineers[i % assignedEngineers.length];
     
@@ -111,7 +109,6 @@ export const customers: Customer[] = Array.from({ length: 50 }, (_, i) => {
         customerCode: `CUST${(i + 1).toString().padStart(3, '0')}`,
         customerName: customerNames[i % customerNames.length],
         region: region,
-        department: department,
         agePeriod: agePeriods[i % agePeriods.length],
         outstandingAmount: Math.floor(Math.random() * 400000) + 20000,
         invoices: generateInvoices(Math.floor(Math.random() * 4) + 1, 'unpaid'),
@@ -125,11 +122,10 @@ const generateOutstandingByAge = (customers: Customer[]): OutstandingByAge[] => 
     const result: { [key: string]: OutstandingByAge } = {};
 
     customers.forEach(customer => {
-        const key = `${customer.region}-${customer.department}`;
+        const key = `${customer.region}`;
         if (!result[key]) {
             result[key] = {
                 region: customer.region,
-                department: customer.department,
                 '0-30': 0,
                 '31-90': 0,
                 '91-180': 0,
@@ -202,20 +198,15 @@ export const regionOptions = [
     { value: 'West', label: 'West' },
 ];
 
-export const departmentOptions = [
-    { value: 'Batching Plant', label: 'Batching Plant' },
-    { value: 'Pump', label: 'Pump' },
-];
-
 export const engineers: Engineer[] = [
-    { id: 'ENG01', name: 'R. Sharma', region: 'North', department: 'Batching Plant' },
-    { id: 'ENG02', name: 'S. Gupta', region: 'North', department: 'Batching Plant' },
-    { id: 'ENG03', name: 'S. Iyer', region: 'South', department: 'Pump' },
-    { id: 'ENG04', name: 'K. Rao', region: 'South', department: 'Batching Plant' },
-    { id: 'ENG05', name: 'A. Das', region: 'East', department: 'Pump' },
-    { id: 'ENG06', name: 'B. Chatterjee', region: 'East', department: 'Pump' },
-    { id: 'ENG07', name: 'P. Patel', region: 'West', department: 'Pump' },
-    { id: 'ENG08', name: 'V. Mehta', region: 'West', department: 'Pump' },
+    { id: 'ENG01', name: 'R. Sharma', region: 'North' },
+    { id: 'ENG02', name: 'S. Gupta', region: 'North' },
+    { id: 'ENG03', name: 'S. Iyer', region: 'South' },
+    { id: 'ENG04', name: 'K. Rao', region: 'South' },
+    { id: 'ENG05', name: 'A. Das', region: 'East' },
+    { id: 'ENG06', name: 'B. Chatterjee', region: 'East' },
+    { id: 'ENG07', name: 'P. Patel', region: 'West' },
+    { id: 'ENG08', name: 'V. Mehta', region: 'West' },
 ];
 
 export const logs: LogEntry[] = [
@@ -231,31 +222,31 @@ export const logs: LogEntry[] = [
 ];
 
 export const engineerPerformance: EngineerPerformance[] = [
-    { name: 'R. Sharma', region: 'North', department: 'Batching Plant', outstandingCollected: 450000, newOutstandingAssigned: 320000, netChange: 130000 },
-    { name: 'S. Gupta', region: 'North', department: 'Batching Plant', outstandingCollected: 380000, newOutstandingAssigned: 410000, netChange: -30000 },
-    { name: 'S. Iyer', region: 'South', department: 'Pump', outstandingCollected: 520000, newOutstandingAssigned: 280000, netChange: 240000 },
-    { name: 'K. Rao', region: 'South', department: 'Batching Plant', outstandingCollected: 410000, newOutstandingAssigned: 390000, netChange: 20000 },
-    { name: 'A. Das', region: 'East', department: 'Pump', outstandingCollected: 290000, newOutstandingAssigned: 310000, netChange: -20000 },
-    { name: 'B. Chatterjee', region: 'East', department: 'Pump', outstandingCollected: 330000, newOutstandingAssigned: 290000, netChange: 40000 },
-    { name: 'P. Patel', region: 'West', department: 'Pump', outstandingCollected: 610000, newOutstandingAssigned: 450000, netChange: 160000 },
-    { name: 'V. Mehta', region: 'West', department: 'Pump', outstandingCollected: 580000, newOutstandingAssigned: 510000, netChange: 70000 },
+    { name: 'R. Sharma', region: 'North', outstandingCollected: 450000, newOutstandingAssigned: 320000, netChange: 130000 },
+    { name: 'S. Gupta', region: 'North', outstandingCollected: 380000, newOutstandingAssigned: 410000, netChange: -30000 },
+    { name: 'S. Iyer', region: 'South', outstandingCollected: 520000, newOutstandingAssigned: 280000, netChange: 240000 },
+    { name: 'K. Rao', region: 'South', outstandingCollected: 410000, newOutstandingAssigned: 390000, netChange: 20000 },
+    { name: 'A. Das', region: 'East', outstandingCollected: 290000, newOutstandingAssigned: 310000, netChange: -20000 },
+    { name: 'B. Chatterjee', region: 'East', outstandingCollected: 330000, newOutstandingAssigned: 290000, netChange: 40000 },
+    { name: 'P. Patel', region: 'West', outstandingCollected: 610000, newOutstandingAssigned: 450000, netChange: 160000 },
+    { name: 'V. Mehta', region: 'West', outstandingCollected: 580000, newOutstandingAssigned: 510000, netChange: 70000 },
 ];
 
 export const users: User[] = [
     // North Region
-    { id: 'MGR01', name: 'Anjali Verma', email: 'anjali.verma@example.com', role: 'Manager', region: 'North', department: 'Batching Plant', contact: '9876543210' },
-    { id: 'ENG01', name: 'R. Sharma', email: 'r.sharma@example.com', role: 'Engineer', region: 'North', department: 'Batching Plant', contact: '9876543211' },
-    { id: 'ENG02', name: 'S. Gupta', email: 's.gupta@example.com', role: 'Engineer', region: 'North', department: 'Batching Plant', contact: '9876543212' },
+    { id: 'MGR01', name: 'Anjali Verma', email: 'anjali.verma@example.com', role: 'Manager', region: 'North', contact: '9876543210' },
+    { id: 'ENG01', name: 'R. Sharma', email: 'r.sharma@example.com', role: 'Engineer', region: 'North', contact: '9876543211' },
+    { id: 'ENG02', name: 'S. Gupta', email: 's.gupta@example.com', role: 'Engineer', region: 'North', contact: '9876543212' },
     // South Region
-    { id: 'MGR02', name: 'Baskar Sundaram', email: 'baskar.s@example.com', role: 'Manager', region: 'South', department: 'Pump', contact: '9876543213' },
-    { id: 'ENG03', name: 'S. Iyer', email: 's.iyer@example.com', role: 'Engineer', region: 'South', department: 'Pump', contact: '9876543214' },
-    { id: 'ENG04', name: 'K. Rao', email: 'k.rao@example.com', role: 'Engineer', region: 'South', department: 'Batching Plant', contact: '9876543215' },
+    { id: 'MGR02', name: 'Baskar Sundaram', email: 'baskar.s@example.com', role: 'Manager', region: 'South', contact: '9876543213' },
+    { id: 'ENG03', name: 'S. Iyer', email: 's.iyer@example.com', role: 'Engineer', region: 'South', contact: '9876543214' },
+    { id: 'ENG04', name: 'K. Rao', email: 'k.rao@example.com', role: 'Engineer', region: 'South', contact: '9876543215' },
     // East Region
-    { id: 'MGR03', name: 'Priya Das', email: 'priya.das@example.com', role: 'Manager', region: 'East', department: 'Pump', contact: '9876543216' },
-    { id: 'ENG05', name: 'A. Das', email: 'a.das@example.com', role: 'Engineer', region: 'East', department: 'Pump', contact: '9876543217' },
-    { id: 'ENG06', name: 'B. Chatterjee', email: 'b.chatterjee@example.com', role: 'Engineer', region: 'East', department: 'Pump', contact: '9876543218' },
+    { id: 'MGR03', name: 'Priya Das', email: 'priya.das@example.com', role: 'Manager', region: 'East', contact: '9876543216' },
+    { id: 'ENG05', name: 'A. Das', email: 'a.das@example.com', role: 'Engineer', region: 'East', contact: '9876543217' },
+    { id: 'ENG06', name: 'B. Chatterjee', email: 'b.chatterjee@example.com', role: 'Engineer', region: 'East', contact: '9876543218' },
     // West Region
-    { id: 'MGR04', name: 'Rajesh Patil', email: 'rajesh.patil@example.com', role: 'Manager', region: 'West', department: 'Pump', contact: '9876543219' },
-    { id: 'ENG07', name: 'P. Patel', email: 'p.patel@example.com', role: 'Engineer', region: 'West', department: 'Pump', contact: '9876543220' },
-    { id: 'ENG08', name: 'V. Mehta', email: 'v.mehta@example.com', role: 'Engineer', region: 'West', department: 'Pump', contact: '9876543221' },
+    { id: 'MGR04', name: 'Rajesh Patil', email: 'rajesh.patil@example.com', role: 'Manager', region: 'West', contact: '9876543219' },
+    { id: 'ENG07', name: 'P. Patel', email: 'p.patel@example.com', role: 'Engineer', region: 'West', contact: '9876543220' },
+    { id: 'ENG08', name: 'V. Mehta', email: 'v.mehta@example.com', role: 'Engineer', region: 'West', contact: '9876543221' },
 ];

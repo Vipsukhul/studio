@@ -49,7 +49,6 @@ export default function TeamHierarchyPage() {
                 <TableHead>User</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Region</TableHead>
-                <TableHead>Department</TableHead>
                 <TableHead>Contact</TableHead>
               </TableRow>
             </TableHeader>
@@ -72,7 +71,6 @@ export default function TeamHierarchyPage() {
                     <Badge variant="secondary">{user.role}</Badge>
                   </TableCell>
                   <TableCell>{user.region}</TableCell>
-                  <TableCell>{user.department}</TableCell>
                   <TableCell>{user.contact}</TableCell>
                 </TableRow>
               ))}
