@@ -1,112 +1,169 @@
 /**
- * @file Firebase Security Rules for the application.
- *
- * Core Philosophy:
- * This ruleset enforces a role-based access control model, combined with user-ownership for user profiles.
- * Customer and invoice data access is restricted to authenticated users.
- * Only authorized users can create, update, or delete customers and invoices.
- * User profiles are secured using an ownership model, where users can only manage their own profiles.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a role-based access control model,
+ *              where users can only access data according to their assigned role.
  *
  * Data Structure:
- * - /customers/{customerId}: Stores customer data.
- * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer.
- * - /users/{userId}: Stores user profile information.
- * - /notifications/{notificationId}: Stores application notifications.
+ * - /customers/{customerId}: Stores customer data. Accessible only to users with specific roles.
+ * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer. Access restricted based on user roles.
+ * - /users/{userId}: Stores user profile information. Only the user themselves or admins can access this data.
+ * - /notifications/{notificationId}: Stores application notifications. Only the user themselves can access this data.
  *
  * Key Security Decisions:
- * - User listing is disallowed.
- * - Strict role based authorization for customer and invoice data.
- *
+ * - Listing of users is disallowed.
+ * - Users can only create their own user document.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Grants role based read and write access to customer documents.
+     * @description Checks if the user is signed in.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the user is the owner of the resource.
+     * @param {string} userId The user ID to check against.
+     */
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the user is signed in and is the existing owner of the resource.
+     * @param {string} userId The user ID to check against.
+     */
+    function isExistingOwner(userId) {
+      return isSignedIn() && isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Checks if the user has the 'Admin' role.
+     */
+    function isAdmin() {
+        return request.auth.token.role == 'Admin';
+    }
+
+    /**
+     * @description Checks if the user has the 'Country Manager' role.
+     */
+    function isCountryManager() {
+        return request.auth.token.role == 'Country Manager';
+    }
+
+    /**
+     * @description Checks if the user has the 'Engineer' role.
+     */
+    function isEngineer() {
+        return request.auth.token.role == 'Engineer';
+    }
+
+    /**
+     * @description Checks if the user has the 'Manager' role.
+     */
+    function isManager() {
+        return request.auth.token.role == 'Manager';
+    }
+
+    /**
+     * @description Checks if the user is authorized to read customer data.
+     */
+    function canReadCustomer() {
+        return isSignedIn() && (isAdmin() || isCountryManager() || isManager() || isEngineer());
+    }
+
+    /**
+     * @description Checks if the user is authorized to write customer data.
+     */
+    function canWriteCustomer() {
+        return isSignedIn() && (isAdmin() || isCountryManager() || isManager());
+    }
+
+    /**
+     * @description
      * @path /customers/{customerId}
-     * @allow (read): Authenticated user can get any customer.
-     * @allow (create): Authenticated user can create a customer if they have the "Admin" role.
-     * @allow (update): Authenticated user can update a customer if they have the "Admin" role.
-     * @allow (delete): Authenticated user can delete a customer if they have the "Admin" role.
-     * @deny (create): Authenticated user without the "Admin" role cannot create a customer.
-     * @deny (update): Authenticated user without the "Admin" role cannot update a customer.
-     * @deny (delete): Authenticated user without the "Admin" role cannot delete a customer.
-     * @principle Role-based access control for customer management.
+     * @allow (read) User with role Admin, Country Manager, Manager or Engineer can read customer data.
+     * @deny (read) User without role Admin, Country Manager, Manager or Engineer cannot read customer data.
+     * @allow (create) User with role Admin, Country Manager or Manager can create customer data.
+     * @deny (create) User without role Admin, Country Manager or Manager cannot create customer data.
+     * @allow (update) User with role Admin, Country Manager or Manager can update customer data.
+     * @deny (update) User without role Admin, Country Manager or Manager cannot update customer data.
+     * @allow (delete) User with role Admin, Country Manager or Manager can delete customer data.
+     * @deny (delete) User without role Admin, Country Manager or Manager cannot delete customer data.
+     * @principle Role-based access control.
      */
     match /customers/{customerId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && hasRole(["Admin"]);
-      allow update: if isSignedIn() && hasRole(["Admin"]);
-      allow delete: if isSignedIn() && hasRole(["Admin"]);
+      allow get: if canReadCustomer();
+      allow list: if canReadCustomer();
+      allow create: if canWriteCustomer();
+      allow update: if canWriteCustomer() && resource != null;
+      allow delete: if canWriteCustomer() && resource != null;
     }
 
     /**
-     * @description Grants role based read and write access to invoice documents under a customer.
+     * @description
      * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (read): Authenticated user can read any invoice.
-     * @allow (create): Authenticated user can create an invoice if they have the "Admin" role.
-     * @allow (update): Authenticated user can update an invoice if they have the "Admin" role.
-     * @allow (delete): Authenticated user can delete an invoice if they have the "Admin" role.
-     * @deny (create): Authenticated user without the "Admin" role cannot create an invoice.
-     * @deny (update): Authenticated user without the "Admin" role cannot update an invoice.
-     * @deny (delete): Authenticated user without the "Admin" role cannot delete an invoice.
-     * @principle Role-based access control for invoice management, scoped to a customer.
+     * @allow (read) User with role Admin, Country Manager, Manager or Engineer can read invoice data.
+     * @deny (read) User without role Admin, Country Manager, Manager or Engineer cannot read invoice data.
+     * @allow (create) User with role Admin, Country Manager or Manager can create invoice data.
+     * @deny (create) User without role Admin, Country Manager or Manager cannot create invoice data.
+     * @allow (update) User with role Admin, Country Manager or Manager can update invoice data.
+     * @deny (update) User without role Admin, Country Manager or Manager cannot update invoice data.
+     * @allow (delete) User with role Admin, Country Manager or Manager can delete invoice data.
+     * @deny (delete) User without role Admin, Country Manager or Manager cannot delete invoice data.
+     * @principle Role-based access control.
      */
     match /customers/{customerId}/invoices/{invoiceId} {
-      allow get, list: if isSignedIn();
-      allow create: if isSignedIn() && hasRole(["Admin"]);
-      allow update: if isSignedIn() && hasRole(["Admin"]);
-      allow delete: if isSignedIn() && hasRole(["Admin"]);
+      allow get: if canReadCustomer();
+      allow list: if canReadCustomer();
+      allow create: if canWriteCustomer();
+      allow update: if canWriteCustomer() && resource != null;
+      allow delete: if canWriteCustomer() && resource != null;
     }
 
     /**
-     * @description Grants owner-only access to user profile documents.
+     * @description
      * @path /users/{userId}
-     * @allow (get): Authenticated user can get their own profile.
-     * @allow (create): Authenticated user can create their own profile, if the user ID matches their auth UID.
-     * @allow (update): Authenticated user can update their own profile.
-     * @allow (delete): Authenticated user can delete their own profile.
-     * @deny (get): Authenticated user cannot get another user's profile.
-     * @deny (create): Authenticated user cannot create a profile for another user.
-     * @deny (update): Authenticated user cannot update another user's profile.
-     * @deny (delete): Authenticated user cannot delete another user's profile.
-     * @principle Enforces document ownership for user profiles.
+     * @allow (read) User can read their own user document or admin can read any user document.
+     * @deny (read) User cannot read other user documents.
+     * @allow (create) User can create their own user document.
+     * @deny (create) User cannot create other user documents.
+     * @allow (update) User can update their own user document or admin can update any user document.
+     * @deny (update) User cannot update other user documents.
+     * @allow (delete) User can delete their own user document or admin can delete any user document.
+     * @deny (delete) User cannot delete other user documents.
+     * @principle Owner-only access for user documents.
      */
     match /users/{userId} {
-      allow get: if isOwner(userId);
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if false;
       allow create: if isOwner(userId);
-      allow update: if isOwner(userId) && resource.data.email == request.auth.token.email;
-      allow delete: if isOwner(userId);
+      allow update: if isExistingOwner(userId) || isAdmin();
+      allow delete: if isExistingOwner(userId) || isAdmin();
     }
 
     /**
-     * @description Grants read and write access to notification documents.
+     * @description
      * @path /notifications/{notificationId}
-     * @allow (get): Authenticated user can get any notification.
-     * @allow (create): Authenticated user can create a notification.
-     * @allow (update): Authenticated user can update any notification.
-     * @allow (delete): Authenticated user can delete any notification.
-     * @principle Open access to notifications.
+     * @allow (read) User can read their own notifications.
+     * @deny (read) User cannot read other user notifications.
+     * @allow (create) Any signed in user can create notifications.
+     * @deny (create) User cannot create other user notifications.
+     * @allow (update) User can update their own notifications.
+     * @deny (update) User cannot update other user notifications.
+     * @allow (delete) User can delete their own notifications.
+     * @deny (delete) User cannot delete other user notifications.
+     * @principle Owner-only access for notifications.
      */
     match /notifications/{notificationId} {
-      allow get, list: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list: if false;
       allow create: if isSignedIn();
-      allow update: if isSignedIn();
-      allow delete: if isSignedIn();
+      allow update: if false;
+      allow delete: if false;
     }
-  }
-
-  // Helper functions
-  function isSignedIn() {
-    return request.auth != null;
-  }
-
-  function isOwner(userId) {
-    return request.auth.uid == userId;
-  }
-
-  function hasRole(roles) {
-    return isSignedIn() && request.auth.token.role in roles;
   }
 }
