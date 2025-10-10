@@ -2,53 +2,52 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { collection, query, where, orderBy, doc, updateDoc } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Notification } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { getNotifications, markNotificationAsRead } from '@/lib/notifications';
+import { Button } from '@/components/ui/button';
 
 export default function NotificationsPage() {
     const [userRole, setUserRole] = useState<string | null>(null);
-    const firestore = useFirestore();
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const role = localStorage.getItem('userRole') || '';
         setUserRole(role);
+        setNotifications(getNotifications(role));
+        setLoading(false);
     }, []);
 
-    const notificationsQuery = useMemoFirebase(() => {
-        if (!firestore || !userRole) return null;
-        
-        return query(
-            collection(firestore, 'notifications'),
-            where('to', 'in', ['all', userRole]),
-            orderBy('timestamp', 'desc')
-        );
-    }, [firestore, userRole]);
-
-    const { data: notifications, isLoading: loading } = useCollection<Notification>(notificationsQuery);
-
-    const handleNotificationClick = async (notificationId?: string) => {
-        if (!notificationId || !firestore) return;
-        const notificationRef = doc(firestore, 'notifications', notificationId);
-        try {
-            await updateDoc(notificationRef, { isRead: true });
-        } catch (error) {
-            console.error("Error marking notification as read:", error);
+    const handleNotificationClick = (notificationId?: string) => {
+        if (!notificationId) return;
+        markNotificationAsRead(notificationId);
+        // Force a re-render to update the UI
+        if(userRole) {
+            setNotifications([...getNotifications(userRole)]);
         }
     };
+    
+    const refreshNotifications = () => {
+        if(userRole) {
+            setNotifications(getNotifications(userRole));
+        }
+    }
 
     return (
         <>
-            <h1 className="text-3xl font-headline font-bold">Notifications</h1>
+            <div className="flex items-center justify-between">
+              <h1 className="text-3xl font-headline font-bold">Notifications</h1>
+              <Button onClick={refreshNotifications} variant="outline">Refresh</Button>
+            </div>
             <Card>
                 <CardHeader>
                     <CardTitle>Your Recent Alerts</CardTitle>
                     <CardDescription>
-                        Here are the latest updates and alerts for you.
+                        Here are the latest updates and alerts for you. These will clear if you refresh the page.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
