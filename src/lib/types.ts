@@ -1,3 +1,4 @@
+
 export interface Outstanding {
   id?: string;
   invoiceId?: string;
@@ -102,14 +103,14 @@ export interface EngineerPerformance {
 }
 
 export interface Notification {
-  id: number;
+  id?: string;
   from: {
     name: string;
     role: string;
   };
   to: string; // "all", "Manager", "Country Manager"
   message: string;
-  timestamp: string;
+  timestamp: string; // ISO string
   isRead: boolean;
 }
 

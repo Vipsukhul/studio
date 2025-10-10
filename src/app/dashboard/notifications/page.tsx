@@ -1,36 +1,41 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { collection, query, where, orderBy } from 'firebase/firestore';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { getNotifications, markNotificationAsRead } from '@/lib/notifications';
+import { markNotificationAsRead } from '@/lib/notifications';
 import type { Notification } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 
 export default function NotificationsPage() {
-    const [notifications, setNotifications] = useState<Notification[]>([]);
-    const [loading, setLoading] = useState(true);
+    const [userRole, setUserRole] = useState<string | null>(null);
+    const firestore = useFirestore();
 
     useEffect(() => {
-        async function loadNotifications() {
-            setLoading(true);
-            const userRole = localStorage.getItem('userRole') || '';
-            const data = await getNotifications(userRole);
-            setNotifications(data);
-            setLoading(false);
-        }
-        loadNotifications();
+        const role = localStorage.getItem('userRole') || '';
+        setUserRole(role);
     }, []);
 
-    const handleNotificationClick = async (notificationId: number) => {
-        // Mark as read on the backend (simulated)
-        await markNotificationAsRead(notificationId);
-        // Update the state locally
-        setNotifications(prev => 
-            prev.map(n => n.id === notificationId ? { ...n, isRead: true } : n)
+    const notificationsQuery = useMemoFirebase(() => {
+        if (!firestore || !userRole) return null;
+        
+        return query(
+            collection(firestore, 'notifications'),
+            where('to', 'in', ['all', userRole]),
+            orderBy('timestamp', 'desc')
         );
+    }, [firestore, userRole]);
+
+    const { data: notifications, isLoading: loading } = useCollection<Notification>(notificationsQuery);
+
+    const handleNotificationClick = async (notificationId?: string) => {
+        if (!notificationId) return;
+        // The useCollection hook will update the UI automatically
+        await markNotificationAsRead(notificationId);
     };
 
     return (
@@ -48,7 +53,7 @@ export default function NotificationsPage() {
                         <div className="flex items-center justify-center h-48">
                             <div className="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-primary"></div>
                         </div>
-                    ) : notifications.length > 0 ? (
+                    ) : notifications && notifications.length > 0 ? (
                         <div className="space-y-2">
                             {notifications.map((notif) => (
                                 <div

@@ -1,3 +1,4 @@
+
 {
   "entities": {
     "Customer": {
@@ -87,6 +88,25 @@
           "contact": {"type": "string"}
       },
       "required": ["name", "email", "role", "region", "department"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "type": "object",
+      "description": "Represents a user notification.",
+      "properties": {
+        "from": {
+          "type": "object",
+          "properties": {
+            "name": {"type": "string"},
+            "role": {"type": "string"}
+          }
+        },
+        "to": {"type": "string"},
+        "message": {"type": "string"},
+        "timestamp": {"type": "string", "format": "date-time"},
+        "isRead": {"type": "boolean"}
+      },
+      "required": ["from", "to", "message", "timestamp", "isRead"]
     }
   },
   "auth": {
@@ -106,6 +126,10 @@
     "/users/{userId}": {
         "schema": {"$ref": "#/entities/User"},
         "description": "Stores user profile information."
+    },
+    "/notifications/{notificationId}": {
+        "schema": {"$ref": "#/entities/Notification"},
+        "description": "Stores application notifications."
     }
   }
 }
