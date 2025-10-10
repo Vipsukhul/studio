@@ -14,7 +14,8 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { departmentOptions } from '@/lib/data';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
-import { login } from '@/lib/api';
+import { useAuth, useUser } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -25,19 +26,17 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [isUserLoading, setIsUserLoading] = useState(true);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
+  
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
-    // Check if user is already logged in
-    const token = localStorage.getItem('token');
-    if (token) {
-      // For simplicity, we just redirect. A real app would verify the token.
+    // If user is already logged in, redirect to dashboard
+    if (!isUserLoading && user) {
       router.push('/dashboard');
-    } else {
-      setIsUserLoading(false);
     }
-  }, [router]);
+  }, [user, isUserLoading, router]);
 
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -45,11 +44,12 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const { token, user } = await login(email, password, department);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
       
-      localStorage.setItem('token', token);
-      localStorage.setItem('user', JSON.stringify(user));
-      localStorage.setItem('userRole', user.role);
+      // We don't need to store token manually. Firebase SDK handles session.
+      // We can fetch user details from our Firestore DB if needed, but for now
+      // let's just store the department preference.
+      
       localStorage.setItem('department', department);
       localStorage.setItem('financialYear', '2024-2025');
 
@@ -60,11 +60,11 @@ export default function LoginPage() {
 
       setShowInstallDialog(true);
 
-    } catch (error) {
+    } catch (error: any) {
       toast({
         variant: 'destructive',
         title: 'Login Failed',
-        description: (error as Error).message || 'An unexpected error occurred.',
+        description: error.message || 'An unexpected error occurred.',
       });
     } finally {
         setIsLoading(false);
@@ -76,7 +76,7 @@ export default function LoginPage() {
     router.push('/dashboard');
   }
 
-  if (isUserLoading) {
+  if (isUserLoading || (!isUserLoading && user)) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
@@ -94,7 +94,7 @@ export default function LoginPage() {
         <Card className="w-full max-w-sm">
           <CardHeader>
             <CardTitle className="text-2xl font-headline">Login</CardTitle>
-            <CardDescription>Enter your credentials below to login. (Hint: vipsukhul@gmail.com / password)</CardDescription>
+            <CardDescription>Enter your credentials below to login. (Hint: engineer@example.com / password)</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="grid gap-4">

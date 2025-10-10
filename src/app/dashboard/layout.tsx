@@ -34,6 +34,9 @@ import { useEffect, useState } from 'react';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { GoToTop } from '@/components/ui/go-to-top';
+import { useAuth, useUser as useFirebaseUser, useDoc, useFirestore } from '@/firebase';
+import type { User } from '@/lib/types';
+import { doc } from 'firebase/firestore';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -52,17 +55,21 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { user: firebaseUser, isUserLoading } = useFirebaseUser();
+  
+  const userDocRef = firebaseUser ? doc(firestore, 'users', firebaseUser.uid) : null;
+  const { data: userProfile } = useDoc<User>(userDocRef);
+
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   
   useEffect(() => {
-    const role = localStorage.getItem('userRole');
-    if (!role) {
+    if (!isUserLoading && !firebaseUser) {
       router.replace('/');
       return;
     }
-    setUserRole(role);
     
     const handleStorageChange = () => {
       const storedUrl = localStorage.getItem('profileImageUrl');
@@ -75,14 +82,16 @@ export default function DashboardLayout({
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, [router]);
+  }, [isUserLoading, firebaseUser, router]);
 
+  const userRole = userProfile?.role;
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
     return item.roles.includes(userRole || '');
   });
 
   const handleLogout = async () => {
+    await auth.signOut();
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
@@ -91,7 +100,15 @@ export default function DashboardLayout({
     router.replace('/');
   };
 
-  const userInitial = 'U';
+  if (isUserLoading || !userProfile) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+      </div>
+    );
+  }
+
+  const userInitial = userProfile?.name?.charAt(0) || 'U';
 
   return (
     <>
@@ -159,7 +176,7 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src={profileImageUrl || `https://picsum.photos/seed/user/32/32`} />
+                  <AvatarImage src={profileImageUrl || `https://picsum.photos/seed/${firebaseUser?.uid}/32/32`} />
                   <AvatarFallback>{userInitial}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>

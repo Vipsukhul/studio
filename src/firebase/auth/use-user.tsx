@@ -18,12 +18,19 @@ export interface UseUserResult {
  * @param {Auth} auth - The Firebase Auth instance.
  * @returns {UseUserResult} Object with user, isLoading, error.
  */
-export function useUser(auth: Auth): UseUserResult {
-  const [user, setUser] = useState<User | null>(auth.currentUser);
+export function useUser(auth: Auth | null): UseUserResult {
+  const [user, setUser] = useState<User | null>(auth?.currentUser ?? null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
 
   useEffect(() => {
+    if (!auth) {
+      setUser(null);
+      setIsLoading(false);
+      setError(new Error("Firebase Auth instance is not available."));
+      return;
+    }
+    
     // Set initial state based on synchronous check
     const currentUser = auth.currentUser;
     setUser(currentUser);

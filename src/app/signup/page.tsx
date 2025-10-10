@@ -13,6 +13,11 @@ import { Logo } from '@/components/logo';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { regionOptions, departmentOptions } from '@/lib/data';
 import { Eye, EyeOff } from 'lucide-react';
+import { useAuth, useFirestore } from '@/firebase';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import type { User } from '@/lib/types';
+
 
 const roleOptions = [
     { value: 'Country Manager', label: 'Country Manager' },
@@ -32,8 +37,10 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!region || !role || !department) {
         toast({
@@ -45,16 +52,40 @@ export default function SignupPage() {
     }
     setIsLoading(true);
     
-    // Simulate signup
-    setTimeout(() => {
-        console.log('New user:', { name, email, region, role, contact, department });
+    try {
+      // 1. Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+
+      // 2. Create user profile in Firestore
+      const userProfile: Omit<User, 'id'> = {
+        name,
+        email,
+        contact,
+        role: role as User['role'],
+        region: region as User['region'],
+        department: department as User['department'],
+      };
+
+      const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+      await setDoc(userDocRef, userProfile);
+
+      toast({
+        title: 'Signup Successful',
+        description: "Your account has been created. Redirecting to login...",
+      });
+
+      router.push('/');
+
+    } catch (error: any) {
         toast({
-          title: 'Signup Successful',
-          description: "Your account has been created. Redirecting to login...",
+            variant: 'destructive',
+            title: 'Signup Failed',
+            description: error.message || 'An unexpected error occurred.',
         });
+    } finally {
         setIsLoading(false);
-        router.push('/');
-    }, 1500)
+    }
   };
 
 
