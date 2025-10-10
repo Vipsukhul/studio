@@ -24,6 +24,7 @@ import {
   Upload,
   Bell,
   Download,
+  Users,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
@@ -37,6 +38,7 @@ const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
   { href: '/dashboard/invoice-tracker', label: 'Invoice Tracker', icon: LineChart },
   { href: '/dashboard/data-sheet', label: 'Data Sheet', icon: SheetIcon },
+  { href: '/dashboard/team-hierarchy', label: 'Team Hierarchy', icon: Users },
   { href: '/dashboard/upload-data', label: 'Upload Data', icon: Upload, roles: ['Country Manager', 'Admin'] },
   { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
   { href: '/dashboard/settings', label: 'Settings', icon: Settings },

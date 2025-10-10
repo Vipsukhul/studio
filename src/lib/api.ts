@@ -9,8 +9,9 @@ import {
   engineers,
   outstandingRecoveryTrend,
   engineerPerformance,
+  users,
 } from './data';
-import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, EngineerPerformance } from './types';
+import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, EngineerPerformance, User } from './types';
 import { createNotification } from './notifications';
 
 // Simulate a delay to mimic network latency
@@ -298,4 +299,12 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
   const localImageUrl = URL.createObjectURL(file);
   console.log('Simulated upload complete. Image URL:', localImageUrl);
   return localImageUrl;
+}
+
+/**
+ * Simulates fetching all users (managers and engineers).
+ */
+export async function getUsers(): Promise<User[]> {
+  await delay(300);
+  return users;
 }

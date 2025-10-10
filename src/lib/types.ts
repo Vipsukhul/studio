@@ -112,3 +112,13 @@ export interface Notification {
   timestamp: string;
   isRead: boolean;
 }
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: 'Manager' | 'Engineer' | 'Country Manager' | 'Admin';
+  region: 'North' | 'South' | 'East' | 'West';
+  department: 'Batching Plant' | 'Pump';
+  contact: string;
+}

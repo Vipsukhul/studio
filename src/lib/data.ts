@@ -1,4 +1,4 @@
-import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, Engineer, Invoice, OutstandingRecoveryTrend, LogEntry, EngineerPerformance } from './types';
+import { Customer, InvoiceTrackerData, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, Engineer, Invoice, OutstandingRecoveryTrend, LogEntry, EngineerPerformance, User } from './types';
 
 export const kpis: Kpi[] = [
   {
@@ -171,4 +171,23 @@ export const engineerPerformance: EngineerPerformance[] = [
     { name: 'B. Chatterjee', region: 'East', department: 'Pump', outstandingCollected: 330000, newOutstandingAssigned: 290000, netChange: 40000 },
     { name: 'P. Patel', region: 'West', department: 'Pump', outstandingCollected: 610000, newOutstandingAssigned: 450000, netChange: 160000 },
     { name: 'V. Mehta', region: 'West', department: 'Pump', outstandingCollected: 580000, newOutstandingAssigned: 510000, netChange: 70000 },
+];
+
+export const users: User[] = [
+    // North Region
+    { id: 'MGR01', name: 'Anjali Verma', email: 'anjali.verma@example.com', role: 'Manager', region: 'North', department: 'Batching Plant', contact: '9876543210' },
+    { id: 'ENG01', name: 'R. Sharma', email: 'r.sharma@example.com', role: 'Engineer', region: 'North', department: 'Batching Plant', contact: '9876543211' },
+    { id: 'ENG02', name: 'S. Gupta', email: 's.gupta@example.com', role: 'Engineer', region: 'North', department: 'Batching Plant', contact: '9876543212' },
+    // South Region
+    { id: 'MGR02', name: 'Baskar Sundaram', email: 'baskar.s@example.com', role: 'Manager', region: 'South', department: 'Pump', contact: '9876543213' },
+    { id: 'ENG03', name: 'S. Iyer', email: 's.iyer@example.com', role: 'Engineer', region: 'South', department: 'Pump', contact: '9876543214' },
+    { id: 'ENG04', name: 'K. Rao', email: 'k.rao@example.com', role: 'Engineer', region: 'South', department: 'Batching Plant', contact: '9876543215' },
+    // East Region
+    { id: 'MGR03', name: 'Priya Das', email: 'priya.das@example.com', role: 'Manager', region: 'East', department: 'Pump', contact: '9876543216' },
+    { id: 'ENG05', name: 'A. Das', email: 'a.das@example.com', role: 'Engineer', region: 'East', department: 'Pump', contact: '9876543217' },
+    { id: 'ENG06', name: 'B. Chatterjee', email: 'b.chatterjee@example.com', role: 'Engineer', region: 'East', department: 'Pump', contact: '9876543218' },
+    // West Region
+    { id: 'MGR04', name: 'Rajesh Patil', email: 'rajesh.patil@example.com', role: 'Manager', region: 'West', department: 'Pump', contact: '9876543219' },
+    { id: 'ENG07', name: 'P. Patel', email: 'p.patel@example.com', role: 'Engineer', region: 'West', department: 'Pump', contact: '9876543220' },
+    { id: 'ENG08', name: 'V. Mehta', email: 'v.mehta@example.com', role: 'Engineer', region: 'West', department: 'Pump', contact: '9876543221' },
 ];
