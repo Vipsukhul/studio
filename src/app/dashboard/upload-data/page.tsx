@@ -101,28 +101,34 @@ export default function UploadDataPage() {
           <form onSubmit={handleSubmit}>
             <CardContent className="grid gap-6">
               <div className="grid sm:grid-cols-2 gap-4">
-                 <div className="grid gap-2">
-                    <Select value={financialYear} onValueChange={setFinancialYear}>
-                        <SelectTrigger>
-                           <CalendarDays className="h-4 w-4 text-muted-foreground mr-2" />
-                           <SelectValue placeholder="Select FY" />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {financialYearOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
+                <div className="grid gap-2">
+                  <Label htmlFor="financialYear">Financial Year</Label>
+                  <Select value={financialYear} onValueChange={setFinancialYear}>
+                    <SelectTrigger id="financialYear">
+                      <CalendarDays className="h-4 w-4 text-muted-foreground mr-2" />
+                      <SelectValue placeholder="Select FY" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {financialYearOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="grid gap-2">
+                  <Label htmlFor="month">Month</Label>
                   <Select value={month} onValueChange={setMonth}>
-                    <SelectTrigger>
+                    <SelectTrigger id="month">
                       <CalendarDays className="h-4 w-4 text-muted-foreground mr-2" />
                       <SelectValue placeholder="Select Month" />
                     </SelectTrigger>
                     <SelectContent>
-                      {monthOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      {monthOptions.map((option) => (
+                        <SelectItem key={option.value} value={option.value}>
+                          {option.label}
+                        </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
