@@ -12,9 +12,40 @@ import {
 } from './data';
 import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, User } from './types';
 import { createNotification } from './notifications';
+import jwt from 'jsonwebtoken';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
+
+const mockUsersCredentials = {
+  'vipsukhul@gmail.com': { password: 'password', role: 'Country Manager', department: 'Batching Plant' },
+  'manager@example.com': { password: 'password', role: 'Manager', department: 'Pump' },
+  'engineer@example.com': { password: 'password', role: 'Engineer', department: 'Batching Plant' },
+};
+
+
+export async function login(email: string, password: string, department: string) {
+  await delay(1000);
+  // @ts-ignore
+  const userCredentials = mockUsersCredentials[email];
+
+  if (userCredentials && userCredentials.password === password) {
+    const user = {
+      id: email,
+      name: email.split('@')[0],
+      role: userCredentials.role,
+      department: department,
+    };
+    
+    // In a real backend, you'd use a secret from an env variable
+    const token = jwt.sign(user, 'your-super-secret-key', { expiresIn: '1h' });
+    
+    return { token, user };
+  } else {
+    throw new Error('Invalid email or password.');
+  }
+}
+
 
 /**
  * Simulates fetching all dashboard data.
@@ -237,8 +268,10 @@ export async function getOutstandingRecoveryTrend(department: string, financialY
  */
 export async function getEngineerPerformanceData(department: string = 'Batching Plant', financialYear: string = '2024-2025'): Promise<EngineerPerformance[]> {
   await delay(500);
+  // @ts-ignore
+  const { engineerPerformance } = await import('./data');
   console.log(`Fetching engineer performance for department: ${department} and FY: ${financialYear}`);
-  return engineerPerformance.filter(item => item.department === department);
+  return engineerPerformance.filter((item: any) => item.department === department);
 }
 
 /**

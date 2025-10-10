@@ -14,6 +14,7 @@ import { Eye, EyeOff } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { departmentOptions } from '@/lib/data';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
+import { login } from '@/lib/api';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -24,58 +25,50 @@ export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
   
-  const [user, setUser] = useState<object | null>(null);
   const [isUserLoading, setIsUserLoading] = useState(true);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
 
   useEffect(() => {
-    const checkUser = setTimeout(() => {
-      setIsUserLoading(false);
-    }, 1000);
-
-    return () => clearTimeout(checkUser);
-  }, []);
-
-
-  useEffect(() => {
-    if (!isUserLoading && user) {
+    // Check if user is already logged in
+    const token = localStorage.getItem('token');
+    if (token) {
+      // For simplicity, we just redirect. A real app would verify the token.
       router.push('/dashboard');
+    } else {
+      setIsUserLoading(false);
     }
-  }, [user, isUserLoading, router]);
+  }, [router]);
 
-  const handleSubmit = (e: React.FormEvent) => {
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    setTimeout(() => {
-      const loginSuccess = (role: string, userEmail: string) => {
-        toast({
-            title: 'Login Successful',
-            description: "Welcome back! You're being redirected to your dashboard.",
-        });
-        localStorage.setItem('userRole', role);
-        localStorage.setItem('department', department);
-        // Default financial year
-        localStorage.setItem('financialYear', '2024-2025');
-        // Don't set user, which causes redirection. Instead, show dialog.
-        setShowInstallDialog(true);
-      };
+    try {
+      const { token, user } = await login(email, password, department);
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(user));
+      localStorage.setItem('userRole', user.role);
+      localStorage.setItem('department', department);
+      localStorage.setItem('financialYear', '2024-2025');
 
-      if (email === 'vipsukhul@gmail.com' && password === 'password') {
-        loginSuccess('Country Manager', 'vipsukhul@gmail.com');
-      } else if (email === 'manager@example.com' && password === 'password') {
-        loginSuccess('Manager', 'manager@example.com');
-      } else if (email === 'engineer@example.com' && password === 'password') {
-        loginSuccess('Engineer', 'engineer@example.com');
-      } else {
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: 'Invalid email or password for a user account.',
-        });
+      toast({
+          title: 'Login Successful',
+          description: "Welcome back! You're being redirected to your dashboard.",
+      });
+
+      setShowInstallDialog(true);
+
+    } catch (error) {
+      toast({
+        variant: 'destructive',
+        title: 'Login Failed',
+        description: (error as Error).message || 'An unexpected error occurred.',
+      });
+    } finally {
         setIsLoading(false);
-      }
-    }, 1500);
+    }
   };
   
   const handleDialogClose = () => {

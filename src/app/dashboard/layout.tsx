@@ -58,6 +58,10 @@ export default function DashboardLayout({
   
   useEffect(() => {
     const role = localStorage.getItem('userRole');
+    if (!role) {
+      router.replace('/');
+      return;
+    }
     setUserRole(role);
     
     const handleStorageChange = () => {
@@ -71,7 +75,7 @@ export default function DashboardLayout({
     return () => {
       window.removeEventListener('storage', handleStorageChange);
     };
-  }, []);
+  }, [router]);
 
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
@@ -83,9 +87,7 @@ export default function DashboardLayout({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
     });
-    localStorage.removeItem('userRole');
-    localStorage.removeItem('department');
-    localStorage.removeItem('profileImageUrl');
+    localStorage.clear();
     router.replace('/');
   };
 
@@ -178,7 +180,7 @@ export default function DashboardLayout({
             </DropdownMenuContent>
           </DropdownMenu>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background overflow-x-hidden">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
           {children}
         </main>
         <Footer />
