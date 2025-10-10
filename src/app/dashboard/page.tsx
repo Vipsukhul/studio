@@ -26,7 +26,14 @@ const kpiIcons = {
 
 function KpiCard({ kpi }: { kpi: Kpi }) {
   const isIncrease = kpi.changeType === 'increase';
-  const badgeVariant = isIncrease ? 'destructive' : 'default';
+  
+  let badgeVariant: 'destructive' | 'default' = 'default';
+  if (kpi.label === 'Recovered Amount') {
+    badgeVariant = isIncrease ? 'default' : 'destructive';
+  } else {
+    badgeVariant = isIncrease ? 'destructive' : 'default';
+  }
+  
   // @ts-ignore
   const Icon = kpiIcons[kpi.label] || IndianRupee;
 
