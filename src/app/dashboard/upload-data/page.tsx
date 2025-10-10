@@ -1,19 +1,30 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { monthOptions } from '@/lib/data';
-import { UploadCloud, File, X } from 'lucide-react';
+import { generateMonthOptions, financialYearOptions } from '@/lib/data';
+import { UploadCloud, File, X, CalendarDays } from 'lucide-react';
 import { processAndUploadFile } from '@/lib/api';
 
 export default function UploadDataPage() {
-  const [month, setMonth] = useState('Apr-25');
+  const [financialYear, setFinancialYear] = useState('2024-2025');
+  const monthOptions = useMemo(() => generateMonthOptions(financialYear), [financialYear]);
+  const [month, setMonth] = useState(monthOptions[0].value);
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  
+  useEffect(() => {
+    const storedFinancialYear = localStorage.getItem('financialYear');
+    if (storedFinancialYear) {
+      setFinancialYear(storedFinancialYear);
+       const newMonthOptions = generateMonthOptions(storedFinancialYear);
+       setMonth(newMonthOptions[0].value);
+    }
+  }, []);
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
@@ -85,21 +96,37 @@ export default function UploadDataPage() {
         <Card className="w-full max-w-2xl">
           <CardHeader>
             <CardTitle>Upload Outstanding Data</CardTitle>
-            <CardDescription>Select the month and upload the corresponding Excel file (.xlsx).</CardDescription>
+            <CardDescription>Select the financial year and month, then upload the corresponding Excel file (.xlsx).</CardDescription>
           </CardHeader>
           <form onSubmit={handleSubmit}>
             <CardContent className="grid gap-6">
-              <div className="grid gap-2">
-                <Select value={month} onValueChange={setMonth}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Month" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {monthOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid sm:grid-cols-2 gap-4">
+                 <div className="grid gap-2">
+                    <Select value={financialYear} onValueChange={setFinancialYear}>
+                        <SelectTrigger>
+                           <CalendarDays className="h-4 w-4 text-muted-foreground mr-2" />
+                           <SelectValue placeholder="Select FY" />
+                        </SelectTrigger>
+                        <SelectContent>
+                        {financialYearOptions.map(option => (
+                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                        ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+                <div className="grid gap-2">
+                  <Select value={month} onValueChange={setMonth}>
+                    <SelectTrigger>
+                      <CalendarDays className="h-4 w-4 text-muted-foreground mr-2" />
+                      <SelectValue placeholder="Select Month" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {monthOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
 
               <div

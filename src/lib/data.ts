@@ -96,18 +96,35 @@ export const customers: Customer[] = [
     { customerCode: 'CUST007', customerName: 'Nexus Enterprises', region: 'South', department: 'Batching Plant', agePeriod: '181-365', outstandingAmount: 95000, invoices: generateInvoices(2, 'unpaid'), remarks: 'under follow-up', notes: '', assignedEngineer: 'K. Rao' },
 ];
 
-export const monthOptions = [
-    { value: 'Apr-25', label: 'April 2025' },
-    { value: 'May-25', label: 'May 2025' },
-    { value: 'Jun-25', label: 'June 2025' },
-    { value: 'Jul-25', label: 'July 2025' },
-];
 
 export const financialYearOptions = [
     { value: '2024-2025', label: 'FY 2024-25' },
     { value: '2023-2024', label: 'FY 2023-24' },
     { value: '2022-2023', label: 'FY 2022-23' },
 ];
+
+export function generateMonthOptions(financialYear: string) {
+  const [startYear, endYear] = financialYear.split('-').map(Number);
+  const shortEndYear = endYear % 100;
+  const shortStartYear = startYear % 100;
+
+  const months = [
+    { value: `Apr-${shortStartYear}`, label: `Apr-${shortStartYear}` },
+    { value: `May-${shortStartYear}`, label: `May-${shortStartYear}` },
+    { value: `Jun-${shortStartYear}`, label: `Jun-${shortStartYear}` },
+    { value: `Jul-${shortStartYear}`, label: `Jul-${shortStartYear}` },
+    { value: `Aug-${shortStartYear}`, label: `Aug-${shortStartYear}` },
+    { value: `Sep-${shortStartYear}`, label: `Sep-${shortStartYear}` },
+    { value: `Oct-${shortStartYear}`, label: `Oct-${shortStartYear}` },
+    { value: `Nov-${shortStartYear}`, label: `Nov-${shortStartYear}` },
+    { value: `Dec-${shortStartYear}`, label: `Dec-${shortStartYear}` },
+    { value: `Jan-${shortEndYear}`, label: `Jan-${shortEndYear}` },
+    { value: `Feb-${shortEndYear}`, label: `Feb-${shortEndYear}` },
+    { value: `Mar-${shortEndYear}`, label: `Mar-${shortEndYear}` },
+  ];
+  return months;
+};
+
 
 export const regionOptions = [
     { value: 'All', label: 'All Regions' },

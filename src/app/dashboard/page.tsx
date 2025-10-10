@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
@@ -9,7 +9,7 @@ import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
 import { OutstandingRecoveryChart } from '@/components/charts/outstanding-recovery-chart';
-import { monthOptions, regionOptions, departmentOptions, financialYearOptions } from '@/lib/data';
+import { generateMonthOptions, regionOptions, departmentOptions, financialYearOptions } from '@/lib/data';
 import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
 import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
@@ -73,10 +73,13 @@ export default function DashboardPage() {
   } | null>(null);
   const [recoveryData, setRecoveryData] = useState<OutstandingRecoveryTrend[] | null>(null);
   const [loading, setLoading] = useState(true);
-  const [month, setMonth] = useState('Apr-25');
+  
+  const [financialYear, setFinancialYear] = useState('2024-2025');
+  const monthOptions = useMemo(() => generateMonthOptions(financialYear), [financialYear]);
+  const [month, setMonth] = useState(monthOptions[0].value);
+
   const [region, setRegion] = useState('All');
   const [department, setDepartment] = useState('Batching Plant');
-  const [financialYear, setFinancialYear] = useState('2024-2025');
   const [isClient, setIsClient] = useState(false);
   const [userRole, setUserRole] = useState<string | null>(null);
 
@@ -85,15 +88,28 @@ export default function DashboardPage() {
     const storedDepartment = localStorage.getItem('department');
     const storedFinancialYear = localStorage.getItem('financialYear');
     const storedRole = localStorage.getItem('userRole');
+
     if (storedDepartment) setDepartment(storedDepartment);
-    if (storedFinancialYear) setFinancialYear(storedFinancialYear);
     if (storedRole) setUserRole(storedRole);
+    
+    if (storedFinancialYear) {
+      setFinancialYear(storedFinancialYear);
+      const newMonthOptions = generateMonthOptions(storedFinancialYear);
+      setMonth(newMonthOptions[0].value);
+    } else {
+       setMonth(monthOptions[0].value);
+    }
+
 
      const handleStorageChange = () => {
         const storedDept = localStorage.getItem('department');
         const storedFY = localStorage.getItem('financialYear');
         if (storedDept) setDepartment(storedDept);
-        if (storedFY) setFinancialYear(storedFY);
+        if (storedFY) {
+            setFinancialYear(storedFY);
+            const newMonthOptions = generateMonthOptions(storedFY);
+            setMonth(newMonthOptions[0].value);
+        }
     };
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
@@ -124,6 +140,8 @@ export default function DashboardPage() {
   const handleFinancialYearChange = (newFinancialYear: string) => {
     setFinancialYear(newFinancialYear);
     localStorage.setItem('financialYear', newFinancialYear);
+    const newMonthOptions = generateMonthOptions(newFinancialYear);
+    setMonth(newMonthOptions[0].value); // Reset month to the first month of the new FY
     window.dispatchEvent(new Event('storage'));
   };
 
