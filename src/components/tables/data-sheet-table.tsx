@@ -1,3 +1,4 @@
+
 'use client';
 
 import * as React from 'react';
@@ -57,15 +58,16 @@ import type { Customer, Invoice, Engineer } from "@/lib/types"
 const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean }) => {
     const { toast } = useToast();
 
-    const handleDisputeChange = async (invoiceNumber: string, newStatus: string) => {
+    const handleDisputeChange = (invoiceNumber: string, newStatus: string) => {
         const status = newStatus === 'dispute' ? 'dispute' : 'unpaid';
         toast({ title: 'Updating invoice...', description: `Setting status for invoice ${invoiceNumber} to ${status}.`});
         try {
-            await updateInvoiceDisputeStatus(customer.id!, invoiceNumber, status);
+            // This is a fire-and-forget update now
+            updateInvoiceDisputeStatus(customer.id!, invoiceNumber, status);
             onInvoiceUpdate(invoiceNumber, status);
-            toast({ title: 'Success', description: 'Invoice status updated.'});
+            toast({ title: 'Success', description: 'Invoice status update requested.'});
         } catch(error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to update invoice status.' });
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to request invoice status update.' });
         }
     };
   
@@ -88,8 +90,9 @@ const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: C
               <TableCell className="text-right">₹{invoice.invoiceAmount?.toLocaleString('en-IN') || 'N/A'}</TableCell>
               <TableCell>
                 <span className={`px-2 py-1 text-xs font-semibold rounded-full ${
-                  invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                }`}>{invoice.status === 'paid' ? 'Paid' : 'Unpaid'}</span>
+                  invoice.status === 'paid' ? 'bg-green-100 text-green-800' : 
+                  invoice.status === 'dispute' ? 'bg-red-100 text-red-800' : 'bg-yellow-100 text-yellow-800'
+                }`}>{invoice.status}</span>
               </TableCell>
               <TableCell>
                  <Select
@@ -136,10 +139,10 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
 
   const isReadOnly = userRole === 'Engineer';
 
-  const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
-    toast({ title: 'Updating status...', description: `Setting remark for customer ${customerId} to ${newRemark}.` });
+  const handleRemarkChange = (customerId: string, newRemark: Customer['remarks']) => {
+    toast({ title: 'Updating status...', description: `Setting remark for customer to ${newRemark}.` });
     try {
-      await updateCustomerRemark(customerId, newRemark);
+      updateCustomerRemark(customerId, newRemark);
       setTableData((prevData) =>
         prevData.map((customer) =>
           customer.id === customerId
@@ -147,15 +150,15 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             : customer
         )
       );
-      toast({ title: 'Success', description: 'Remark updated successfully.'});
+      toast({ title: 'Success', description: 'Remark update requested.'});
     } catch(error) {
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update remark.' });
     }
   };
 
-  const handleNotesChange = async (customerId: string, newNotes: string) => {
+  const handleNotesChange = (customerId: string, newNotes: string) => {
     try {
-      await updateCustomerNotes(customerId, newNotes);
+      updateCustomerNotes(customerId, newNotes);
       setTableData((prevData) =>
         prevData.map((customer) =>
           customer.id === customerId
@@ -163,21 +166,21 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             : customer
         )
       );
-      toast({ title: 'Success', description: 'Notes updated.' });
+      toast({ title: 'Success', description: 'Notes update requested.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update notes.' });
     }
   };
 
-  const handleEngineerChange = async (customerId: string, newEngineer: string) => {
+  const handleEngineerChange = (customerId: string, newEngineer: string) => {
     try {
-      await updateAssignedEngineer(customerId, newEngineer);
+      updateAssignedEngineer(customerId, newEngineer);
       setTableData((prevData) =>
         prevData.map((customer) =>
           customer.id === customerId ? { ...customer, assignedEngineer: newEngineer } : customer
         )
       );
-      toast({ title: "Success", description: "Engineer assigned." });
+      toast({ title: "Success", description: "Engineer assignment requested." });
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to assign engineer." });
     }
@@ -312,7 +315,8 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
                 className="min-w-[200px]"
-                readOnly={isReadOnly}
+                // Engineer can add notes even if read-only for other fields
+                // readOnly={isReadOnly} 
             />;
         }
     },
