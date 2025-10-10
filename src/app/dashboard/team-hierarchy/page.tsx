@@ -19,12 +19,27 @@ interface RegionHierarchy {
 export default function TeamHierarchyPage() {
   const [hierarchy, setHierarchy] = React.useState<RegionHierarchy>({});
   const [loading, setLoading] = React.useState(true);
+  const [department, setDepartment] = React.useState('Batching Plant');
+
+  React.useEffect(() => {
+    const storedDepartment = localStorage.getItem('department');
+    if (storedDepartment) setDepartment(storedDepartment);
+
+    const handleStorageChange = () => {
+      const storedDept = localStorage.getItem('department');
+      if (storedDept) setDepartment(storedDept);
+    };
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
 
   React.useEffect(() => {
     async function loadData() {
       setLoading(true);
       const users = await getUsers();
-      const groupedData: RegionHierarchy = users.reduce((acc, user) => {
+      const filteredUsers = users.filter(user => user.department === department);
+      
+      const groupedData: RegionHierarchy = filteredUsers.reduce((acc, user) => {
         const region = user.region || 'Unassigned';
         if (!acc[region]) {
           acc[region] = { manager: null, engineers: [] };
@@ -36,11 +51,12 @@ export default function TeamHierarchyPage() {
         }
         return acc;
       }, {} as RegionHierarchy);
+      
       setHierarchy(groupedData);
       setLoading(false);
     }
     loadData();
-  }, []);
+  }, [department]);
 
   if (loading) {
     return (
@@ -53,7 +69,9 @@ export default function TeamHierarchyPage() {
   return (
     <>
       <h1 className="text-3xl font-headline font-bold">Team Hierarchy</h1>
-      <p className="text-muted-foreground">Organizational structure of managers and engineers by region.</p>
+      <p className="text-muted-foreground">
+        Organizational structure for the <span className="font-semibold">{department}</span> department, grouped by region.
+      </p>
 
       <Card className="mt-6">
         <CardHeader>
@@ -89,7 +107,7 @@ export default function TeamHierarchyPage() {
                           ))}
                         </div>
                      ) : (
-                        <p className="text-muted-foreground">No engineers assigned to this region.</p>
+                        <p className="text-muted-foreground">No engineers assigned to this region for this department.</p>
                      )}
                   </div>
 
