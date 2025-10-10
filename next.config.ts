@@ -31,9 +31,6 @@ const nextConfig: NextConfig = {
       },
     ],
   },
-  devIndicators: {
-    buildActivity: false,
-  },
   experimental: {
     // allowedDevOrigins is now a top-level property
   },
