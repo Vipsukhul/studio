@@ -60,12 +60,13 @@ export default function DashboardLayout({
   const { user: firebaseUser, isUserLoading } = useFirebaseUser();
   
   const userDocRef = firebaseUser ? doc(firestore, 'users', firebaseUser.uid) : null;
-  const { data: userProfile } = useDoc<User>(userDocRef);
+  const { data: userProfile, isLoading: isProfileLoading } = useDoc<User>(userDocRef);
 
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   
   useEffect(() => {
+    // This effect now correctly handles redirection after checking both auth and profile state.
     if (!isUserLoading && !firebaseUser) {
       router.replace('/');
       return;
@@ -100,13 +101,25 @@ export default function DashboardLayout({
     router.replace('/');
   };
 
-  if (isUserLoading || !userProfile) {
+  // We show loading until BOTH the user is checked and the profile is fetched.
+  if (isUserLoading || isProfileLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
       </div>
     );
   }
+
+  // If after loading, there is still no user, it means they need to log in.
+  // The useEffect above will handle the redirection.
+  if (!firebaseUser || !userProfile) {
+     return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+      </div>
+    );
+  }
+
 
   const userInitial = userProfile?.name?.charAt(0) || 'U';
 
@@ -224,3 +237,5 @@ function NavItem({ href, label, icon: Icon, mobile = false }: { href: string; la
     </Link>
   );
 }
+
+    
