@@ -43,15 +43,6 @@ export const kpis: Kpi[] = [
   },
 ];
 
-export const outstandingByAge: OutstandingByAge[] = [
-  { region: 'North', department: 'Batching Plant', '0-30': 350000, '31-90': 220000, '91-180': 150000, '181-365': 80000, '>365': 45000, total: 845000 },
-  { region: 'South', department: 'Batching Plant', '0-30': 420000, '31-90': 280000, '91-180': 180000, '181-365': 100000, '>365': 60000, total: 1040000 },
-  { region: 'East', department: 'Pump', '0-30': 280000, '31-90': 180000, '91-180': 120000, '181-365': 60000, '>365': 30000, total: 670000 },
-  { region: 'West', department: 'Pump', '0-30': 510000, '31-90': 320000, '91-180': 210000, '181-365': 120000, '>365': 70000, total: 1230000 },
-];
-
-export const regionDistribution: RegionDistribution[] = outstandingByAge.map(d => ({ region: d.region, amount: d.total }));
-
 export const monthlyTrends: MonthlyTrend[] = [
     { month: 'Jan-24', North: 4000, West: 2400, South: 2400, East: 1800 },
     { month: 'Feb-24', North: 3000, West: 1398, South: 2210, East: 2000 },
@@ -129,6 +120,49 @@ export const customers: Customer[] = Array.from({ length: 50 }, (_, i) => {
         assignedEngineer: assignedEngineer,
     };
 });
+
+const generateOutstandingByAge = (customers: Customer[]): OutstandingByAge[] => {
+    const result: { [key: string]: OutstandingByAge } = {};
+
+    customers.forEach(customer => {
+        const key = `${customer.region}-${customer.department}`;
+        if (!result[key]) {
+            result[key] = {
+                region: customer.region,
+                department: customer.department,
+                '0-30': 0,
+                '31-90': 0,
+                '91-180': 0,
+                '181-365': 0,
+                '>365': 0,
+                total: 0
+            };
+        }
+
+        const agePeriod = customer.agePeriod || '0-30';
+        const amount = customer.outstandingAmount || 0;
+
+        if (agePeriods.includes(agePeriod)) {
+            result[key][agePeriod] += amount;
+            result[key].total += amount;
+        }
+    });
+
+    return Object.values(result);
+};
+
+export const outstandingByAge: OutstandingByAge[] = generateOutstandingByAge(customers);
+
+export const regionDistribution: RegionDistribution[] = outstandingByAge.reduce((acc, curr) => {
+    const existing = acc.find(item => item.region === curr.region);
+    if (existing) {
+        existing.amount += curr.total;
+    } else {
+        acc.push({ region: curr.region, amount: curr.total });
+    }
+    return acc;
+}, [] as RegionDistribution[]);
+
 
 export const financialYearOptions = [
     { value: '2024-2025', label: 'FY 2024-25' },
