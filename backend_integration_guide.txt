@@ -1,0 +1,176 @@
+# Backend Integration Guide for Outstanding Tracker Frontend
+
+This document provides the full technical specifications for building a Node.js/Express/MongoDB backend that is compatible with the existing Next.js frontend of the Outstanding Tracker application.
+
+## 1. Overview
+
+The frontend is built with Next.js and expects to communicate with a RESTful API. It uses a token-based authentication system (`Bearer` token in the `Authorization` header). The backend should handle all business logic, database interactions, and authentication.
+
+**Base API URL Expectation:** The frontend is configured to make requests to a base URL. For local development, this would typically be `http://localhost:5000/api`.
+
+**CORS:** The backend server must be configured to accept requests from the frontend's origin (e.g., `http://localhost:9002` in development).
+
+## 2. Authentication
+
+The frontend has a standard email/password login flow.
+
+### Login Endpoint
+
+- **Endpoint:** `POST /api/auth/login`
+- **Request Body:**
+  ```json
+  {
+    "email": "user@example.com",
+    "password": "user_password"
+  }
+  ```
+- **Success Response (200 OK):** The backend should validate the credentials, and if successful, return a JWT token and a user object.
+  ```json
+  {
+    "token": "your_jwt_token_here",
+    "user": {
+      "id": "some_user_id",
+      "name": "User Name",
+      "role": "Manager", // e.g., 'Manager', 'Engineer', 'Country Manager', 'Admin'
+      "department": "Batching Plant" // e.g., 'Batching Plant' or 'Pump'
+    }
+  }
+  ```
+- **Error Response (400/401):**
+  ```json
+  {
+    "error": "Invalid email or password."
+  }
+  ```
+
+## 3. Main Data API Endpoints
+
+These endpoints are called by the frontend to populate the dashboard, charts, and tables. They should be protected and require a valid JWT.
+
+---
+
+### **Get Dashboard Data**
+- **Endpoint:** `GET /api/dashboard`
+- **Query Parameters:** `month` (e.g., "May-25"), `department` (e.g., "Batching Plant"), `financialYear` (e.g., "2024-2025").
+- **Success Response (200 OK):** Should return a JSON object containing data for the main dashboard. The structure should match the types in `src/lib/types.ts`.
+  ```json
+  {
+    "kpis": [
+      { "label": "Total Outstanding", "value": "₹1,23,45,678", "change": "+5.2%", "description": "vs. last month" },
+      // ... other KPIs
+    ],
+    "outstandingByAge": [
+      { "region": "North", "department": "Batching Plant", "0-30": 50000, "total": 50000 /*, etc. */ },
+      // ... other regions
+    ],
+    "regionDistribution": [
+      { "region": "North", "amount": 1250000 },
+      // ... other regions
+    ],
+    "monthlyTrends": [
+      { "month": "Jan-24", "North": 4000, "West": 2400 /*, etc. */ },
+      // ... other months
+    ]
+  }
+  ```
+---
+
+### **Get Customers (for Data Sheet)**
+- **Endpoint:** `GET /api/customers`
+- **Query Parameters:** `department` (e.g., "Pump"), `financialYear` (e.g., "2024-2025").
+- **Success Response (200 OK):** Return an array of `Customer` objects. Each customer object must include an `invoices` array.
+  ```json
+  [
+    {
+      "id": "doc_id_1",
+      "customerCode": "CUST001",
+      "customerName": "Apex Innovations",
+      "region": "North",
+      "department": "Batching Plant",
+      "outstandingAmount": 150000,
+      "remarks": "under follow-up",
+      "notes": "Follow up next week",
+      "assignedEngineer": "R. Sharma",
+      "invoices": [
+        { "invoiceNumber": "INV-123", "invoiceAmount": 75000, "invoiceDate": "2024-05-15T00:00:00.000Z", "status": "unpaid" },
+        { "invoiceNumber": "INV-124", "invoiceAmount": 75000, "invoiceDate": "2024-06-01T00:00:00.000Z", "status": "unpaid" }
+      ]
+    }
+    // ... other customers
+  ]
+  ```
+---
+
+### **Get Invoice Tracker Data**
+- **Endpoint:** `GET /api/invoice-tracker`
+- **Query Parameters:** `region`, `department`, `financialYear`.
+- **Success Response (200 OK):** Return an array matching `InvoiceTrackerData`.
+  ```json
+  [
+    { "monthYear": "Apr-25", "department": "Batching Plant", "previousMonthInvoices": 520, "previousMonthAmount": 9800000, /* etc. */ }
+  ]
+  ```
+---
+
+### **Get All Users (for Team Hierarchy)**
+- **Endpoint:** `GET /api/users`
+- **Success Response (200 OK):** Return an array of all `User` objects.
+  ```json
+  [
+    { "id": "USR01", "name": "Anjali Verma", "email": "a.v@example.com", "role": "Manager", "region": "North", "department": "Batching Plant", "contact": "987..." }
+  ]
+  ```
+---
+
+## 4. Data Mutation Endpoints
+
+These endpoints handle updates from the Data Sheet page.
+
+- **Update Customer Remark:**
+  - **Endpoint:** `PUT /api/customers/:id/remark`
+  - **Request Body:** `{ "newRemark": "payment received" }`
+  - **Success Response:** `200 OK` with `{ "success": true }`
+
+- **Update Customer Notes:**
+  - **Endpoint:** `PUT /api/customers/:id/notes`
+  - **Request Body:** `{ "newNotes": "Customer promised payment by EOD." }`
+  - **Success Response:** `200 OK` with `{ "success": true }`
+
+- **Update Assigned Engineer:**
+  - **Endpoint:** `PUT /api/customers/:id/assign-engineer`
+  - **Request Body:** `{ "engineerName": "S. Gupta" }`
+  - **Success Response:** `200 OK` with `{ "success": true }`
+
+- **Update Invoice Dispute Status:**
+  - **Endpoint:** `PUT /api/customers/:customerId/invoices/:invoiceNumber/dispute`
+  - **Request Body:** `{ "newStatus": "dispute" }` (Can be 'dispute' or 'unpaid')
+  - **Success Response:** `200 OK` with `{ "success": true }`
+
+## 5. File Upload
+
+- **Endpoint:** `POST /api/upload`
+- **Request Type:** `multipart/form-data`
+- **Form Fields:**
+  - `file`: The `.xlsx` file itself.
+  - `month`: The selected month string (e.g., "May-25").
+  - `financialYear`: The selected financial year string (e.g., "2024-2025").
+- **Backend Logic:**
+  1. The backend should use a library like `multer` to handle the file stream and `xlsx` or `exceljs` to parse the Excel data.
+  2. Parse the rows into an array of invoice/customer records.
+  3. Save the parsed data to the database, associating it with the correct month and financial year.
+  4. Role-based access control should ensure only authorized roles (e.g., 'Country Manager', 'Admin') can use this endpoint.
+- **Success Response (200 OK):**
+  ```json
+  {
+    "count": 150, // Number of records processed
+    "message": "Upload successful. 150 records were processed."
+  }
+  ```
+- **Error Response (400/500):**
+  ```json
+  {
+    "error": "File processing failed: Invalid column structure."
+  }
+  ```
+
+With these specifications, you can build a backend that will seamlessly integrate with the frontend application. Good luck, my friend! Let's rock this.
