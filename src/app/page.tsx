@@ -320,7 +320,7 @@ export default function DashboardPage() {
                       <TableCell className="text-right font-bold">{row.total.toLocaleString('en-IN')}</TableCell>
                     </TableRow>
                   ))}
-                </Body>
+                </TableBody>
                 <TableFooter>
                     <TableRow className="font-bold bg-muted/50">
                         <TableCell>Grand Total</TableCell>
