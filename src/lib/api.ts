@@ -12,7 +12,7 @@ import {
   engineerPerformance,
   users as mockUsers,
 } from './data';
-import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, EngineerPerformance, User } from './types';
+import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, LogEntry, EngineerPerformance, User } from './types';
 import { createNotification } from './notifications';
 import { Firestore, collection, getDocs, doc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
 
@@ -40,7 +40,7 @@ export async function getDashboardData(month: string, department: string, financ
   const existingKpis = kpis.filter(k => k.label !== 'Total Customers');
   
   // Simple filtering for demonstration. In a real app, this would be more complex.
-  const filteredOutstandingByAge = outstandingByAge.filter(item => item.department === department);
+  const filteredOutstandingByAge = outstandingByage.filter(item => item.department === department);
   const filteredRegionDistribution = regionDistribution; // Not department-specific in mock data
   const filteredMonthlyTrends = monthlyTrends; // Not department-specific in mock data
 
@@ -156,7 +156,6 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
             return reject(new Error("Excel file is empty or could not be parsed."));
         }
         
-        // Group rows by customer code
         const customersDataMap = new Map<string, { customer: Partial<Customer>, invoices: Partial<Invoice>[] }>();
 
         jsonData.forEach(row => {
@@ -171,7 +170,8 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
                         customerName: row['Party Nam'],
                         region: row.Region,
                         outstandingAmount: 0,
-                        department: 'Batching Plant', // Defaulting department as it's not in the sheet
+                        department: 'Batching Plant',
+                        agePeriod: row.Age,
                     },
                     invoices: []
                 });
@@ -180,16 +180,14 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
             const current = customersDataMap.get(codeStr)!;
             const outstandingAmount = parseFloat(row['July.Outstg.Amt'] || 0);
             
-            // Add to total outstanding
             current.customer.outstandingAmount! += outstandingAmount;
 
-            // Add invoice if invoiceNumber is present
             const invoiceNumber = row['Inv. No'];
             if (invoiceNumber) {
                 current.invoices.push({
                     invoiceNumber: invoiceNumber.toString(),
                     invoiceAmount: parseFloat(row['Inv.Amt'] || 0),
-                    invoiceDate: new Date().toISOString(), // Defaulting date as it's not in the sheet
+                    invoiceDate: new Date().toISOString(),
                     status: 'unpaid',
                 });
             }
@@ -354,3 +352,5 @@ export async function getUsers(firestore: Firestore): Promise<User[]> {
   return userList;
 }
 
+
+    
