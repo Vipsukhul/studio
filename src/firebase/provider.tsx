@@ -6,6 +6,7 @@ import { Firestore } from 'firebase/firestore';
 import { Auth, User } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener'
 import { useUser as useAuthUserHook } from './auth/use-user';
+import { useRouter, usePathname } from 'next/navigation';
 
 interface FirebaseProviderProps {
   children: ReactNode;
