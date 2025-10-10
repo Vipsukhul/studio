@@ -166,10 +166,12 @@ export function processAndUploadFile(firestore: Firestore, file: File, month: st
             }
 
             const region = row.Region;
+            // Basic validation: skip row if Region is a number or invalid string
             if (typeof region !== 'string' || !isNaN(parseFloat(region))) {
               console.warn(`Skipping row ${index + 2} for Accode ${customerCode}: Invalid Region data '${region}'.`);
               return;
             }
+
 
             const codeStr = customerCode.toString();
             if (!customersDataMap.has(codeStr)) {
@@ -308,7 +310,7 @@ export async function getOutstandingRecoveryTrend(department: string, financialY
  * Simulates fetching engineer performance data.
  * @param department - The department to filter by.
  */
-export async function getEngineerPerformanceData(department: string, financialYear: string): Promise<EngineerPerformance[]> {
+export async function getEngineerPerformanceData(department: string = 'Batching Plant', financialYear: string = '2024-2025'): Promise<EngineerPerformance[]> {
   await delay(500);
   console.log(`Fetching engineer performance for department: ${department} and FY: ${financialYear}`);
   return engineerPerformance.filter(item => item.department === department);
@@ -370,3 +372,4 @@ export async function getUsers(firestore: Firestore): Promise<User[]> {
     
 
     
+
