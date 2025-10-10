@@ -14,7 +14,7 @@ import {
 } from './data';
 import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, EngineerPerformance, User } from './types';
 import { createNotification } from './notifications';
-import { Firestore, collection, getDocs, doc, updateDoc, setDoc } from 'firebase/firestore';
+import { Firestore, collection, getDocs, doc, updateDoc, setDoc, writeBatch } from 'firebase/firestore';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
@@ -77,8 +77,18 @@ export async function getCustomers(department: string, financialYear: string, fi
   console.log(`Fetching customers for department: ${department} and FY: ${financialYear}`);
   const customersCol = collection(firestore, 'customers');
   const customerSnapshot = await getDocs(customersCol);
-  const customerList = customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
-  return customerList.filter(c => c.department === department);
+  const customerList: Customer[] = [];
+
+  for (const customerDoc of customerSnapshot.docs) {
+    const customerData = { id: customerDoc.id, ...customerDoc.data() } as Customer;
+    if (customerData.department === department) {
+        const invoicesCol = collection(firestore, 'customers', customerDoc.id, 'invoices');
+        const invoicesSnapshot = await getDocs(invoicesCol);
+        customerData.invoices = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
+        customerList.push(customerData);
+    }
+  }
+  return customerList;
 }
 
 /**
@@ -92,15 +102,11 @@ export async function updateCustomerRemark(firestore: Firestore, customerId: str
   const customerRef = doc(firestore, 'customers', customerId);
   await updateDoc(customerRef, { remarks: newRemark });
 
-  const userRole = localStorage.getItem('userRole');
-  if (userRole === 'Manager') {
-      const customerName = 'Customer ' + customerId; // Simplified for now
-      createNotification({
-          from: { name: 'Manager', role: 'Manager' },
-          to: 'Country Manager',
-          message: `Manager updated remark for ${customerName} to "${newRemark}".`
-      });
-  }
+  createNotification({
+      from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
+      to: 'Manager',
+      message: `Remark for customer ${customerId} updated to "${newRemark}".`
+  });
 
   return { success: true };
 }
@@ -115,22 +121,18 @@ export async function updateCustomerNotes(firestore: Firestore, customerId: stri
   const customerRef = doc(firestore, 'customers', customerId);
   await updateDoc(customerRef, { notes: newNotes });
   
-  const userRole = localStorage.getItem('userRole');
-  if (userRole === 'Engineer') {
-      const customerName = 'Customer ' + customerId; // Simplified for now
-      createNotification({
-          from: { name: 'Engineer', role: 'Engineer' },
-          to: 'Manager',
-          message: `Engineer added new notes for ${customerName}.`
-      });
-  }
+  createNotification({
+      from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
+      to: 'Manager',
+      message: `Notes updated for customer ${customerId}.`
+  });
 
   return { success: true };
 }
 
 
 /**
- * Processes an uploaded Excel file and saves the data to Firestore.
+ * Processes an uploaded Excel file, groups by customer, and saves the aggregated data to Firestore.
  * @param file - The Excel file to process.
  */
 export async function processAndUploadFile(firestore: Firestore, file: File, month: string): Promise<{ count: number; data: any[] }> {
@@ -151,39 +153,69 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
         if (jsonData.length === 0) {
             return reject(new Error("Excel file is empty or could not be parsed."));
         }
+        
+        // Group rows by customer code
+        const customersDataMap = new Map<string, { customer: Partial<Customer>, invoices: Partial<Invoice>[] }>();
 
-        const uploadPromises = jsonData.map(async (row) => {
+        jsonData.forEach(row => {
             const customerCode = row.customerCode || row['Customer Code'];
-            if (!customerCode) {
-                console.warn('Skipping row due to missing customer code:', row);
-                return; // Skip rows without a customer code
+            if (!customerCode) return;
+
+            const codeStr = customerCode.toString();
+            if (!customersDataMap.has(codeStr)) {
+                customersDataMap.set(codeStr, {
+                    customer: {
+                        customerCode: codeStr,
+                        customerName: row.customerName || row['Customer Name'],
+                        region: row.region || row['Region'],
+                        department: row.department || row['Department'],
+                        outstandingAmount: 0, // Will be calculated
+                    },
+                    invoices: []
+                });
             }
 
-            const customerRef = doc(firestore, 'customers', customerCode.toString());
-            const customerData: Partial<Customer> = {
-                customerCode: customerCode.toString(),
-                customerName: row.customerName || row['Customer Name'],
-                region: row.region || row['Region'],
-                department: row.department || row['Department'],
-                outstandingAmount: row.outstandingAmount || row['Outstanding Amount'] || 0,
-                remarks: row.remarks || 'none',
-                notes: row.notes || '',
-                assignedEngineer: row.assignedEngineer || '',
-            };
+            const current = customersDataMap.get(codeStr)!;
+            const outstandingAmount = parseFloat(row.outstandingAmount || row['Outstanding Amount'] || 0);
+            
+            // Add to total outstanding
+            current.customer.outstandingAmount! += outstandingAmount;
 
-            // Use setDoc with merge: true to create or update.
-            return setDoc(customerRef, customerData, { merge: true });
+            // Add invoice if invoiceNumber is present
+            const invoiceNumber = row.invoiceNumber || row['Invoice Number'];
+            if (invoiceNumber) {
+                current.invoices.push({
+                    invoiceNumber: invoiceNumber.toString(),
+                    invoiceAmount: outstandingAmount,
+                    invoiceDate: row.invoiceDate ? new Date(row.invoiceDate).toISOString() : new Date().toISOString(),
+                    status: row.status || 'unpaid',
+                });
+            }
         });
 
-        await Promise.all(uploadPromises);
+        const batch = writeBatch(firestore);
+
+        for (const [code, data] of customersDataMap.entries()) {
+            const customerRef = doc(firestore, 'customers', code);
+            batch.set(customerRef, data.customer, { merge: true });
+
+            data.invoices.forEach(invoice => {
+                if (invoice.invoiceNumber) {
+                    const invoiceRef = doc(firestore, 'customers', code, 'invoices', invoice.invoiceNumber);
+                    batch.set(invoiceRef, invoice, { merge: true });
+                }
+            });
+        }
+        
+        await batch.commit();
 
         createNotification({
-            from: { name: 'Country Manager', role: 'Country Manager' },
+            from: { name: 'System', role: 'System' },
             to: 'all',
-            message: `The data sheet for ${month} has been updated with ${jsonData.length} records.`
+            message: `The data sheet for ${month} has been updated with ${customersDataMap.size} customer records.`
         });
         
-        resolve({ count: jsonData.length, data: jsonData });
+        resolve({ count: customersDataMap.size, data: Array.from(customersDataMap.values()) });
       } catch (error) {
         console.error("Error processing file:", error);
         reject(error);
@@ -218,15 +250,11 @@ export async function updateAssignedEngineer(firestore: Firestore, customerId: s
     const customerRef = doc(firestore, 'customers', customerId);
     await updateDoc(customerRef, { assignedEngineer: engineerName });
     
-    const userRole = localStorage.getItem('userRole');
-    if (userRole === 'Manager') {
-        const customerName = 'Customer ' + customerId;
-        createNotification({
-            from: { name: 'Manager', role: 'Manager' },
-            to: 'Country Manager',
-            message: `Manager assigned ${engineerName} to ${customerName}.`
-        });
-    }
+    createNotification({
+        from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
+        to: 'Manager',
+        message: `Assigned ${engineerName} to customer ${customerId}.`
+    });
     
     return { success: true };
 }
@@ -242,6 +270,12 @@ export async function updateInvoiceDisputeStatus(firestore: Firestore, customerI
   
   const invoiceRef = doc(firestore, 'customers', customerId, 'invoices', invoiceNumber);
   await setDoc(invoiceRef, { status: newStatus }, { merge: true });
+  
+  createNotification({
+      from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
+      to: 'Manager',
+      message: `Status for invoice ${invoiceNumber} updated to ${newStatus}.`
+  });
   
   return { success: true };
 }
