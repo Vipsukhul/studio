@@ -240,7 +240,7 @@ export default function DashboardPage() {
               <CardTitle>Region-wise Distribution</CardTitle>
             </CardHeader>
             <CardContent className="overflow-x-auto">
-              <div className="min-w-[400px]">
+               <div className="min-w-[400px] md:min-w-0">
                 {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
                     <RegionPieChart data={regionDistribution} />
                 </ChartContainer>}
