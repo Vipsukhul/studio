@@ -131,12 +131,6 @@ export default function DashboardPage() {
     }
   }, [month, department, financialYear]);
 
-  const handleDepartmentChange = (newDepartment: string) => {
-    setDepartment(newDepartment);
-    localStorage.setItem('department', newDepartment);
-    window.dispatchEvent(new Event('storage'));
-  };
-
   const handleFinancialYearChange = (newFinancialYear: string) => {
     setFinancialYear(newFinancialYear);
     localStorage.setItem('financialYear', newFinancialYear);
@@ -202,21 +196,6 @@ export default function DashboardPage() {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
         <div className="flex flex-wrap items-center gap-4">
-            {userRole === 'Country Manager' && (
-                <div className="flex items-center gap-2">
-                    <Building className="h-5 w-5 text-muted-foreground" />
-                    <Select value={department} onValueChange={handleDepartmentChange}>
-                        <SelectTrigger className="w-full sm:w-[180px]">
-                            <SelectValue placeholder="Select Department" />
-                        </SelectTrigger>
-                        <SelectContent>
-                        {departmentOptions.map(option => (
-                            <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                        ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-            )}
              <div className="flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-muted-foreground" />
                 <Select value={financialYear} onValueChange={handleFinancialYearChange}>
@@ -258,8 +237,8 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Region vs. Ageing</CardTitle>
             </CardHeader>
-            <CardContent>
-              {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
+            <CardContent className="overflow-x-auto">
+              {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] min-w-[600px] w-full">
                 <AgeBarChart data={filteredAgeData} />
               </ChartContainer>}
             </CardContent>
@@ -268,8 +247,8 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Region-wise Distribution</CardTitle>
             </CardHeader>
-            <CardContent>
-              {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
+            <CardContent className="overflow-x-auto">
+              {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] min-w-[400px] w-full">
                   <RegionPieChart data={regionDistribution} />
               </ChartContainer>}
             </CardContent>
@@ -281,8 +260,8 @@ export default function DashboardPage() {
               <CardHeader>
                   <CardTitle>Month-wise Outstanding Trend</CardTitle>
               </CardHeader>
-              <CardContent>
-                  {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
+              <CardContent className="overflow-x-auto">
+                  {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] min-w-[600px] w-full">
                       <MonthlyLineChart data={monthlyTrends} />
                   </ChartContainer>}
               </CardContent>
@@ -291,8 +270,8 @@ export default function DashboardPage() {
               <CardHeader>
                   <CardTitle>New vs. Recovered Outstanding</CardTitle>
               </CardHeader>
-              <CardContent>
-                  {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full">
+              <CardContent className="overflow-x-auto">
+                  {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] min-w-[600px] w-full">
                       <OutstandingRecoveryChart data={recoveryData} />
                   </ChartContainer>}
               </CardContent>
