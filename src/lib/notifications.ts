@@ -1,15 +1,15 @@
 
 import { collection, addDoc, doc, updateDoc } from 'firebase/firestore';
-import { getSdks } from '@/firebase';
+import { initializeFirebase } from '@/firebase';
 import type { Notification } from './types';
 
-const { firestore } = getSdks();
 
 /**
  * Creates a new notification and adds it to our in-memory store.
  * @param notificationData - The data for the new notification.
  */
 export async function createNotification(notificationData: Omit<Notification, 'id' | 'timestamp' | 'isRead'>) {
+    const { firestore } = initializeFirebase();
     const notificationsCollection = collection(firestore, 'notifications');
     const newNotification = {
         ...notificationData,
@@ -29,6 +29,7 @@ export async function createNotification(notificationData: Omit<Notification, 'i
  * @param notificationId The ID of the notification to mark as read.
  */
 export async function markNotificationAsRead(notificationId: string): Promise<{ success: boolean }> {
+    const { firestore } = initializeFirebase();
     const notificationRef = doc(firestore, 'notifications', notificationId);
     try {
         await updateDoc(notificationRef, { isRead: true });
