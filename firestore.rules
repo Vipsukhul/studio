@@ -1,169 +1,147 @@
 /**
  * @file Firestore Security Rules
- * @description This ruleset enforces a role-based access control model,
- *              where users can only access data according to their assigned role.
+ * @version 2
  *
- * Data Structure:
- * - /customers/{customerId}: Stores customer data. Accessible only to users with specific roles.
- * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer. Access restricted based on user roles.
- * - /users/{userId}: Stores user profile information. Only the user themselves or admins can access this data.
- * - /notifications/{notificationId}: Stores application notifications. Only the user themselves can access this data.
+ * @description This ruleset enforces a role-based access control model with user-owned data.
+ * Data is organized into top-level collections for customers, invoices (nested under customers), users, and notifications.
  *
- * Key Security Decisions:
+ * @data_structure
+ * - /customers/{customerId}: Customer data. Accessible only to admins and country managers who share the same region as the customer.
+ * - /customers/{customerId}/invoices/{invoiceId}: Invoice data for a specific customer. Accessible only to admins and country managers who share the same region as the customer.
+ * - /users/{userId}: User profile data. Accessible only to the user and admins.
+ * - /notifications/{notificationId}: Notification data. Accessible only to the recipient user.
+ *
+ * @key_security_decisions
+ * - Users can only read and write their own profile data.
  * - Listing of users is disallowed.
- * - Users can only create their own user document.
+ * - Customer and invoice data is restricted to admins and country managers with matching regions.
+ * - Notifications are private and only accessible to the intended recipient.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the user is signed in.
-     */
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    /**
-     * @description Checks if the user is the owner of the resource.
-     * @param {string} userId The user ID to check against.
-     */
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    /**
-     * @description Checks if the user is signed in and is the existing owner of the resource.
-     * @param {string} userId The user ID to check against.
-     */
-    function isExistingOwner(userId) {
-      return isSignedIn() && isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Checks if the user has the 'Admin' role.
-     */
-    function isAdmin() {
-        return request.auth.token.role == 'Admin';
-    }
-
-    /**
-     * @description Checks if the user has the 'Country Manager' role.
-     */
-    function isCountryManager() {
-        return request.auth.token.role == 'Country Manager';
-    }
-
-    /**
-     * @description Checks if the user has the 'Engineer' role.
-     */
-    function isEngineer() {
-        return request.auth.token.role == 'Engineer';
-    }
-
-    /**
-     * @description Checks if the user has the 'Manager' role.
-     */
-    function isManager() {
-        return request.auth.token.role == 'Manager';
-    }
-
-    /**
-     * @description Checks if the user is authorized to read customer data.
-     */
-    function canReadCustomer() {
-        return isSignedIn() && (isAdmin() || isCountryManager() || isManager() || isEngineer());
-    }
-
-    /**
-     * @description Checks if the user is authorized to write customer data.
-     */
-    function canWriteCustomer() {
-        return isSignedIn() && (isAdmin() || isCountryManager() || isManager());
-    }
-
-    /**
-     * @description
+     * @description Manages access to customer data. Only admins and country managers who share the same region can access customer data.
      * @path /customers/{customerId}
-     * @allow (read) User with role Admin, Country Manager, Manager or Engineer can read customer data.
-     * @deny (read) User without role Admin, Country Manager, Manager or Engineer cannot read customer data.
-     * @allow (create) User with role Admin, Country Manager or Manager can create customer data.
-     * @deny (create) User without role Admin, Country Manager or Manager cannot create customer data.
-     * @allow (update) User with role Admin, Country Manager or Manager can update customer data.
-     * @deny (update) User without role Admin, Country Manager or Manager cannot update customer data.
-     * @allow (delete) User with role Admin, Country Manager or Manager can delete customer data.
-     * @deny (delete) User without role Admin, Country Manager or Manager cannot delete customer data.
-     * @principle Role-based access control.
+     * @allow (read) User with role "Admin" or "Country Manager" and matching region.
+     * @allow (create, update, delete) User with role "Admin" or "Country Manager" and matching region.
+     * @deny (read) User without role "Admin" or "Country Manager" or without matching region.
+     * @deny (create, update, delete) User without role "Admin" or "Country Manager" or without matching region.
+     * @principle Enforces role-based access control with region matching.
      */
     match /customers/{customerId} {
-      allow get: if canReadCustomer();
-      allow list: if canReadCustomer();
-      allow create: if canWriteCustomer();
-      allow update: if canWriteCustomer() && resource != null;
-      allow delete: if canWriteCustomer() && resource != null;
+      allow get: if isAdminOrCountryManagerWithMatchingRegion();
+      allow list: if isAdminOrCountryManagerWithMatchingRegion();
+      allow create: if isAdminOrCountryManagerWithMatchingRegion();
+      allow update: if isAdminOrCountryManagerWithMatchingRegion();
+      allow delete: if isAdminOrCountryManagerWithMatchingRegion();
     }
 
     /**
-     * @description
+     * @description Manages access to invoice data for a specific customer. Only admins and country managers who share the same region can access invoice data.
      * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (read) User with role Admin, Country Manager, Manager or Engineer can read invoice data.
-     * @deny (read) User without role Admin, Country Manager, Manager or Engineer cannot read invoice data.
-     * @allow (create) User with role Admin, Country Manager or Manager can create invoice data.
-     * @deny (create) User without role Admin, Country Manager or Manager cannot create invoice data.
-     * @allow (update) User with role Admin, Country Manager or Manager can update invoice data.
-     * @deny (update) User without role Admin, Country Manager or Manager cannot update invoice data.
-     * @allow (delete) User with role Admin, Country Manager or Manager can delete invoice data.
-     * @deny (delete) User without role Admin, Country Manager or Manager cannot delete invoice data.
-     * @principle Role-based access control.
+     * @allow (read) User with role "Admin" or "Country Manager" and matching region.
+     * @allow (create, update, delete) User with role "Admin" or "Country Manager" and matching region.
+     * @deny (read) User without role "Admin" or "Country Manager" or without matching region.
+     * @deny (create, update, delete) User without role "Admin" or "Country Manager" or without matching region.
+     * @principle Enforces role-based access control with region matching.
      */
     match /customers/{customerId}/invoices/{invoiceId} {
-      allow get: if canReadCustomer();
-      allow list: if canReadCustomer();
-      allow create: if canWriteCustomer();
-      allow update: if canWriteCustomer() && resource != null;
-      allow delete: if canWriteCustomer() && resource != null;
+      allow get: if isAdminOrCountryManagerWithMatchingRegion();
+      allow list: if isAdminOrCountryManagerWithMatchingRegion();
+      allow create: if isAdminOrCountryManagerWithMatchingRegion();
+      allow update: if isAdminOrCountryManagerWithMatchingRegion();
+      allow delete: if isAdminOrCountryManagerWithMatchingRegion();
     }
 
     /**
-     * @description
+     * @description Manages access to user profile data. Users can only read and write their own profile data. Admins can read and write all user profiles.
      * @path /users/{userId}
-     * @allow (read) User can read their own user document or admin can read any user document.
-     * @deny (read) User cannot read other user documents.
-     * @allow (create) User can create their own user document.
-     * @deny (create) User cannot create other user documents.
-     * @allow (update) User can update their own user document or admin can update any user document.
-     * @deny (update) User cannot update other user documents.
-     * @allow (delete) User can delete their own user document or admin can delete any user document.
-     * @deny (delete) User cannot delete other user documents.
-     * @principle Owner-only access for user documents.
+     * @allow (read) User is the owner or has "Admin" role.
+     * @allow (create) User is the owner (self-creation).
+     * @allow (update, delete) User is the owner or has "Admin" role.
+     * @deny (read) User is not the owner and doesn't have "Admin" role.
+     * @deny (create) User is not the owner (mismatched userId).
+     * @deny (update, delete) User is not the owner and doesn't have "Admin" role.
+     * @principle Enforces document ownership and admin override.
      */
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isExistingOwner(userId) || isAdmin();
-      allow delete: if isExistingOwner(userId) || isAdmin();
+      allow create: if isOwner(userId) && request.resource.data.email == request.auth.token.email;
+      allow update: if isOwner(userId) || isAdmin();
+      allow delete: if isOwner(userId) || isAdmin();
     }
 
     /**
-     * @description
+     * @description Manages access to notification data. Only the recipient user can access their notifications.
      * @path /notifications/{notificationId}
-     * @allow (read) User can read their own notifications.
-     * @deny (read) User cannot read other user notifications.
-     * @allow (create) Any signed in user can create notifications.
-     * @deny (create) User cannot create other user notifications.
-     * @allow (update) User can update their own notifications.
-     * @deny (update) User cannot update other user notifications.
-     * @allow (delete) User can delete their own notifications.
-     * @deny (delete) User cannot delete other user notifications.
-     * @principle Owner-only access for notifications.
+     * @allow (read) User is the recipient of the notification.
+     * @allow (create) Always denied (notifications should be created via backend).
+     * @allow (update, delete) Always denied (notifications should be managed via backend).
+     * @deny (read) User is not the recipient of the notification.
+     * @deny (create) All users.
+     * @deny (update, delete) All users.
+     * @principle Enforces recipient-only access for notifications.
      */
     match /notifications/{notificationId} {
-      allow get: if isSignedIn();
-      allow list: if false;
-      allow create: if isSignedIn();
+      allow get: if request.auth.uid == resource.data.to;
+      allow list: if request.auth.uid == resource.data.to;
+      allow create: if false;
       allow update: if false;
       allow delete: if false;
     }
   }
+
+  // --- Helper functions ---
+
+  /**
+   * @description Checks if the user is signed in.
+   * @return {bool} True if the user is signed in, false otherwise.
+   */
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  /**
+   * @description Checks if the user is the owner of the document.
+   * @param {string} userId The user ID to check against.
+   * @return {bool} True if the user is the owner, false otherwise.
+   */
+  function isOwner(userId) {
+    return isSignedIn() && request.auth.uid == userId;
+  }
+
+  /**
+   * @description Checks if the user has the "Admin" role.
+   * @return {bool} True if the user has the "Admin" role, false otherwise.
+   */
+  function isAdmin() {
+    return isSignedIn() && request.auth.token.role == "Admin";
+  }
+
+    /**
+   * @description Checks if the user has the "Country Manager" role.
+   * @return {bool} True if the user has the "Country Manager" role, false otherwise.
+   */
+  function isCountryManager() {
+    return isSignedIn() && request.auth.token.role == "Country Manager";
+  }
+
+    /**
+   * @description Checks if the user has the "Engineer" role.
+   * @return {bool} True if the user has the "Engineer" role, false otherwise.
+   */
+    function isEngineer() {
+      return isSignedIn() && request.auth.token.role == "Engineer";
+    }
+
+    /**
+     * @description Checks if the user is an Admin or a Country Manager and if the user's region matches the customer's region.
+     * @return {bool} True if the user is an Admin or Country Manager and regions match, false otherwise.
+     */
+    function isAdminOrCountryManagerWithMatchingRegion() {
+      return isSignedIn() && (isAdmin() || isCountryManager()) && request.auth.token.region == resource.data.region;
+    }
 }

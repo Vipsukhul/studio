@@ -23,13 +23,6 @@ export async function createNotification(firestore: Firestore, notificationData:
 }
 
 /**
- * Retrieves all notifications relevant to the user role.
- * This function is now superseded by the real-time `useCollection` hook on the page.
- * It can be kept for non-real-time use cases or removed.
- */
-// export function getNotifications(userRole: string): Notification[] { ... }
-
-/**
  * Marks a single notification as read in the Firestore database.
  * @param firestore - The Firestore instance.
  * @param notificationId The ID of the notification to mark as read.
