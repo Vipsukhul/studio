@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDown, ArrowUp, Building, CalendarDays, Users } from 'lucide-react';
+import { ArrowDown, ArrowUp, Building, CalendarDays, Users, FileText, IndianRupee } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
@@ -14,17 +14,27 @@ import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
 import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
 
+const kpiIcons = {
+    'Total Outstanding': IndianRupee,
+    'Recovered Amount': IndianRupee,
+    'New Outstanding': IndianRupee,
+    'Total Invoices': FileText,
+    'Disputed Invoices': FileText,
+    'Total Customers': Users,
+};
+
+
 function KpiCard({ kpi }: { kpi: Kpi }) {
   const isIncrease = kpi.changeType === 'increase';
   const badgeVariant = isIncrease ? 'destructive' : 'default';
+  // @ts-ignore
+  const Icon = kpiIcons[kpi.label] || IndianRupee;
 
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-sm font-medium">{kpi.label}</CardTitle>
-        {kpi.label === 'Total Customers' ? <Users className="h-4 w-4 text-muted-foreground" /> : (
-            kpi.change && (isIncrease ? <ArrowUp className="h-4 w-4 text-destructive" /> : <ArrowDown className="h-4 w-4 text-green-600" />)
-        )}
+        <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold">{kpi.value}</div>
@@ -211,7 +221,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
         {kpis.map((kpi) => (
           <KpiCard key={kpi.label} kpi={kpi} />
         ))}

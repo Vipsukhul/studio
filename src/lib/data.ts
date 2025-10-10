@@ -15,7 +15,21 @@ export const kpis: Kpi[] = [
     changeType: 'increase',
     description: 'cleared this month',
   },
-   {
+  {
+    label: 'New Outstanding',
+    value: '₹15,00,000',
+    change: '+8.5%',
+    changeType: 'increase',
+    description: 'this month',
+  },
+  {
+    label: 'Total Invoices',
+    value: '540',
+    change: '+20',
+    changeType: 'increase',
+    description: 'from last month',
+  },
+  {
     label: 'Disputed Invoices',
     value: '15',
     change: '+3',
