@@ -9,6 +9,7 @@ import type { InvoiceTrackerData, Customer } from '@/lib/types';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { regionOptions } from '@/lib/data';
 import { getInvoiceTrackerData, getCustomers } from '@/lib/api';
+import { useFirestore } from '@/firebase';
 
 type DetailedInvoice = {
   invoiceNumber: string;
@@ -26,6 +27,7 @@ export default function InvoiceTrackerPage() {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [detailedInvoices, setDetailedInvoices] = useState<DetailedInvoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
+  const firestore = useFirestore();
 
    useEffect(() => {
     const storedFinancialYear = localStorage.getItem('financialYear');
@@ -41,12 +43,12 @@ export default function InvoiceTrackerPage() {
 
   useEffect(() => {
     async function loadInitialData() {
-        if (!financialYear) return;
-      const customerData = await getCustomers(financialYear);
+        if (!financialYear || !firestore) return;
+      const customerData = await getCustomers(firestore, financialYear);
       setCustomers(customerData);
     }
     loadInitialData();
-  }, [financialYear]);
+  }, [financialYear, firestore]);
 
   useEffect(() => {
     async function fetchData() {
@@ -74,7 +76,7 @@ export default function InvoiceTrackerPage() {
       });
     });
     
-    setDetailedInvoices(allInvoices.slice(0, 10));
+    setDetailedInvoices(allInvoices.slice(0, 10)); // Show a sample
     setIsDialogOpen(true);
   };
 
@@ -148,7 +150,7 @@ export default function InvoiceTrackerPage() {
           <DialogHeader>
             <DialogTitle>Invoice Details for {selectedMonth}</DialogTitle>
             <DialogDescription>
-              Detailed list of invoices for the selected period.
+              Detailed list of invoices for the selected period. This is sample data.
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-4">

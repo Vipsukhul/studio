@@ -8,7 +8,7 @@ import { Auth, onAuthStateChanged, User } from 'firebase/auth';
  */
 export interface UseUserResult {
   user: User | null;
-  isLoading: boolean;
+  isUserLoading: boolean;
   error: Error | null;
 }
 
@@ -51,5 +51,5 @@ export function useUser(auth: Auth | null): UseUserResult {
     return () => unsubscribe();
   }, [auth]); // Re-run if the auth instance changes
 
-  return { user, isLoading, error };
+  return { user, isLoading: isLoading, error };
 }

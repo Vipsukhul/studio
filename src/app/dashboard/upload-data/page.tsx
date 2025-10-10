@@ -9,6 +9,7 @@ import { generateMonthOptions, financialYearOptions } from '@/lib/data';
 import { UploadCloud, File, X, CalendarDays } from 'lucide-react';
 import { processAndUploadFile } from '@/lib/api';
 import { Label } from '@/components/ui/label';
+import { useFirestore } from '@/firebase';
 
 export default function UploadDataPage() {
   const [financialYear, setFinancialYear] = useState('2024-2025');
@@ -17,6 +18,7 @@ export default function UploadDataPage() {
   const [file, setFile] = useState<File | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
+  const firestore = useFirestore();
   
   useEffect(() => {
     const storedFinancialYear = localStorage.getItem('financialYear');
@@ -69,11 +71,15 @@ export default function UploadDataPage() {
       });
       return;
     }
+    if (!firestore) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Database not available.' });
+        return;
+    }
     
     setIsLoading(true);
     
     try {
-      const result = await processAndUploadFile(file, month);
+      const result = await processAndUploadFile(firestore, file, month);
       toast({
           title: 'Upload Successful',
           description: `${result.count} records for ${month} were processed. A notification has been sent.`,

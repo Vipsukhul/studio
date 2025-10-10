@@ -1,4 +1,3 @@
-
 'use client';
 
 import * as React from 'react';
@@ -52,18 +51,20 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
 import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus } from '@/lib/api';
+import { useFirestore } from '@/firebase';
 
 import type { Customer, Invoice, Engineer } from "@/lib/types"
 
-const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean }) => {
+const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly, firestore }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean, firestore: any }) => {
     const { toast } = useToast();
 
-    const handleDisputeChange = (invoiceNumber: string, newStatus: string) => {
+    const handleDisputeChange = async (invoiceId: string, newStatus: string) => {
         const status = newStatus === 'dispute' ? 'dispute' : 'unpaid';
-        toast({ title: 'Updating invoice...', description: `Setting status for invoice ${invoiceNumber} to ${status}.`});
+        toast({ title: 'Updating invoice...', description: `Setting status for invoice ${invoiceId} to ${status}.`});
         try {
-            updateInvoiceDisputeStatus(customer.customerCode!, invoiceNumber, status);
-            onInvoiceUpdate(invoiceNumber, status);
+            if (!customer.id) throw new Error("Customer ID is missing");
+            await updateInvoiceDisputeStatus(firestore, customer.id, invoiceId, status);
+            onInvoiceUpdate(invoiceId, status);
             toast({ title: 'Success', description: 'Invoice status updated.'});
         } catch(error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Failed to update invoice status.' });
@@ -96,7 +97,7 @@ const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: C
               <TableCell>
                  <Select
                     value={invoice.status === 'dispute' ? 'dispute' : 'not-disputed'}
-                    onValueChange={(value) => handleDisputeChange(invoice.invoiceNumber, value)}
+                    onValueChange={(value) => handleDisputeChange(invoice.id!, value)}
                     disabled={isReadOnly}
                  >
                     <SelectTrigger className='w-28'>
@@ -127,6 +128,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const firestore = useFirestore();
 
   const { toast } = useToast();
 
@@ -138,58 +140,58 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
 
   const isReadOnly = userRole === 'Engineer';
 
-  const handleRemarkChange = (customerId: string, newRemark: Customer['remarks']) => {
+  const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
     toast({ title: 'Updating status...', description: `Setting remark for customer to ${newRemark}.` });
     try {
-      updateCustomerRemark(customerId, newRemark);
+      await updateCustomerRemark(firestore, customerId, newRemark);
       setTableData((prevData) =>
         prevData.map((customer) =>
-          customer.customerCode === customerId
+          customer.id === customerId
             ? { ...customer, remarks: newRemark }
             : customer
         )
       );
-      toast({ title: 'Success', description: 'Remark update requested.'});
+      toast({ title: 'Success', description: 'Remark update successful.'});
     } catch(error) {
        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update remark.' });
     }
   };
 
-  const handleNotesChange = (customerId: string, newNotes: string) => {
+  const handleNotesChange = async (customerId: string, newNotes: string) => {
     try {
-      updateCustomerNotes(customerId, newNotes);
+      await updateCustomerNotes(firestore, customerId, newNotes);
       setTableData((prevData) =>
         prevData.map((customer) =>
-          customer.customerCode === customerId
+          customer.id === customerId
             ? { ...customer, notes: newNotes }
             : customer
         )
       );
-      toast({ title: 'Success', description: 'Notes update requested.' });
+      toast({ title: 'Success', description: 'Notes updated successfully.' });
     } catch (error) {
       toast({ variant: 'destructive', title: 'Error', description: 'Failed to update notes.' });
     }
   };
 
-  const handleEngineerChange = (customerId: string, newEngineer: string) => {
+  const handleEngineerChange = async (customerId: string, newEngineer: string) => {
     try {
-      updateAssignedEngineer(customerId, newEngineer);
+      await updateAssignedEngineer(firestore, customerId, newEngineer);
       setTableData((prevData) =>
         prevData.map((customer) =>
-          customer.customerCode === customerId ? { ...customer, assignedEngineer: newEngineer } : customer
+          customer.id === customerId ? { ...customer, assignedEngineer: newEngineer } : customer
         )
       );
-      toast({ title: "Success", description: "Engineer assignment requested." });
+      toast({ title: "Success", description: "Engineer assigned successfully." });
     } catch (error) {
       toast({ variant: "destructive", title: "Error", description: "Failed to assign engineer." });
     }
   };
   
-    const handleInvoiceUpdate = (invoiceNumber: string, newStatus: Invoice['status']) => {
+    const handleInvoiceUpdate = (invoiceId: string, newStatus: Invoice['status']) => {
         if (!selectedCustomer) return;
 
         const updatedInvoices = selectedCustomer.invoices?.map(inv => 
-            inv.invoiceNumber === invoiceNumber ? { ...inv, status: newStatus } : inv
+            inv.id === invoiceId ? { ...inv, status: newStatus } : inv
         );
 
         const updatedCustomer = { ...selectedCustomer, invoices: updatedInvoices };
@@ -213,7 +215,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     return (
         <Select
             value={row.original.assignedEngineer}
-            onValueChange={(value) => handleEngineerChange(row.original.customerCode, value)}
+            onValueChange={(value) => handleEngineerChange(row.original.id, value)}
             disabled={isReadOnly}
         >
             <SelectTrigger className="w-[180px]">
@@ -271,7 +273,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         cell: ({ row }) => (
           <Select
             value={row.original.remarks}
-            onValueChange={(value) => handleRemarkChange(row.original.customerCode!, value as Customer['remarks'])}
+            onValueChange={(value) => handleRemarkChange(row.original.id!, value as Customer['remarks'])}
             disabled={isReadOnly}
           >
             <SelectTrigger className="w-[180px]">
@@ -296,7 +298,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
 
             const handleBlur = () => {
                 if (notes !== row.original.notes) {
-                    handleNotesChange(row.original.customerCode!, notes);
+                    handleNotesChange(row.original.id!, notes);
                 }
             };
             
@@ -475,7 +477,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-4">
-            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} isReadOnly={isReadOnly} />}
+            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} isReadOnly={isReadOnly} firestore={firestore} />}
           </div>
         </DialogContent>
       </Dialog>

@@ -6,16 +6,19 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@/lib/types';
 import { getUsers } from '@/lib/api';
+import { useFirestore } from '@/firebase';
 
 export default function TeamHierarchyPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const firestore = useFirestore();
 
   useEffect(() => {
     async function loadUsers() {
+      if (!firestore) return;
       setLoading(true);
       try {
-        const userList = await getUsers();
+        const userList = await getUsers(firestore);
         setUsers(userList);
       } catch (error) {
         console.error("Failed to fetch users:", error);
@@ -24,7 +27,7 @@ export default function TeamHierarchyPage() {
       }
     }
     loadUsers();
-  }, []);
+  }, [firestore]);
 
   if (loading) {
     return (
@@ -58,7 +61,7 @@ export default function TeamHierarchyPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar>
-                        <AvatarImage src={`https://picsum.photos/seed/${user.id}/32/32`} />
+                        <AvatarImage src={user.photoURL || `https://picsum.photos/seed/${user.id}/32/32`} />
                         <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div>
