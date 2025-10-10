@@ -28,8 +28,8 @@ export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
 
+  // This effect will handle redirecting the user if they are already logged in
   useEffect(() => {
-    // If user is already logged in, redirect to dashboard
     if (!isUserLoading && user) {
       router.push('/dashboard');
     }
@@ -50,7 +50,7 @@ export default function LoginPage() {
           title: 'Login Successful',
           description: "Welcome back! You're being redirected to your dashboard.",
       });
-
+      // The redirect is now handled by the provider, but we can push here for faster navigation.
       router.push('/dashboard');
 
     } catch (error: any) {
@@ -63,14 +63,16 @@ export default function LoginPage() {
         setIsLoading(false);
     }
   };
-
-  if (isUserLoading || (!isUserLoading && user)) {
+  
+  // Display a loading indicator while checking auth status or if user is already logged in
+  if (isUserLoading || user) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
       </div>
     );
   }
+
 
   return (
     <>
