@@ -165,6 +165,7 @@ export const regionDistribution: RegionDistribution[] = outstandingByAge.reduce(
 
 
 export const financialYearOptions = [
+    { value: '2025-2026', label: 'FY 2025-26' },
     { value: '2024-2025', label: 'FY 2024-25' },
     { value: '2023-2024', label: 'FY 2023-24' },
     { value: '2022-2023', label: 'FY 2022-23' },
