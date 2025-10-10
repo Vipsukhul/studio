@@ -52,6 +52,7 @@ const initialUsers = [
     status: 'Active',
     lastLogin: '2024-07-29',
     initials: 'VS',
+    password: 'Password',
   },
   {
     name: 'Supriy Sukhadeve',
@@ -61,6 +62,7 @@ const initialUsers = [
     status: 'Active',
     lastLogin: '2024-07-29',
     initials: 'SS',
+    password: 'Supriy@0310',
   },
   {
     name: 'Jane Doe',
@@ -70,6 +72,7 @@ const initialUsers = [
     status: 'Active',
     lastLogin: '2024-07-28',
     initials: 'JD',
+    password: 'password',
   },
   {
     name: 'John Smith',
@@ -79,6 +82,7 @@ const initialUsers = [
     status: 'Inactive',
     lastLogin: '2024-06-15',
     initials: 'JS',
+    password: 'password',
   },
    {
     name: 'S. Iyer',
@@ -88,6 +92,7 @@ const initialUsers = [
     status: 'Active',
     lastLogin: '2024-07-29',
     initials: 'SI',
+    password: 'password',
   },
 ];
 
@@ -118,6 +123,7 @@ function AddUserDialog({ onAddUser, children }: { onAddUser: (user: User) => voi
             status: 'Active',
             lastLogin: new Date().toISOString().split('T')[0],
             initials: name.split(' ').map(n => n[0]).join(''),
+            password: 'password',
         };
         onAddUser(newUser);
         toast({
@@ -229,6 +235,7 @@ export default function UserManagementPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
+                <TableHead>Password</TableHead>
                 <TableHead>Region</TableHead>
                 <TableHead>Role</TableHead>
                 <TableHead>Status</TableHead>
@@ -251,6 +258,7 @@ export default function UserManagementPage() {
                         </div>
                     </div>
                   </TableCell>
+                  <TableCell>{user.password}</TableCell>
                   <TableCell>{user.region}</TableCell>
                   <TableCell>{user.role}</TableCell>
                   <TableCell>

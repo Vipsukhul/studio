@@ -38,7 +38,7 @@ export const kpis: Kpi[] = [
   },
   {
     label: 'Total Customers',
-    value: '7',
+    value: '50',
     description: 'active accounts',
   },
 ];
@@ -86,16 +86,49 @@ const generateInvoices = (count: number, status: 'paid' | 'unpaid' | 'dispute'):
     }));
 };
 
-export const customers: Customer[] = [
-    { customerCode: 'CUST001', customerName: 'Apex Innovations', region: 'North', department: 'Batching Plant', agePeriod: '31-90', outstandingAmount: 125000, invoices: generateInvoices(3, 'unpaid'), remarks: 'none', notes: '', assignedEngineer: 'R. Sharma' },
-    { customerCode: 'CUST002', customerName: 'Zenith Solutions', region: 'West', department: 'Pump', agePeriod: '0-30', outstandingAmount: 78000, invoices: generateInvoices(2, 'unpaid'), remarks: 'under follow-up', notes: 'Call next week', assignedEngineer: 'P. Patel' },
-    { customerCode: 'CUST003', customerName: 'Pinnacle Corp', region: 'South', department: 'Batching Plant', agePeriod: '91-180', outstandingAmount: 240000, invoices: generateInvoices(5, 'unpaid'), remarks: 'dispute', notes: 'Quality issue on item #45', assignedEngineer: 'S. Iyer' },
-    { customerCode: 'CUST004', customerName: 'Quantum Industries', region: 'East', department: 'Pump', agePeriod: '>365', outstandingAmount: 35000, invoices: generateInvoices(1, 'dispute'), remarks: 'none', notes: '', assignedEngineer: 'A. Das' },
-    { customerCode: 'CUST005', customerName: 'Stellar Tech', region: 'West', department: 'Pump', agePeriod: '31-90', outstandingAmount: 150000, invoices: generateInvoices(4, 'unpaid'), remarks: 'partial payment', notes: 'Paid 50k on 15th', assignedEngineer: 'V. Mehta' },
-    { customerCode: 'CUST006', customerName: 'Fusion Dynamics', region: 'North', department: 'Batching Plant', agePeriod: '0-30', outstandingAmount: 45000, invoices: generateInvoices(1, 'unpaid'), remarks: 'payment received', notes: 'Full payment received', assignedEngineer: 'S. Gupta' },
-    { customerCode: 'CUST007', customerName: 'Nexus Enterprises', region: 'South', department: 'Batching Plant', agePeriod: '181-365', outstandingAmount: 95000, invoices: generateInvoices(2, 'unpaid'), remarks: 'under follow-up', notes: '', assignedEngineer: 'K. Rao' },
+const customerNames = [
+    "Apex Innovations", "Zenith Solutions", "Pinnacle Corp", "Quantum Industries", "Stellar Tech",
+    "Fusion Dynamics", "Nexus Enterprises", "Momentum Inc", "Catalyst Co", "Synergy Group",
+    "Vertex Ventures", "Matrix Systems", "Orion Services", "Helios Ltd", "Aegis Corp",
+    "Nova Solutions", "Echo Enterprises", "Trident Tech", "Polaris Inc", "Equinox Corp",
+    "Atlas Industries", "Crestwood Group", "Meridian Systems", "Omega Solutions", "Vanguard Ltd",
+    "Horizon Corp", "Alpha Tech", "Summit Systems", "Cascade Inc", "Spire Solutions",
+    "Core Dynamics", "Blue-sky Corp", "Axiom Enterprises", "Elevate Ltd", "Frontier Tech",
+    "Global Reach", "Keystone Corp", "Landmark Ltd", "Milestone Inc", "New-age Solutions",
+    "Next-level Corp", "Open-sky Inc", "Peak Performance", "Prime Time Ltd", "Progressive Inc",
+    "Red-wood Corp", "River-stone Inc", "Silver-lining Ltd", "Sky-high Inc", "Solid-state Solutions"
 ];
 
+const regions = ['North', 'South', 'East', 'West'] as const;
+const departments = ['Batching Plant', 'Pump'] as const;
+const agePeriods = ['0-30', '31-90', '91-180', '181-365', '>365'] as const;
+const remarksOptions = ['none', 'under follow-up', 'dispute', 'partial payment', 'payment received'] as const;
+const engineersByRegion = {
+    North: ['R. Sharma', 'S. Gupta'],
+    South: ['S. Iyer', 'K. Rao'],
+    East: ['A. Das', 'B. Chatterjee'],
+    West: ['P. Patel', 'V. Mehta']
+};
+
+export const customers: Customer[] = Array.from({ length: 50 }, (_, i) => {
+    const region = regions[i % regions.length];
+    const department = departments[i % departments.length];
+    const assignedEngineers = engineersByRegion[region];
+    const assignedEngineer = assignedEngineers[i % assignedEngineers.length];
+    
+    return {
+        customerCode: `CUST${(i + 1).toString().padStart(3, '0')}`,
+        customerName: customerNames[i % customerNames.length],
+        region: region,
+        department: department,
+        agePeriod: agePeriods[i % agePeriods.length],
+        outstandingAmount: Math.floor(Math.random() * 400000) + 20000,
+        invoices: generateInvoices(Math.floor(Math.random() * 4) + 1, 'unpaid'),
+        remarks: remarksOptions[i % remarksOptions.length],
+        notes: i % 5 === 0 ? `Follow up on invoice #${Math.floor(Math.random() * 1000)}` : '',
+        assignedEngineer: assignedEngineer,
+    };
+});
 
 export const financialYearOptions = [
     { value: '2024-2025', label: 'FY 2024-25' },
