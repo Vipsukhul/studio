@@ -26,7 +26,6 @@ import {
   LayoutDashboard,
   TrendingUp,
   Download,
-  Zap,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
@@ -118,26 +117,6 @@ export default function AdminLayout({
           <div className="w-full flex-1">
             <h1 className="text-xl font-semibold">Admin</h1>
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Zap className="h-5 w-5" />
-                <span className="sr-only">Quick Links</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Quick Links</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {navItems.map(item => (
-                <Link href={item.href} key={item.href} passHref>
-                  <DropdownMenuItem>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    <span>{item.label}</span>
-                  </DropdownMenuItem>
-                </Link>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
            <ThemeToggle />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -162,7 +141,7 @@ export default function AdminLayout({
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
           {children}
         </main>
-        <Footer />
+        <Footer navItems={navItems} />
       </div>
     </div>
     <InstallPwaDialog open={showInstallDialog} onOpenChange={setShowInstallDialog} />

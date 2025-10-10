@@ -24,7 +24,6 @@ import {
   Upload,
   Bell,
   Download,
-  Zap,
 } from 'lucide-react';
 import { Logo } from '@/components/logo';
 import { Footer } from '@/components/footer';
@@ -144,26 +143,6 @@ export default function DashboardLayout({
           <div className="w-full flex-1">
              {/* The department selector was here */}
           </div>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Zap className="h-5 w-5" />
-                <span className="sr-only">Quick Links</span>
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Quick Links</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {filteredNavItems.map(item => (
-                 <Link href={item.href} key={item.href} passHref>
-                  <DropdownMenuItem>
-                    <item.icon className="mr-2 h-4 w-4" />
-                    <span>{item.label}</span>
-                  </DropdownMenuItem>
-                </Link>
-              ))}
-            </DropdownMenuContent>
-          </DropdownMenu>
            <ThemeToggle />
            <Link href="/dashboard/notifications">
             <Button variant="ghost" size="icon" className="rounded-full relative">
@@ -199,7 +178,7 @@ export default function DashboardLayout({
         <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
           {children}
         </main>
-        <Footer />
+        <Footer navItems={filteredNavItems} />
       </div>
     </div>
     <InstallPwaDialog open={showInstallDialog} onOpenChange={setShowInstallDialog} />
