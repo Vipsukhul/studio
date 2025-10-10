@@ -14,6 +14,8 @@ import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution,
 import { createNotification } from './notifications';
 import jwt from 'jsonwebtoken';
 
+const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api';
+
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
 
@@ -25,6 +27,7 @@ const mockUsersCredentials = {
 
 
 export async function login(email: string, password: string, department: string) {
+  console.log(`Attempting login for ${email} at ${API_URL}/auth/login`);
   await delay(1000);
   // @ts-ignore
   const userCredentials = mockUsersCredentials[email];
@@ -54,7 +57,7 @@ export async function login(email: string, password: string, department: string)
  */
 export async function getDashboardData(month: string, department: string, financialYear: string) {
   await delay(500);
-  console.log(`Fetching data for month: ${month}, department: ${department}, and FY: ${financialYear}`);
+  console.log(`Fetching data for month: ${month}, department: ${department}, and FY: ${financialYear} from ${API_URL}/dashboard`);
   
   const customers = await getCustomers(department, financialYear);
   const totalCustomers = customers.length;
@@ -86,7 +89,7 @@ export async function getDashboardData(month: string, department: string, financ
  */
 export async function getInvoiceTrackerData(region: string, department: string, financialYear: string): Promise<InvoiceTrackerData[]> {
   await delay(500);
-  console.log(`Fetching invoice tracker data for region: ${region}, department: ${department}, and FY: ${financialYear}`);
+  console.log(`Fetching invoice tracker data for region: ${region}, department: ${department}, and FY: ${financialYear} from ${API_URL}/invoice-tracker`);
   let filteredData = invoiceTrackerData.filter(d => d.department === department);
   if (region === 'All') {
     return filteredData;
@@ -100,7 +103,7 @@ export async function getInvoiceTrackerData(region: string, department: string, 
  */
 export async function getCustomers(department: string, financialYear: string): Promise<Customer[]> {
   await delay(200);
-  console.log(`Fetching customers for department: ${department} and FY: ${financialYear}`);
+  console.log(`Fetching customers for department: ${department} and FY: ${financialYear} from ${API_URL}/customers`);
   return mockCustomers.filter(c => c.department === department).map(c => ({...c, id: c.customerCode}));
 }
 
@@ -111,7 +114,7 @@ export async function getCustomers(department: string, financialYear: string): P
  * @param newRemark - The new remark to set.
  */
 export async function updateCustomerRemark(customerId: string, newRemark: Customer['remarks']): Promise<{ success: boolean }> {
-  console.log(`Updating remark for customer ${customerId} to "${newRemark}"`);
+  console.log(`Updating remark for customer ${customerId} to "${newRemark}" at ${API_URL}/customers/${customerId}/remark`);
   const customerIndex = mockCustomers.findIndex(c => c.customerCode === customerId);
   if(customerIndex !== -1) {
     mockCustomers[customerIndex].remarks = newRemark;
@@ -132,7 +135,7 @@ export async function updateCustomerRemark(customerId: string, newRemark: Custom
  * @param newNotes - The new notes to set.
  */
 export async function updateCustomerNotes(customerId: string, newNotes: string): Promise<{ success: boolean }> {
-  console.log(`Updating notes for customer ${customerId} to "${newNotes}"`);
+  console.log(`Updating notes for customer ${customerId} to "${newNotes}" at ${API_URL}/customers/${customerId}/notes`);
   const customerIndex = mockCustomers.findIndex(c => c.customerCode === customerId);
   if(customerIndex !== -1) {
     mockCustomers[customerIndex].notes = newNotes;
@@ -153,6 +156,7 @@ export async function updateCustomerNotes(customerId: string, newNotes: string):
  * @param file - The Excel file to process.
  */
 export function processAndUploadFile(file: File, month: string): Promise<{ count: number; data: any[] }> {
+  console.log(`Uploading file to ${API_URL}/upload`);
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -201,6 +205,7 @@ export function processAndUploadFile(file: File, month: string): Promise<{ count
  */
 export async function getEngineersByRegionAndDepartment(region: string, department: string): Promise<Engineer[]> {
     await delay(100);
+    console.log(`Fetching engineers from ${API_URL}/users`);
     return engineers.filter(e => e.region === region && e.department === department);
 }
 
@@ -210,7 +215,7 @@ export async function getEngineersByRegionAndDepartment(region: string, departme
  * @param engineerName - The name of the engineer to assign.
  */
 export async function updateAssignedEngineer(customerId: string, engineerName: string): Promise<{ success: boolean }> {
-    console.log(`Assigning engineer ${engineerName} to customer ${customerId}`);
+    console.log(`Assigning engineer ${engineerName} to customer ${customerId} at ${API_URL}/customers/${customerId}/assign-engineer`);
     const customerIndex = mockCustomers.findIndex(c => c.customerCode === customerId);
     if(customerIndex !== -1) {
       mockCustomers[customerIndex].assignedEngineer = engineerName;
@@ -232,7 +237,7 @@ export async function updateAssignedEngineer(customerId: string, engineerName: s
  * @param newStatus The new dispute status
  */
 export async function updateInvoiceDisputeStatus(customerId: string, invoiceNumber: string, newStatus: 'dispute' | 'paid' | 'unpaid'): Promise<{ success: boolean }> {
-  console.log(`Updating invoice ${invoiceNumber} for customer ${customerId} to status "${newStatus}"`);
+  console.log(`Updating invoice ${invoiceNumber} for customer ${customerId} to status "${newStatus}" at ${API_URL}/customers/${customerId}/invoices/${invoiceNumber}/dispute`);
   
   const customerIndex = mockCustomers.findIndex(c => c.customerCode === customerId);
   if(customerIndex !== -1) {
@@ -258,7 +263,7 @@ export async function updateInvoiceDisputeStatus(customerId: string, invoiceNumb
  */
 export async function getOutstandingRecoveryTrend(department: string, financialYear: string): Promise<OutstandingRecoveryTrend[]> {
   await delay(500);
-  console.log(`Fetching recovery trend for department: ${department} and FY: ${financialYear}`);
+  console.log(`Fetching recovery trend for department: ${department} and FY: ${financialYear} from ${API_URL}/dashboard`);
   return outstandingRecoveryTrend.filter(item => item.department === department);
 }
 
@@ -270,7 +275,7 @@ export async function getEngineerPerformanceData(department: string = 'Batching 
   await delay(500);
   // @ts-ignore
   const { engineerPerformance } = await import('./data');
-  console.log(`Fetching engineer performance for department: ${department} and FY: ${financialYear}`);
+  console.log(`Fetching engineer performance for department: ${department} and FY: ${financialYear} from ${API_URL}/dashboard`);
   return engineerPerformance.filter((item: any) => item.department === department);
 }
 
@@ -292,5 +297,6 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
  */
 export async function getUsers(): Promise<User[]> {
   await delay(300);
+  console.log(`Fetching users from ${API_URL}/users`);
   return mockUsers;
 }
