@@ -13,7 +13,6 @@ import { Logo } from '@/components/logo';
 import { Eye, EyeOff } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { departmentOptions } from '@/lib/data';
-import { InstallPwaDialog } from '@/components/install-pwa-dialog';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 
@@ -25,8 +24,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  
-  const [showInstallDialog, setShowInstallDialog] = useState(false);
   
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
@@ -44,11 +41,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // We don't need to store token manually. Firebase SDK handles session.
-      // We can fetch user details from our Firestore DB if needed, but for now
-      // let's just store the department preference.
+      await signInWithEmailAndPassword(auth, email, password);
       
       localStorage.setItem('department', department);
       localStorage.setItem('financialYear', '2024-2025');
@@ -58,7 +51,7 @@ export default function LoginPage() {
           description: "Welcome back! You're being redirected to your dashboard.",
       });
 
-      setShowInstallDialog(true);
+      router.push('/dashboard');
 
     } catch (error: any) {
       toast({
@@ -70,11 +63,6 @@ export default function LoginPage() {
         setIsLoading(false);
     }
   };
-  
-  const handleDialogClose = () => {
-    setShowInstallDialog(false);
-    router.push('/dashboard');
-  }
 
   if (isUserLoading || (!isUserLoading && user)) {
     return (
@@ -169,7 +157,6 @@ export default function LoginPage() {
           </form>
         </Card>
       </div>
-      <InstallPwaDialog open={showInstallDialog} onOpenChange={handleDialogClose} />
     </>
   );
 }
