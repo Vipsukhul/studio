@@ -27,13 +27,12 @@ export default function LoginPage() {
   const auth = useAuth();
   const { user, isUserLoading } = useUser();
 
-  // This effect will handle redirecting the user if they are already logged in
+  // This effect handles redirecting the user if they are already logged in
   useEffect(() => {
     if (!isUserLoading && user) {
       router.push('/dashboard');
     }
   }, [user, isUserLoading, router]);
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +48,7 @@ export default function LoginPage() {
           title: 'Login Successful',
           description: "Welcome back! You're being redirected to your dashboard.",
       });
-      // The redirect is now handled by the provider, but we can push here for faster navigation.
+      
       router.push('/dashboard');
 
     } catch (error: any) {
@@ -58,18 +57,16 @@ export default function LoginPage() {
         title: 'Login Failed',
         description: error.message || 'An unexpected error occurred.',
       });
-    } finally {
-        setIsLoading(false);
+       setIsLoading(false);
     }
   };
   
-  // Display a loading indicator while checking auth status or if user is already logged in
+  // If we are checking for a user or if a user exists, render nothing.
+  // The useEffect hook above will handle the redirect.
+  // This prevents the login page from "flashing" or showing a loading spinner
+  // over the dashboard content.
   if (isUserLoading || user) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
-      </div>
-    );
+    return null;
   }
 
 
