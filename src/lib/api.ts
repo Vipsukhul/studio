@@ -274,4 +274,3 @@ export async function getUsers(): Promise<User[]> {
     const userList = userSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
     return userList;
 }
-
