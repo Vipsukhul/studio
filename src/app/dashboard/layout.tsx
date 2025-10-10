@@ -66,12 +66,13 @@ export default function DashboardLayout({
   const [showInstallDialog, setShowInstallDialog] = useState(false);
   
   useEffect(() => {
-    // This effect now correctly handles redirection after checking both auth and profile state.
+    // This effect handles redirection if the user is definitely not logged in after loading.
     if (!isUserLoading && !firebaseUser) {
       router.replace('/');
       return;
     }
     
+    // This effect handles profile image URL from localStorage
     const handleStorageChange = () => {
       const storedUrl = localStorage.getItem('profileImageUrl');
       setProfileImageUrl(storedUrl);
@@ -85,6 +86,30 @@ export default function DashboardLayout({
     };
   }, [isUserLoading, firebaseUser, router]);
 
+  // We show loading until BOTH the auth check is complete and the profile is fetched (or fails).
+  if (isUserLoading || isProfileLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+      </div>
+    );
+  }
+
+  // After loading, if there's no Firebase user, the useEffect above will handle redirection.
+  // We also check for userProfile here. If auth is fine but the DB profile is missing,
+  // it's an incomplete state, so we prevent rendering the dashboard.
+  if (!firebaseUser || !userProfile) {
+     return (
+      <div className="flex items-center justify-center h-screen">
+         <div className="text-center">
+            <p className="text-lg font-semibold">Authentication incomplete.</p>
+            <p className="text-muted-foreground">User profile not found. Please try logging in again.</p>
+            <Button onClick={() => router.replace('/')} className="mt-4">Go to Login</Button>
+        </div>
+      </div>
+    );
+  }
+  
   const userRole = userProfile?.role;
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
@@ -100,26 +125,6 @@ export default function DashboardLayout({
     localStorage.clear();
     router.replace('/');
   };
-
-  // We show loading until BOTH the user is checked and the profile is fetched.
-  if (isUserLoading || isProfileLoading) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
-      </div>
-    );
-  }
-
-  // If after loading, there is still no user, it means they need to log in.
-  // The useEffect above will handle the redirection.
-  if (!firebaseUser || !userProfile) {
-     return (
-      <div className="flex items-center justify-center h-screen">
-        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
-      </div>
-    );
-  }
-
 
   const userInitial = userProfile?.name?.charAt(0) || 'U';
 
