@@ -1,91 +1,121 @@
 /**
- * @fileoverview Firestore Security Rules for the Outstanding Tracker application.
+ * @fileoverview Firestore Security Rules for Outstanding Tracker App
  *
  * Core Philosophy:
- * This ruleset enforces a strict ownership model based on the Firestore path.
- * Access is granted only to authenticated users, and only within their designated customer, invoice, and outstanding documents.
+ * This ruleset enforces a strict path-based ownership model where each customer, invoice, and outstanding amount is only accessible to authorized users.
  *
  * Data Structure:
- * The data is organized hierarchically: customers > invoices > outstandings.
- * - /customers/{customerId}
- * - /customers/{customerId}/invoices/{invoiceId}
- * - /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}
+ * The data is organized hierarchically: /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}.
  *
  * Key Security Decisions:
- * - All read and write operations are restricted to authenticated users.
- * - Path-based ownership is enforced, where the authenticated user must have a customerId that matches the path.
+ * - Data access is restricted based on the path.
+ * - The rules do not allow listing of root level documents.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(customerId) {
-      return isSignedIn() && request.auth.uid == customerId;
-    }
-
-    function isExistingOwner(customerId) {
-        return isOwner(customerId) && resource != null;
-    }
-
     /**
-     * @description Grants access to customer documents based on path-based ownership.
+     * @description Controls access to customer documents.
      * @path /customers/{customerId}
-     * @allow (read) Authenticated user can read customer document if customerId matches auth.uid.
-     * @allow (create) Authenticated user can create customer document if customerId matches auth.uid.
-     * @allow (update) Authenticated user can update customer document if customerId matches auth.uid and the document exists.
-     * @allow (delete) Authenticated user can delete customer document if customerId matches auth.uid and the document exists.
-     * @deny (create) Authenticated user cannot create customer document if customerId does not match auth.uid.
-     * @deny (update) Authenticated user cannot update customer document if customerId does not match auth.uid.
-     * @deny (delete) Authenticated user cannot delete customer document if customerId does not match auth.uid.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) If the authenticated user ID matches the `customerId`.
+     * @deny (create) If the authenticated user ID does not match the `customerId`.
+     * @allow (get) If the authenticated user ID matches the `customerId`.
+     * @deny (get) If the authenticated user ID does not match the `customerId`.
+     * @allow (update) If the authenticated user ID matches the `customerId`.
+     * @deny (update) If the authenticated user ID does not match the `customerId`.
+     * @allow (delete) If the authenticated user ID matches the `customerId`.
+     * @deny (delete) If the authenticated user ID does not match the `customerId`.
+     * @allow (list) If the authenticated user ID matches the `customerId`.
+     * @deny (list) If the authenticated user ID does not match the `customerId`.
+     * @principle Enforces document ownership based on the customerId path parameter.
      */
     match /customers/{customerId} {
-      allow get: if isSignedIn() && isOwner(customerId);
-      allow list: if isSignedIn() && isOwner(customerId);
-      allow create: if isSignedIn() && isOwner(customerId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(customerId) {
+        return request.auth.uid == customerId;
+      }
+
+      function isExistingOwner(customerId) {
+        return isSignedIn() && resource.data.id == customerId && request.auth.uid == customerId;
+      }
+
+      allow get: if isOwner(customerId);
+      allow list: if false;
+
+      allow create: if isSignedIn() && request.auth.uid == customerId;
       allow update: if isExistingOwner(customerId);
       allow delete: if isExistingOwner(customerId);
     }
 
     /**
-     * @description Grants access to invoice documents based on path-based ownership.
+     * @description Controls access to invoice documents nested under a customer.
      * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (read) Authenticated user can read invoice document if customerId matches auth.uid.
-     * @allow (create) Authenticated user can create invoice document if customerId matches auth.uid.
-     * @allow (update) Authenticated user can update invoice document if customerId matches auth.uid and the document exists.
-     * @allow (delete) Authenticated user can delete invoice document if customerId matches auth.uid and the document exists.
-     * @deny (create) Authenticated user cannot create invoice document if customerId does not match auth.uid.
-     * @deny (update) Authenticated user cannot update invoice document if customerId does not match auth.uid.
-     * @deny (delete) Authenticated user cannot delete invoice document if customerId does not match auth.uid.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) If the authenticated user ID matches the `customerId`.
+     * @deny (create) If the authenticated user ID does not match the `customerId`.
+     * @allow (get) If the authenticated user ID matches the `customerId`.
+     * @deny (get) If the authenticated user ID does not match the `customerId`.
+     * @allow (update) If the authenticated user ID matches the `customerId`.
+     * @deny (update) If the authenticated user ID does not match the `customerId`.
+     * @allow (delete) If the authenticated user ID matches the `customerId`.
+     * @deny (delete) If the authenticated user ID does not match the `customerId`.
+     * @allow (list) If the authenticated user ID matches the `customerId`.
+     * @deny (list) If the authenticated user ID does not match the `customerId`.
+     * @principle Enforces document ownership based on the customerId path parameter.
      */
     match /customers/{customerId}/invoices/{invoiceId} {
-      allow get: if isSignedIn() && isOwner(customerId);
-      allow list: if isSignedIn() && isOwner(customerId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(customerId) {
+        return request.auth.uid == customerId;
+      }
+
+      function isExistingOwner(customerId) {
+        return isSignedIn() && resource.data.customerId == customerId && request.auth.uid == customerId;
+      }
+
+      allow get: if isOwner(customerId);
+      allow list: if isOwner(customerId);
       allow create: if isSignedIn() && isOwner(customerId);
       allow update: if isExistingOwner(customerId);
       allow delete: if isExistingOwner(customerId);
     }
 
     /**
-     * @description Grants access to outstanding documents based on path-based ownership.
+     * @description Controls access to outstanding documents nested under an invoice.
      * @path /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}
-     * @allow (read) Authenticated user can read outstanding document if customerId matches auth.uid.
-     * @allow (create) Authenticated user can create outstanding document if customerId matches auth.uid.
-     * @allow (update) Authenticated user can update outstanding document if customerId matches auth.uid and the document exists.
-     * @allow (delete) Authenticated user can delete outstanding document if customerId matches auth.uid and the document exists.
-     * @deny (create) Authenticated user cannot create outstanding document if customerId does not match auth.uid.
-     * @deny (update) Authenticated user cannot update outstanding document if customerId does not match auth.uid.
-     * @deny (delete) Authenticated user cannot delete outstanding document if customerId does not match auth.uid.
-     * @principle Enforces document ownership for all operations.
+     * @allow (create) If the authenticated user ID matches the `customerId`.
+     * @deny (create) If the authenticated user ID does not match the `customerId`.
+     * @allow (get) If the authenticated user ID matches the `customerId`.
+     * @deny (get) If the authenticated user ID does not match the `customerId`.
+     * @allow (update) If the authenticated user ID matches the `customerId`.
+     * @deny (update) If the authenticated user ID does not match the `customerId`.
+     * @allow (delete) If the authenticated user ID matches the `customerId`.
+     * @deny (delete) If the authenticated user ID does not match the `customerId`.
+     * @allow (list) If the authenticated user ID matches the `customerId`.
+     * @deny (list) If the authenticated user ID does not match the `customerId`.
+     * @principle Enforces document ownership based on the customerId path parameter.
      */
     match /customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId} {
-      allow get: if isSignedIn() && isOwner(customerId);
-      allow list: if isSignedIn() && isOwner(customerId);
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      function isOwner(customerId) {
+        return request.auth.uid == customerId;
+      }
+
+      function isExistingOwner(customerId) {
+        return isSignedIn() && resource.data.invoiceId == invoiceId && request.auth.uid == customerId;
+      }
+
+      allow get: if isOwner(customerId);
+      allow list: if isOwner(customerId);
       allow create: if isSignedIn() && isOwner(customerId);
       allow update: if isExistingOwner(customerId);
       allow delete: if isExistingOwner(customerId);

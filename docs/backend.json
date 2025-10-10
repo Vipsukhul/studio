@@ -6,10 +6,6 @@
       "type": "object",
       "description": "Represents a customer with outstanding invoices.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the customer."
-        },
         "customerCode": {
           "type": "string",
           "description": "The unique code assigned to the customer."
@@ -22,20 +18,29 @@
           "type": "string",
           "description": "The geographical region of the customer."
         },
-        "invoiceIds": {
-          "type": "array",
-          "description": "References to Invoices. (Relationship: Customer 1:N Invoice)",
-          "items": {
+        "department": {
+            "type": "string",
+            "enum": ["Batching Plant", "Pump"]
+        },
+        "outstandingAmount": {
+            "type": "number"
+        },
+        "remarks": {
+            "type": "string",
+            "enum": ["payment received", "partial payment", "under follow-up", "dispute", "write-off", "none"]
+        },
+        "notes": {
             "type": "string"
-          }
+        },
+        "assignedEngineer": {
+            "type": "string"
         }
       },
       "required": [
-        "id",
         "customerCode",
         "customerName",
         "region",
-        "invoiceIds"
+        "department"
       ]
     },
     "Invoice": {
@@ -44,14 +49,6 @@
       "type": "object",
       "description": "Represents an invoice for a customer.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the invoice."
-        },
-        "customerId": {
-          "type": "string",
-          "description": "Reference to Customer. (Relationship: Customer 1:N Invoice)"
-        },
         "invoiceNumber": {
           "type": "string",
           "description": "The unique number of the invoice."
@@ -68,130 +65,47 @@
         "status": {
           "type": "string",
           "description": "The current status of the invoice (e.g., paid, unpaid, dispute)."
-        },
-        "agePeriod": {
-          "type": "string",
-          "description": "The age period of the outstanding amount (e.g., 0-30 days, 30-90 days)."
-        },
-        "outstandingIds": {
-          "type": "array",
-          "description": "References to Outstandings. (Relationship: Invoice 1:N Outstanding)",
-          "items": {
-            "type": "string"
-          }
         }
       },
       "required": [
-        "id",
-        "customerId",
         "invoiceNumber",
         "invoiceAmount",
         "invoiceDate",
-        "status",
-        "agePeriod",
-        "outstandingIds"
+        "status"
       ]
     },
-    "Outstanding": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Outstanding",
+    "User": {
+      "title": "User",
       "type": "object",
-      "description": "Represents an outstanding amount for a specific month.",
+      "description": "Represents an application user.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the outstanding entry."
-        },
-        "invoiceId": {
-          "type": "string",
-          "description": "Reference to Invoice. (Relationship: Invoice 1:N Outstanding)"
-        },
-        "month": {
-          "type": "string",
-          "description": "The month for which the outstanding amount is calculated (e.g., Apr-25)."
-        },
-        "amount": {
-          "type": "number",
-          "description": "The outstanding amount for the specified month."
-        }
+          "name": {"type": "string"},
+          "email": {"type": "string", "format": "email"},
+          "role": {"type": "string", "enum": ["Manager", "Engineer", "Country Manager", "Admin"]},
+          "region": {"type": "string", "enum": ["North", "South", "East", "West"]},
+          "department": {"type": "string", "enum": ["Batching Plant", "Pump"]},
+          "contact": {"type": "string"}
       },
-      "required": [
-        "id",
-        "invoiceId",
-        "month",
-        "amount"
-      ]
+      "required": ["name", "email", "role", "region", "department"]
     }
   },
   "auth": {
     "providers": [
-      "password",
-      "anonymous"
+      "password"
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "customers/{customerId}",
-        "definition": {
-          "entityName": "Customer",
-          "schema": {
-            "$ref": "#/backend/entities/Customer"
-          },
-          "description": "Stores customer data. Includes denormalized 'customerId' for authorization independence.",
-          "params": [
-            {
-              "name": "customerId",
-              "description": "The unique identifier of the customer."
-            }
-          ]
-        }
-      },
-      {
-        "path": "customers/{customerId}/invoices/{invoiceId}",
-        "definition": {
-          "entityName": "Invoice",
-          "schema": {
-            "$ref": "#/backend/entities/Invoice"
-          },
-          "description": "Stores invoice data for a specific customer. Includes denormalized 'customerId' and 'invoiceId' for authorization independence.",
-          "params": [
-            {
-              "name": "customerId",
-              "description": "The unique identifier of the customer."
-            },
-            {
-              "name": "invoiceId",
-              "description": "The unique identifier of the invoice."
-            }
-          ]
-        }
-      },
-      {
-        "path": "customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}",
-        "definition": {
-          "entityName": "Outstanding",
-          "schema": {
-            "$ref": "#/backend/entities/Outstanding"
-          },
-          "description": "Stores outstanding amount data for a specific invoice. Includes denormalized 'customerId', 'invoiceId', and 'outstandingId' for authorization independence.",
-          "params": [
-            {
-              "name": "customerId",
-              "description": "The unique identifier of the customer."
-            },
-            {
-              "name": "invoiceId",
-              "description": "The unique identifier of the invoice."
-            },
-            {
-              "name": "outstandingId",
-              "description": "The unique identifier of the outstanding amount."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "This Firestore structure is designed to manage customer, invoice, and outstanding data for the Outstanding Tracker application. It prioritizes authorization independence and efficient querying. Customers are stored at the root level in a `customers` collection. Invoices are stored as subcollections of customer documents (`customers/{customerId}/invoices/{invoiceId}`), and outstanding amounts are further nested under invoice documents (`customers/{customerId}/invoices/{invoiceId}/outstandings/{outstandingId}`).\n\n**Authorization Independence**: The structure does not require `get()` calls in security rules. The application uses path-based ownership for security. Only the user with the appropriate permissions can access customer, invoice and outstanding documents.\n\n**QAPs Support**: The structure supports secure `list` operations. Security rules can easily check if the requesting user has access to a specific customer document or its subcollections (invoices and outstanding). The homogeneous security posture within each collection simplifies the rules, ensuring only authorized users can list resources.\n\nGiven the nature of data and the lack of user-specific ownership, there is no need for denormalization of members, roles, or other authorization context."
+    "/customers/{customerId}": {
+      "schema": { "$ref": "#/entities/Customer" },
+      "description": "Stores customer data."
+    },
+    "/customers/{customerId}/invoices/{invoiceId}": {
+      "schema": { "$ref": "#/entities/Invoice" },
+      "description": "Stores invoice data for a specific customer."
+    },
+    "/users/{userId}": {
+        "schema": {"$ref": "#/entities/User"},
+        "description": "Stores user profile information."
+    }
   }
 }
