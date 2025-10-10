@@ -96,6 +96,8 @@ const initialUsers = [
   },
 ];
 
+const roleOptions = ['Admin', 'Country Manager', 'Manager', 'Engineer'];
+
 type User = typeof initialUsers[0];
 
 function AddUserDialog({ onAddUser, children }: { onAddUser: (user: User) => void, children: React.ReactNode }) {
@@ -159,7 +161,18 @@ function AddUserDialog({ onAddUser, children }: { onAddUser: (user: User) => voi
                     </div>
                     <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="role" className="text-right">Role</Label>
-                        <Input id="role" value={role} onChange={e => setRole(e.target.value)} className="col-span-3" />
+                         <Select value={role} onValueChange={setRole}>
+                            <SelectTrigger className="col-span-3">
+                                <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {roleOptions.map(option => (
+                                    <SelectItem key={option} value={option}>
+                                        {option}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                      <div className="grid grid-cols-4 items-center gap-4">
                         <Label htmlFor="region" className="text-right">Region</Label>
@@ -215,6 +228,16 @@ export default function UserManagementPage() {
         setUsers(prevUsers => [newUser, ...prevUsers]);
     };
 
+    const handleRoleChange = (email: string, newRole: string) => {
+        setUsers(users.map(user => 
+            user.email === email ? { ...user, role: newRole } : user
+        ));
+         toast({
+            title: 'Permissions Updated',
+            description: `Role for ${email} has been updated to ${newRole}.`,
+        });
+    }
+
   return (
     <>
       <div className="flex items-center justify-between">
@@ -228,16 +251,15 @@ export default function UserManagementPage() {
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
-          <CardDescription>A list of all users in the system.</CardDescription>
+          <CardDescription>A list of all users in the system including their assigned permissions.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>User</TableHead>
-                <TableHead>Password</TableHead>
                 <TableHead>Region</TableHead>
-                <TableHead>Role</TableHead>
+                <TableHead>Permissions</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Last Login</TableHead>
                 <TableHead className="text-right">Actions</TableHead>
@@ -258,9 +280,21 @@ export default function UserManagementPage() {
                         </div>
                     </div>
                   </TableCell>
-                  <TableCell>{user.password}</TableCell>
                   <TableCell>{user.region}</TableCell>
-                  <TableCell>{user.role}</TableCell>
+                  <TableCell>
+                     <Select value={user.role} onValueChange={(value) => handleRoleChange(user.email, value)}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select a role" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {roleOptions.map(option => (
+                                <SelectItem key={option} value={option}>
+                                    {option}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                  </TableCell>
                   <TableCell>
                     <Badge variant={user.status === 'Active' ? 'default' : 'destructive'}>{user.status}</Badge>
                   </TableCell>
