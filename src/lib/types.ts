@@ -1,4 +1,3 @@
-
 export interface Outstanding {
   id?: string;
   invoiceId?: string;
@@ -122,4 +121,5 @@ export interface User {
   region: 'North' | 'South' | 'East' | 'West';
   department: 'Batching Plant' | 'Pump';
   contact: string;
+  photoURL?: string;
 }

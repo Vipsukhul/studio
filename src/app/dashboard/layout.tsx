@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import Link from 'next/link';
@@ -35,15 +33,19 @@ import { useEffect, useState } from 'react';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { GoToTop } from '@/components/ui/go-to-top';
+import { useAuth, useUser } from '@/firebase';
+import { doc, getDoc } from 'firebase/firestore';
+import { useFirestore } from '@/firebase';
+import type { User as UserProfile } from '@/lib/types';
 
 const navItems = [
-  { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/invoice-tracker', label: 'Invoice Tracker', icon: LineChart },
-  { href: '/data-sheet', label: 'Data Sheet', icon: SheetIcon },
-  { href: '/team-hierarchy', label: 'Team Hierarchy', icon: Users },
-  { href: '/upload-data', label: 'Upload Data', icon: Upload, roles: ['Country Manager', 'Admin'] },
-  { href: '/notifications', label: 'Notifications', icon: Bell },
-  { href: '/settings', label: 'Settings', icon: Settings },
+  { href: '/dashboard', label: 'Dashboard', icon: Home },
+  { href: '/dashboard/invoice-tracker', label: 'Invoice Tracker', icon: LineChart },
+  { href: '/dashboard/data-sheet', label: 'Data Sheet', icon: SheetIcon },
+  { href: '/dashboard/team-hierarchy', label: 'Team Hierarchy', icon: Users },
+  { href: '/dashboard/upload-data', label: 'Upload Data', icon: Upload, roles: ['Country Manager', 'Admin'] },
+  { href: '/dashboard/notifications', label: 'Notifications', icon: Bell },
+  { href: '/dashboard/settings', label: 'Settings', icon: Settings },
 ];
 
 export default function DashboardLayout({
@@ -53,10 +55,47 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { toast } = useToast();
+  const auth = useAuth();
+  const firestore = useFirestore();
+  const { user: firebaseUser, isUserLoading } = useUser();
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(true);
   
-  const [userRole, setUserRole] = useState('Engineer'); // Mock role
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
+
+  useEffect(() => {
+    if (isUserLoading) return; // Wait for auth to settle
+
+    if (!firebaseUser) {
+      router.replace('/'); // Redirect unauthenticated users
+      return;
+    }
+
+    const fetchUserProfile = async () => {
+      setIsProfileLoading(true);
+      const userDocRef = doc(firestore, 'users', firebaseUser.uid);
+      const userDoc = await getDoc(userDocRef);
+      if (userDoc.exists()) {
+        const profile = userDoc.data() as UserProfile;
+        setUserProfile(profile);
+        localStorage.setItem('userRole', profile.role);
+        localStorage.setItem('department', profile.department);
+        window.dispatchEvent(new Event('storage')); // Notify other components of change
+      } else {
+        toast({
+          variant: 'destructive',
+          title: 'Error',
+          description: 'User profile not found. Please contact support.',
+        });
+        auth.signOut(); // Log out if profile is missing
+      }
+      setIsProfileLoading(false);
+    };
+
+    fetchUserProfile();
+
+  }, [firebaseUser, isUserLoading, firestore, auth, router, toast]);
   
   useEffect(() => {
     const handleStorageChange = () => {
@@ -74,18 +113,26 @@ export default function DashboardLayout({
   
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
-    return item.roles.includes(userRole || '');
+    return item.roles.includes(userProfile?.role || '');
   });
 
   const handleLogout = async () => {
+    await auth.signOut();
+    localStorage.clear();
     toast({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
     });
-    localStorage.clear();
+    router.replace('/');
   };
 
-  const userInitial = 'U';
+  if (isUserLoading || isProfileLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -93,7 +140,7 @@ export default function DashboardLayout({
       <div className="hidden border-r bg-sidebar md:block">
         <div className="flex h-full max-h-screen flex-col gap-2">
           <div className="flex h-14 items-center border-b px-4 lg:h-[60px] lg:px-6">
-            <Link href="/" className="flex items-center gap-2 font-semibold">
+            <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
               <Logo className="h-6 w-6 text-sidebar-primary" />
               <span className="font-headline text-sidebar-foreground">Outstanding Tracker</span>
             </Link>
@@ -123,7 +170,7 @@ export default function DashboardLayout({
              <SheetHeader>
                 <SheetTitle className="sr-only">Mobile Navigation Menu</SheetTitle>
                 <SheetDescription className="sr-only">A list of links to navigate the application.</SheetDescription>
-                 <Link href="/" className="flex items-center gap-2 text-lg font-semibold mb-4">
+                 <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold mb-4">
                   <Logo className="h-6 w-6 text-sidebar-primary" />
                   <span className="font-headline text-sidebar-foreground">Tracker</span>
                 </Link>
@@ -143,7 +190,7 @@ export default function DashboardLayout({
              {/* The department selector was here */}
           </div>
            <ThemeToggle />
-           <Link href="/notifications">
+           <Link href="/dashboard/notifications">
             <Button variant="ghost" size="icon" className="rounded-full relative">
                 <Bell className="h-5 w-5" />
                 <span className="sr-only">Notifications</span>
@@ -153,16 +200,16 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src={profileImageUrl || `https://picsum.photos/seed/user/32/32`} />
-                  <AvatarFallback>{userInitial}</AvatarFallback>
+                  <AvatarImage src={profileImageUrl || userProfile?.photoURL || `https://picsum.photos/seed/${firebaseUser?.uid}/32/32`} />
+                  <AvatarFallback>{userProfile?.name?.charAt(0) || 'U'}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>My Account</DropdownMenuLabel>
+              <DropdownMenuLabel>{userProfile?.name || 'My Account'}</DropdownMenuLabel>
               <DropdownMenuSeparator />
-              <Link href="/settings" passHref>
+              <Link href="/dashboard/settings" passHref>
                 <DropdownMenuItem>Settings</DropdownMenuItem>
               </Link>
               <DropdownMenuItem>Support</DropdownMenuItem>
@@ -201,5 +248,3 @@ function NavItem({ href, label, icon: Icon, mobile = false }: { href: string; la
     </Link>
   );
 }
-
-    
