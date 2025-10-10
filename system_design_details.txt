@@ -1,0 +1,117 @@
+
+======================================
+Outstanding Tracker - System Design
+======================================
+
+1. Application Overview
+-----------------------
+The Outstanding Tracker is a comprehensive web application designed to help businesses monitor, manage, and analyze outstanding invoices and customer payments. It provides a role-based system with a detailed user dashboard for day-to-day operations and a powerful admin panel for system management and oversight. The application is built with a modern, frontend-only tech stack and uses mock data to simulate a backend.
+
+2. Tech Stack
+-------------
+- Framework: Next.js 15.x (App Router)
+- Language: TypeScript
+- UI Library: React 18.x
+- Styling: Tailwind CSS
+- UI Components: ShadCN/UI
+- Charts: Recharts
+- Form Management: react-hook-form
+- File Handling: 'xlsx' for Excel processing, 'react-dropzone' for file uploads.
+- State Management: React Hooks (useState, useEffect, useMemo, useContext) and component props.
+
+3. Project Structure
+--------------------
+/
+├── src/
+│   ├── app/                # Application routes (Next.js App Router)
+│   │   ├── admin/          # Admin panel routes
+│   │   ├── dashboard/      # User dashboard routes
+│   │   ├── globals.css     # Global styles and ShadCN theme variables
+│   │   └── page.tsx        # Main user login page
+│   │
+│   ├── components/         # Reusable React components
+│   │   ├── charts/         # Chart components built with Recharts
+│   │   ├── tables/         # TanStack Table components (e.g., DataSheetTable)
+│   │   └── ui/             # Core ShadCN UI components (Button, Card, etc.)
+│   │
+│   ├── hooks/              # Custom React hooks (e.g., use-toast)
+│   │
+│   └── lib/                # Shared utilities, data, and types
+│       ├── api.ts          # Mock API functions simulating backend calls
+│       ├── data.ts         # Mock database/static data for the application
+│       ├── notifications.ts# Mock notification handling logic
+│       └── types.ts        # TypeScript type definitions for all data models
+│
+├── public/                 # Static assets (images, etc.)
+│
+└── tailwind.config.ts      # Tailwind CSS configuration
+
+4. Data Models & Schema (from src/lib/types.ts)
+-----------------------------------------------
+- **Customer**: Represents a customer entity, including their code, name, region, department, outstanding amount, and assigned engineer. It can contain a sub-array of `Invoice` objects.
+- **Invoice**: Represents a single invoice with its number, amount, date, and status ('paid', 'unpaid', 'dispute').
+- **User**: Represents an application user with properties like name, email, role ('Manager', 'Engineer', 'Country Manager', 'Admin'), region, department, and contact info.
+- **Kpi**: Defines the structure for a Key Performance Indicator on the dashboard.
+- **OutstandingByAge**: Data structure for the "Region vs. Ageing" bar chart.
+- **RegionDistribution**: Data structure for the "Region-wise Distribution" pie chart.
+- **Notification**: Defines the structure for user alerts and notifications.
+- **LogEntry**: Structure for system logs displayed in the admin panel.
+
+5. Core Features & Logic Flow
+------------------------------
+### 5.1. Authentication
+- **Flow**: Authentication is entirely mocked on the client side.
+- **User Login (`/page.tsx`):**
+    - User enters credentials (e.g., 'vipsukhul@gmail.com' / 'password').
+    - On submit, a timeout simulates a network request.
+    - If credentials match a hardcoded user, the `userRole` and `department` are stored in `localStorage`.
+    - The user is then redirected to `/dashboard`.
+- **Admin Login (`/admin/login/page.tsx`):**
+    - Similar flow, but checks against a separate list of admin credentials.
+    - Stores `userRole` as 'Admin' in `localStorage` and redirects to `/admin`.
+- **Role-Based Access Control (RBAC):**
+    - Implemented on the client side.
+    - The `DashboardLayout` checks `localStorage` for the `userRole` to conditionally render navigation items (e.g., the 'Upload Data' link is only shown to 'Country Manager' and 'Admin').
+
+### 5.2. Data Management (Mock API)
+- **Data Source**: All data is imported from `src/lib/data.ts`.
+- **API Layer (`src/lib/api.ts`):**
+    - This file acts as a simulated backend.
+    - Functions like `getCustomers()`, `getDashboardData()`, and `updateCustomerRemark()` are `async` and use a `setTimeout` to mimic network latency.
+    - "Update" functions directly mutate the imported mock data arrays. This data state is temporary and resets on a full page refresh.
+- **Data Fetching in Components:**
+    - Pages use `useEffect` hooks to call functions from `src/lib/api.ts`.
+    - `useState` is used to manage the component's data, loading, and error states.
+    - Example: `DataSheetPage` fetches customer data and updates its state, re-rendering the `DataSheetTable`.
+
+### 5.3. Dashboard & Charting
+- **KPIs**: Fetched via `getDashboardData` and displayed in `KpiCard` components.
+- **Charts (`/components/charts/*.tsx`):**
+    - All charts are built using `Recharts`.
+    - They are wrapped in a generic `ChartContainer` for consistent styling.
+    - Data for charts is fetched in `src/app/dashboard/page.tsx` and passed down as props.
+    - **Horizontal Scrolling**: The charts and the summary table are wrapped in a `div` with a minimum width and placed inside a container with `overflow-x-auto` to ensure they don't break the layout on smaller screens.
+
+### 5.4. Excel Data Upload (`/dashboard/upload-data/page.tsx`)
+- **UI**: A `react-dropzone` area allows users to drag-and-drop or select an `.xlsx` file.
+- **Processing (`src/lib/api.ts -> processAndUploadFile`):**
+    - The `FileReader` API reads the file on the client side.
+    - The `xlsx` library parses the file buffer into a JSON array.
+    - The function then simulates an upload and creates a mock notification.
+    - No data is actually persisted; it's only logged to the console.
+
+### 5.5. Admin Panel
+- **User Management**: Displays a list of mock users. "Add" and "Delete" actions modify the component's local state, not the persistent mock data source.
+- **Logs**: Displays a static list of log entries from `src/lib/data.ts`.
+- **Engineer Performance**: Fetches and displays mock performance data with a dedicated chart.
+
+6. Styling and Theming
+-----------------------
+- **CSS Framework**: Tailwind CSS is used for all styling.
+- **Component Library**: ShadCN/UI provides the base components (Button, Card, Table, etc.). These are not imported from a node module but are part of the source code in `src/components/ui/`.
+- **Global Styles & CSS Variables (`src/app/globals.css`):**
+    - Defines HSL-based CSS variables for the color palette (e.g., `--background`, `--primary`, `--destructive`).
+    - Contains separate palettes for `light` and `.dark` themes.
+- **Dark Mode**: Implemented using `next-themes`. The `ThemeProvider` in `src/app/layout.tsx` and the `ThemeToggle` component in the header work together to switch themes by changing a `class="dark"` on the `<html>` element.
+- **Fonts**: Custom fonts (`Inter` and `Space Grotesk`) are imported from Google Fonts in `src/app/layout.tsx`.
+- **Responsiveness**: Primarily handled via Tailwind's responsive prefixes (e.g., `md:`, `lg:`). Some pages required manual overflow containers for wide tables and charts.
