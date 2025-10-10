@@ -17,9 +17,14 @@ export default function TeamHierarchyPage() {
     async function loadUsers() {
       if (!firestore) return;
       setLoading(true);
-      const userList = await getUsers(firestore);
-      setUsers(userList);
-      setLoading(false);
+      try {
+        const userList = await getUsers(firestore);
+        setUsers(userList);
+      } catch (error) {
+        console.error("Failed to fetch users:", error);
+      } finally {
+        setLoading(false);
+      }
     }
     loadUsers();
   }, [firestore]);
