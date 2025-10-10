@@ -234,52 +234,60 @@ export default function DashboardPage() {
         </div>
 
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-          <Card className="lg:col-span-4 overflow-x-auto">
+          <Card className="lg:col-span-4">
             <CardHeader>
               <CardTitle>Region vs. Ageing</CardTitle>
             </CardHeader>
-            <CardContent>
-              {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full min-w-[600px]">
-                <AgeBarChart data={filteredAgeData} />
-              </ChartContainer>}
+            <CardContent className="overflow-x-auto">
+              <div className="min-w-[600px]">
+                {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
+                  <AgeBarChart data={filteredAgeData} />
+                </ChartContainer>}
+              </div>
             </CardContent>
           </Card>
-          <Card className="lg:col-span-3 overflow-x-auto">
+          <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle>Region-wise Distribution</CardTitle>
             </CardHeader>
-            <CardContent>
-              {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full min-w-[400px]">
-                  <RegionPieChart data={regionDistribution} />
-              </ChartContainer>}
+            <CardContent className="overflow-x-auto">
+              <div className="min-w-[400px]">
+                {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
+                    <RegionPieChart data={regionDistribution} />
+                </ChartContainer>}
+              </div>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <Card className="overflow-x-auto">
+          <Card>
               <CardHeader>
                   <CardTitle>Month-wise Outstanding Trend</CardTitle>
               </CardHeader>
-              <CardContent>
-                  {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full min-w-[600px]">
-                      <MonthlyLineChart data={monthlyTrends} />
-                  </ChartContainer>}
+              <CardContent className="overflow-x-auto">
+                  <div className="min-w-[600px]">
+                    {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
+                        <MonthlyLineChart data={monthlyTrends} />
+                    </ChartContainer>}
+                  </div>
               </CardContent>
           </Card>
-          <Card className="overflow-x-auto">
+          <Card>
               <CardHeader>
                   <CardTitle>New vs. Recovered Outstanding</CardTitle>
               </CardHeader>
-              <CardContent>
-                  {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full min-w-[600px]">
+              <CardContent className="overflow-x-auto">
+                <div className="min-w-[600px]">
+                  {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full">
                       <OutstandingRecoveryChart data={recoveryData} />
                   </ChartContainer>}
+                </div>
               </CardContent>
           </Card>
         </div>
         
-        <Card className="overflow-x-auto">
+        <Card>
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Ageing Summary by Region</CardTitle>
@@ -297,7 +305,7 @@ export default function DashboardPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
