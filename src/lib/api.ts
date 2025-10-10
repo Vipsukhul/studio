@@ -130,14 +130,10 @@ export async function updateCustomerNotes(firestore: Firestore, customerId: stri
 
 
 /**
- * Processes an uploaded Excel file.
- * In a real app, you might send the file to a backend for processing.
- * Here, we'll process it on the client-side.
+ * Processes an uploaded Excel file and saves the data to Firestore.
  * @param file - The Excel file to process.
  */
 export async function processAndUploadFile(firestore: Firestore, file: File, month: string): Promise<{ count: number; data: any[] }> {
-  await delay(1000); // Simulate upload and processing time
-
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
@@ -151,9 +147,36 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
         const sheetName = workbook.SheetNames[0];
         const worksheet = workbook.Sheets[sheetName];
         const jsonData: any[] = xlsx.utils.sheet_to_json(worksheet, { defval: null });
-        
-        console.log('Simulating data processing and saving:', jsonData);
-        
+
+        if (jsonData.length === 0) {
+            return reject(new Error("Excel file is empty or could not be parsed."));
+        }
+
+        const uploadPromises = jsonData.map(async (row) => {
+            const customerCode = row.customerCode || row['Customer Code'];
+            if (!customerCode) {
+                console.warn('Skipping row due to missing customer code:', row);
+                return; // Skip rows without a customer code
+            }
+
+            const customerRef = doc(firestore, 'customers', customerCode.toString());
+            const customerData: Partial<Customer> = {
+                customerCode: customerCode.toString(),
+                customerName: row.customerName || row['Customer Name'],
+                region: row.region || row['Region'],
+                department: row.department || row['Department'],
+                outstandingAmount: row.outstandingAmount || row['Outstanding Amount'] || 0,
+                remarks: row.remarks || 'none',
+                notes: row.notes || '',
+                assignedEngineer: row.assignedEngineer || '',
+            };
+
+            // Use setDoc with merge: true to create or update.
+            return setDoc(customerRef, customerData, { merge: true });
+        });
+
+        await Promise.all(uploadPromises);
+
         createNotification({
             from: { name: 'Country Manager', role: 'Country Manager' },
             to: 'all',
@@ -162,6 +185,7 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
         
         resolve({ count: jsonData.length, data: jsonData });
       } catch (error) {
+        console.error("Error processing file:", error);
         reject(error);
       }
     };
