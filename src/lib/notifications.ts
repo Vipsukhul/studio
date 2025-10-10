@@ -1,40 +1,45 @@
-import { addDoc, collection, doc, updateDoc, Firestore } from 'firebase/firestore';
+
 import type { Notification } from './types';
 
+// In-memory array to store notifications for the current session.
+let notifications: Notification[] = [];
+let nextId = 1;
+
 /**
- * Creates a new notification and adds it to the Firestore database.
- * @param firestore - The Firestore instance.
+ * Creates a new notification and adds it to the in-memory array.
  * @param notificationData - The data for the new notification.
  */
-export async function createNotification(firestore: Firestore, notificationData: Omit<Notification, 'id' | 'timestamp' | 'isRead'>): Promise<void> {
-    const newNotification = {
+export function createNotification(notificationData: Omit<Notification, 'id' | 'timestamp' | 'isRead'>): void {
+    const newNotification: Notification = {
         ...notificationData,
+        id: (nextId++).toString(),
         timestamp: new Date().toISOString(),
         isRead: false,
     };
     
-    try {
-        const notificationsCollection = collection(firestore, 'notifications');
-        await addDoc(notificationsCollection, newNotification);
-        console.log('Created notification in Firestore:', newNotification);
-    } catch (error) {
-        console.error("Error creating notification in Firestore:", error);
-    }
+    notifications.push(newNotification);
+    console.log('Created client-side notification:', newNotification);
 }
 
 /**
- * Marks a single notification as read in the Firestore database.
- * @param firestore - The Firestore instance.
+ * Retrieves all notifications from the in-memory array.
+ * @returns An array of notifications.
+ */
+export function getNotifications(): Notification[] {
+    return notifications;
+}
+
+/**
+ * Marks a single notification as read in the in-memory array.
  * @param notificationId The ID of the notification to mark as read.
  */
-export async function markNotificationAsRead(firestore: Firestore, notificationId: string): Promise<{ success: boolean }> {
-    try {
-        const notificationRef = doc(firestore, 'notifications', notificationId);
-        await updateDoc(notificationRef, { isRead: true });
-        console.log('Marked notification as read in Firestore:', notificationId);
+export function markNotificationAsRead(notificationId: string): { success: boolean } {
+    const notification = notifications.find(n => n.id === notificationId);
+    if (notification) {
+        notification.isRead = true;
+        console.log('Marked notification as read (client-side):', notificationId);
         return { success: true };
-    } catch (error) {
-        console.error("Error marking notification as read:", error);
-        return { success: false };
     }
+    console.error("Error marking notification as read: Not found.");
+    return { success: false };
 }

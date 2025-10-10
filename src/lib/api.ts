@@ -1,3 +1,4 @@
+
 import * as xlsx from 'xlsx';
 import {
   kpis,
@@ -94,7 +95,7 @@ export async function updateCustomerRemark(firestore: Firestore, customerId: str
   const userRole = localStorage.getItem('userRole');
   if (userRole === 'Manager') {
       const customerName = 'Customer ' + customerId; // Simplified for now
-      await createNotification(firestore, {
+      createNotification({
           from: { name: 'Manager', role: 'Manager' },
           to: 'Country Manager',
           message: `Manager updated remark for ${customerName} to "${newRemark}".`
@@ -117,7 +118,7 @@ export async function updateCustomerNotes(firestore: Firestore, customerId: stri
   const userRole = localStorage.getItem('userRole');
   if (userRole === 'Engineer') {
       const customerName = 'Customer ' + customerId; // Simplified for now
-      await createNotification(firestore, {
+      createNotification({
           from: { name: 'Engineer', role: 'Engineer' },
           to: 'Manager',
           message: `Engineer added new notes for ${customerName}.`
@@ -153,7 +154,7 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
         
         console.log('Simulating data processing and saving:', jsonData);
         
-        await createNotification(firestore, {
+        createNotification({
             from: { name: 'Country Manager', role: 'Country Manager' },
             to: 'all',
             message: `The data sheet for ${month} has been updated with ${jsonData.length} records.`
@@ -196,7 +197,7 @@ export async function updateAssignedEngineer(firestore: Firestore, customerId: s
     const userRole = localStorage.getItem('userRole');
     if (userRole === 'Manager') {
         const customerName = 'Customer ' + customerId;
-        await createNotification(firestore, {
+        createNotification({
             from: { name: 'Manager', role: 'Manager' },
             to: 'Country Manager',
             message: `Manager assigned ${engineerName} to ${customerName}.`

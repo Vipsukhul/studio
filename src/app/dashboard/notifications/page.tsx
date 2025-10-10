@@ -7,53 +7,51 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Notification } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
-import { markNotificationAsRead } from '@/lib/notifications';
+import { getNotifications, markNotificationAsRead } from '@/lib/notifications';
 import { Button } from '@/components/ui/button';
-import { useFirestore, useCollection, useMemoFirebase } from '@/firebase';
-import { collection, query, where, orderBy } from 'firebase/firestore';
 
 export default function NotificationsPage() {
-    const firestore = useFirestore();
-    const [userRole, setUserRole] = useState<string | null>(null);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const role = localStorage.getItem('userRole') || '';
-        setUserRole(role);
+        // Simulate fetching data for consistent UX
+        setLoading(true);
+        const data = getNotifications();
+        setNotifications(data.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+        setLoading(false);
     }, []);
 
-    const notificationsQuery = useMemoFirebase(() => {
-        if (!firestore || !userRole) return null;
-
-        return query(
-            collection(firestore, 'notifications'),
-            where('to', 'in', ['all', userRole]),
-            orderBy('timestamp', 'desc')
-        );
-    }, [firestore, userRole]);
-
-    const { data: notifications, isLoading } = useCollection<Notification>(notificationsQuery);
-
-    const handleNotificationClick = async (notificationId?: string) => {
-        if (!notificationId || !firestore) return;
-        await markNotificationAsRead(firestore, notificationId);
-        // The real-time listener will handle the UI update.
+    const handleNotificationClick = (notificationId?: string) => {
+        if (!notificationId) return;
+        markNotificationAsRead(notificationId);
+        // Re-fetch and re-render to show the "read" state
+        const updatedNotifications = getNotifications().sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+        setNotifications(updatedNotifications);
     };
+
+    const handleRefresh = () => {
+        setLoading(true);
+        const data = getNotifications();
+        setNotifications(data.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+        setLoading(false);
+    }
 
     return (
         <>
             <div className="flex items-center justify-between">
               <h1 className="text-3xl font-headline font-bold">Notifications</h1>
-              {/* Refresh button is no longer needed with real-time updates */}
+              <Button onClick={handleRefresh} variant="outline">Refresh</Button>
             </div>
             <Card>
                 <CardHeader>
                     <CardTitle>Your Recent Alerts</CardTitle>
                     <CardDescription>
-                        Here are the latest updates and alerts for you.
+                        Here are the latest updates and alerts for you. These will clear when you refresh the page.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    {isLoading ? (
+                    {loading ? (
                         <div className="flex items-center justify-center h-48">
                             <div className="w-12 h-12 border-4 border-dashed rounded-full animate-spin border-primary"></div>
                         </div>
