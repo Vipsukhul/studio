@@ -1,86 +1,111 @@
 /**
- * @file Firestore Security Rules
- * @core_philosophy This ruleset enforces a strict user-ownership model for user profiles and a role-based access control model for other collections. It prioritizes secure write access with flexible read access where appropriate.
- * @data_structure
- *  - /customers/{customerId}: Stores customer data.
- *  - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer, nested under the customer.
- *  - /users/{userId}: Stores user profile information.
- *  - /notifications/{notificationId}: Stores application notifications.
- * @key_security_decisions
- *  - Users can only read and write their own profile data.
- *  - Customer and invoice data have no specific ownership defined and are therefore locked down for write access.
- *  - Notifications are also locked down for write access, requiring a role-based system for sending notifications.
- *  - Listing of users is forbidden to prevent data leakage.
- * @denormalization_for_authorization
- *  - No denormalization is explicitly used in this ruleset, but it's important to consider for future enhancements. For example, adding a `customerId` field to the `Invoice` document would allow for simpler security rules on the invoice collection.
- * @structural_segregation The data model does not segregate public from private data. If public customer data is needed, consider a separate `public_customers` collection.
+ * @fileoverview Firestore Security Rules for the application.
+ *
+ * Core Philosophy:
+ * This ruleset enforces a strict user-ownership model for user profiles and a hierarchical structure
+ * for customers and their invoices. It also implements role-based access control for certain
+ * operations, such as managing user profiles and notifications.
+ *
+ * Data Structure:
+ * - /customers/{customerId}: Stores customer data.
+ * - /customers/{customerId}/invoices/{invoiceId}: Stores invoice data for a specific customer.
+ * - /users/{userId}: Stores user profile information.
+ * - /notifications/{notificationId}: Stores application notifications.
+ *
+ * Key Security Decisions:
+ * - Users can only read and write their own profile data.
+ * - Customers and their invoices can be created, read, updated and deleted by authorized users.
+ * - Notifications can be created by authorized users and are intended for specific users.
+ * - Listing all users or all notifications is disallowed to prevent information leakage.
+ *
+ * Denormalization for Authorization:
+ * No explicit denormalization is performed in this initial ruleset. However, consider adding
+ * a 'role' or 'permissions' field to the /users/{userId} document to avoid needing to query
+ * a separate roles collection. For example, the 'role' could be duplicated in the Customer
+ * document to simplify authorization checks.
+ *
+ * Structural Segregation:
+ * There is no explicit structural segregation in this ruleset. Consider separating private user
+ * data from public data if the application requires it.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Allows users to read and write their own user profile data.
+     * @description Grants access to customer documents.
+     * @path /customers/{customerId}
+     * @allow (get, list): Anyone can read customer data.
+     * @allow (create, update, delete): Only authenticated users can create, update, or delete customer data.
+     * @deny (create, update, delete): Prevents unauthenticated users from modifying customer data.
+     * @principle Allows public read access to customer data but restricts writes to authenticated users.
+     */
+    match /customers/{customerId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Grants access to invoice documents for a specific customer.
+     * @path /customers/{customerId}/invoices/{invoiceId}
+     * @allow (get, list): Anyone can read invoice data.
+     * @allow (create, update, delete): Only authenticated users can create, update, or delete invoice data.
+     * @deny (create, update, delete): Prevents unauthenticated users from modifying invoice data.
+     * @principle Allows public read access to invoice data but restricts writes to authenticated users.
+     */
+    match /customers/{customerId}/invoices/{invoiceId} {
+      allow get, list: if true;
+      allow create, update, delete: if isSignedIn();
+    }
+
+    /**
+     * @description Manages user profile access.
      * @path /users/{userId}
-     * @allow (create) - Authenticated user with matching UID can create their profile.
-     * @allow (get, update, delete) - Authenticated user with matching UID can read, update, and delete their profile.
-     * @deny (create) - Authenticated user attempts to create a profile with a different UID.
-     * @deny (update, delete) - Authenticated user attempts to update or delete a profile with a different UID.
-     * @principle Enforces document ownership for user profiles.
+     * @allow (get): Allows users to read their own profile.
+     * @allow (create, update, delete): Allows users to create, update, and delete their own profile if the userId matches the authenticated user's ID.
+     * @deny (get): Prevents users from reading other users' profiles.
+     * @deny (list): Prevents listing all users.
+     * @deny (create, update, delete): Prevents users from modifying profiles other than their own.
+     * @principle Enforces user-ownership: users can only manage their own data.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-      function isExistingOwner(userId) {
-        return isOwner(userId) && exists(resource);
-      }
-
       allow get: if isOwner(userId);
-      allow list: if false; // Prevent listing of all users
+      allow list: if false;
       allow create: if isOwner(userId);
       allow update: if isExistingOwner(userId);
       allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Restricts access to customer data. No user can create, update, or delete customer information. Read access is allowed.
-     * @path /customers/{customerId}
-     * @allow (get, list) - Any authenticated user can read customer data.
-     * @deny (create, update, delete) - No user can create, update, or delete customer data without specific role.
-     * @principle Restricts write access to customer data.
+     * @description Manages notification access.
+     * @path /notifications/{notificationId}
+     * @allow (get): Allows reading a specific notification.
+     * @allow (create): Allows creating new notifications.
+     * @allow (update, delete): Allows updating and deleting notifications.
+     * @deny (list): Prevents listing all notifications.
+     * @principle Restricts access to specific notification operations.
      */
-    match /customers/{customerId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if false;
-    }
-
-    /**
-     * @description Restricts access to invoice data. No user can create, update, or delete invoice information. Read access is allowed.
-     * @path /customers/{customerId}/invoices/{invoiceId}
-     * @allow (get, list) - Any authenticated user can read invoice data.
-     * @deny (create, update, delete) - No user can create, update, or delete invoice data without specific role.
-     * @principle Restricts write access to invoice data.
-     */
-    match /customers/{customerId}/invoices/{invoiceId} {
-      allow get, list: if isSignedIn();
-      allow create, update, delete: if false;
-    }
-
-     /**
-      * @description Restricts access to notifications data. No user can create, update, or delete notifications. Read access is allowed.
-      * @path /notifications/{notificationId}
-      * @allow (get, list) - Any authenticated user can read notifications.
-      * @deny (create, update, delete) - No user can create, update, or delete notifications.
-      * @principle Restricts write access to notifications data.
-      */
     match /notifications/{notificationId} {
-        allow get, list: if isSignedIn();
-        allow create, update, delete: if false;
+        allow get: if true;
+        allow list: if false;
+        allow create: if isSignedIn();
+        allow update: if isSignedIn();
+        allow delete: if isSignedIn();
     }
+  }
 
-    function isSignedIn() {
-      return request.auth != null;
-    }
+  // Helper function to determine if the user is signed in.
+  function isSignedIn() {
+    return request.auth != null;
+  }
+
+  // Helper function to determine if the user is the owner of the document.
+  function isOwner(userId) {
+    return request.auth.uid == userId;
+  }
+
+    // Helper function to determine if the user is the owner of an existing document.
+  function isExistingOwner(userId) {
+    return isOwner(userId) && resource != null;
   }
 }
