@@ -62,12 +62,11 @@ const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: C
         const status = newStatus === 'dispute' ? 'dispute' : 'unpaid';
         toast({ title: 'Updating invoice...', description: `Setting status for invoice ${invoiceNumber} to ${status}.`});
         try {
-            // This is a fire-and-forget update now
-            updateInvoiceDisputeStatus(customer.id!, invoiceNumber, status);
+            updateInvoiceDisputeStatus(customer.customerCode!, invoiceNumber, status);
             onInvoiceUpdate(invoiceNumber, status);
-            toast({ title: 'Success', description: 'Invoice status update requested.'});
+            toast({ title: 'Success', description: 'Invoice status updated.'});
         } catch(error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Failed to request invoice status update.' });
+            toast({ variant: 'destructive', title: 'Error', description: 'Failed to update invoice status.' });
         }
     };
   
@@ -145,7 +144,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       updateCustomerRemark(customerId, newRemark);
       setTableData((prevData) =>
         prevData.map((customer) =>
-          customer.id === customerId
+          customer.customerCode === customerId
             ? { ...customer, remarks: newRemark }
             : customer
         )
@@ -161,7 +160,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       updateCustomerNotes(customerId, newNotes);
       setTableData((prevData) =>
         prevData.map((customer) =>
-          customer.id === customerId
+          customer.customerCode === customerId
             ? { ...customer, notes: newNotes }
             : customer
         )
@@ -177,7 +176,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       updateAssignedEngineer(customerId, newEngineer);
       setTableData((prevData) =>
         prevData.map((customer) =>
-          customer.id === customerId ? { ...customer, assignedEngineer: newEngineer } : customer
+          customer.customerCode === customerId ? { ...customer, assignedEngineer: newEngineer } : customer
         )
       );
       toast({ title: "Success", description: "Engineer assignment requested." });
@@ -214,7 +213,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     return (
         <Select
             value={row.original.assignedEngineer}
-            onValueChange={(value) => handleEngineerChange(row.original.id, value)}
+            onValueChange={(value) => handleEngineerChange(row.original.customerCode, value)}
             disabled={isReadOnly}
         >
             <SelectTrigger className="w-[180px]">
@@ -272,7 +271,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         cell: ({ row }) => (
           <Select
             value={row.original.remarks}
-            onValueChange={(value) => handleRemarkChange(row.original.id!, value as Customer['remarks'])}
+            onValueChange={(value) => handleRemarkChange(row.original.customerCode!, value as Customer['remarks'])}
             disabled={isReadOnly}
           >
             <SelectTrigger className="w-[180px]">
@@ -297,7 +296,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
 
             const handleBlur = () => {
                 if (notes !== row.original.notes) {
-                    handleNotesChange(row.original.id!, notes);
+                    handleNotesChange(row.original.customerCode!, notes);
                 }
             };
             

@@ -43,7 +43,7 @@ const navItems = [
   { href: '/admin/api', label: 'API Management', icon: Webhook },
   { href: '/admin/logs', label: 'Logs', icon: FileText },
   { href: '/admin/engineer-performance', label: 'Engineer Performance', icon: TrendingUp },
-  { href: '/dashboard', label: 'Back to App', icon: PanelLeft },
+  { href: '/', label: 'Back to App', icon: PanelLeft },
 ];
 
 export default function AdminLayout({
@@ -61,7 +61,7 @@ export default function AdminLayout({
       title: 'Logged Out',
       description: 'You have been successfully logged out.',
     });
-    router.replace('/');
+    router.replace('/admin/login');
   };
 
   const userInitial = 'A';

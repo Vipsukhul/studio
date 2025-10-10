@@ -1,23 +1,22 @@
-
 import * as xlsx from 'xlsx';
 import {
+  customers,
   kpis,
   regionDistribution,
   monthlyTrends,
   invoiceTrackerData,
   engineers,
   outstandingRecoveryTrend,
+  outstandingByAge,
+  users as mockUsers
 } from './data';
 import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, User } from './types';
 import { createNotification } from './notifications';
-import { getFirestore, collection, getDocs, doc, query } from 'firebase/firestore';
-import { initializeFirebase, updateDocumentNonBlocking } from '@/firebase';
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api';
 
 // Simulate a delay to mimic network latency
 const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
-
 
 /**
  * Simulates fetching all dashboard data.
@@ -28,7 +27,6 @@ export async function getDashboardData(month: string, financialYear: string) {
   await delay(500);
   console.log(`Fetching data for month: ${month} and FY: ${financialYear} from ${API_URL}/dashboard`);
   
-  const customers = await getCustomers(financialYear);
   const totalCustomers = customers.length;
   
   const customersKpi: Kpi = {
@@ -39,9 +37,7 @@ export async function getDashboardData(month: string, financialYear: string) {
 
   const existingKpis = kpis.filter(k => k.label !== 'Total Customers');
   
-  // TODO: This data should be calculated from Firestore as well
-  const mockDb = await import('./data');
-  const filteredOutstandingByAge = mockDb.outstandingByAge;
+  const filteredOutstandingByAge = outstandingByAge;
   const filteredRegionDistribution = regionDistribution; 
   const filteredMonthlyTrends = monthlyTrends;
 
@@ -69,39 +65,27 @@ export async function getInvoiceTrackerData(region: string, financialYear: strin
 }
 
 /**
- * Fetches the list of all customers from Firestore.
+ * Fetches the list of all customers from mock data.
  * @param financialYear - The selected financial year.
  */
 export async function getCustomers(financialYear: string): Promise<Customer[]> {
-  console.log(`Fetching customers for FY: ${financialYear} from Firestore`);
-  const { firestore } = initializeFirebase();
-  const customersCol = collection(firestore, 'customers');
-  const q = query(customersCol);
-  
-  const customerSnapshot = await getDocs(q);
-  const customerList = customerSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Customer));
-
-  // In a real app, you might fetch subcollections concurrently
-  for (const customer of customerList) {
-    const invoicesCol = collection(firestore, 'customers', customer.id!, 'invoices');
-    const invoiceSnapshot = await getDocs(invoicesCol);
-    customer.invoices = invoiceSnapshot.docs.map(doc => ({...doc.data(), id: doc.id} as Invoice));
-  }
-
-  return customerList;
+  await delay(300);
+  console.log(`Fetching customers for FY: ${financialYear} from mock data`);
+  return JSON.parse(JSON.stringify(customers));
 }
 
 /**
  * Simulates updating a customer's remark.
- * In a real app, this would be a POST/PUT request to your backend.
  * @param customerId - The ID of the customer to update.
  * @param newRemark - The new remark to set.
  */
 export function updateCustomerRemark(customerId: string, newRemark: Customer['remarks']) {
-  console.log(`Updating remark for customer ${customerId} to "${newRemark}" in Firestore`);
-  const { firestore } = initializeFirebase();
-  const customerDoc = doc(firestore, 'customers', customerId);
-  updateDocumentNonBlocking(customerDoc, { remarks: newRemark });
+  console.log(`Updating remark for customer ${customerId} to "${newRemark}"`);
+  
+  const customer = customers.find(c => c.customerCode === customerId);
+  if (customer) {
+    customer.remarks = newRemark;
+  }
   
   createNotification({
       from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
@@ -116,11 +100,13 @@ export function updateCustomerRemark(customerId: string, newRemark: Customer['re
  * @param newNotes - The new notes to set.
  */
 export function updateCustomerNotes(customerId: string, newNotes: string) {
-  console.log(`Updating notes for customer ${customerId} to "${newNotes}" in Firestore`);
-  const { firestore } = initializeFirebase();
-  const customerDoc = doc(firestore, 'customers', customerId);
-  updateDocumentNonBlocking(customerDoc, { notes: newNotes });
-  
+  console.log(`Updating notes for customer ${customerId} to "${newNotes}"`);
+    
+  const customer = customers.find(c => c.customerCode === customerId);
+  if (customer) {
+    customer.notes = newNotes;
+  }
+
   createNotification({
       from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
       to: 'Manager',
@@ -192,11 +178,13 @@ export async function getEngineersByRegion(region: string): Promise<Engineer[]> 
  * @param engineerName - The name of the engineer to assign.
  */
 export function updateAssignedEngineer(customerId: string, engineerName: string) {
-    console.log(`Assigning engineer ${engineerName} to customer ${customerId} in Firestore`);
-    const { firestore } = initializeFirebase();
-    const customerDoc = doc(firestore, 'customers', customerId);
-    updateDocumentNonBlocking(customerDoc, { assignedEngineer: engineerName });
+    console.log(`Assigning engineer ${engineerName} to customer ${customerId}`);
     
+    const customer = customers.find(c => c.customerCode === customerId);
+    if (customer) {
+        customer.assignedEngineer = engineerName;
+    }
+
     createNotification({
         from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
         to: 'Manager',
@@ -211,14 +199,14 @@ export function updateAssignedEngineer(customerId: string, engineerName: string)
  * @param newStatus The new dispute status
  */
 export function updateInvoiceDisputeStatus(customerId: string, invoiceNumber: string, newStatus: 'dispute' | 'paid' | 'unpaid') {
-  console.log(`Updating invoice ${invoiceNumber} for customer ${customerId} to status "${newStatus}" in Firestore`);
-  const { firestore } = initializeFirebase();
-  // Note: This requires knowing the invoice ID, which is not ideal.
-  // In a real app, you might query for the invoice by invoiceNumber within the customer's subcollection.
-  // For this mock, we'll assume we can't directly update it without the ID.
-  // A better implementation would be a Cloud Function to handle this update.
-  console.warn("Direct invoice subcollection updates from the client are not fully implemented in this mock API.");
-  
+  console.log(`Updating invoice ${invoiceNumber} for customer ${customerId} to status "${newStatus}"`);
+    
+    const customer = customers.find(c => c.customerCode === customerId);
+    const invoice = customer?.invoices?.find(i => i.invoiceNumber === invoiceNumber);
+    if(invoice) {
+        invoice.status = newStatus;
+    }
+
   createNotification({
       from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
       to: 'Manager',
@@ -240,7 +228,7 @@ export async function getOutstandingRecoveryTrend(financialYear: string): Promis
  * Simulates fetching engineer performance data.
  * @param financialYear - The selected financial year.
  */
-export async function getEngineerPerformanceData(financialYear: string = '2024-2025'): Promise<EngineerPerformance[]> {
+export async function getEngineerPerformanceData(financialYear: string = '2024-2025'): Promise<any> {
   await delay(500);
   // @ts-ignore
   const { engineerPerformance } = await import('./data');
@@ -265,10 +253,7 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
  * Simulates fetching all users (managers and engineers).
  */
 export async function getUsers(): Promise<User[]> {
-    console.log(`Fetching users from Firestore`);
-    const { firestore } = initializeFirebase();
-    const usersCol = collection(firestore, 'users');
-    const userSnapshot = await getDocs(usersCol);
-    const userList = userSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as User));
-    return userList;
+    await delay(200);
+    console.log(`Fetching users from mock data`);
+    return mockUsers;
 }
