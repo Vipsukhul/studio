@@ -195,9 +195,10 @@ export default function DashboardPage() {
                     </SelectContent>
                 </Select>
             </div>
-            <div className="w-full sm:w-[180px]">
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-muted-foreground" />
               <Select value={month} onValueChange={setMonth}>
-                <SelectTrigger>
+                <SelectTrigger className="w-full sm:w-[180px]">
                   <SelectValue placeholder="Select Month" />
                 </SelectTrigger>
                 <SelectContent>
