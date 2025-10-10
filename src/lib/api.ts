@@ -81,7 +81,9 @@ export async function getCustomers(department: string, financialYear: string, fi
 
   for (const customerDoc of customerSnapshot.docs) {
     const customerData = { id: customerDoc.id, ...customerDoc.data() } as Customer;
-    if (customerData.department === department) {
+    // This is a simplified department check. A real app might need more complex logic
+    // if a customer can belong to multiple departments.
+    if (customerData.department === department || !customerData.department) {
         const invoicesCol = collection(firestore, 'customers', customerDoc.id, 'invoices');
         const invoicesSnapshot = await getDocs(invoicesCol);
         customerData.invoices = invoicesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Invoice));
@@ -158,7 +160,7 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
         const customersDataMap = new Map<string, { customer: Partial<Customer>, invoices: Partial<Invoice>[] }>();
 
         jsonData.forEach(row => {
-            const customerCode = row.customerCode || row['Customer Code'];
+            const customerCode = row.Accode;
             if (!customerCode) return;
 
             const codeStr = customerCode.toString();
@@ -166,29 +168,29 @@ export async function processAndUploadFile(firestore: Firestore, file: File, mon
                 customersDataMap.set(codeStr, {
                     customer: {
                         customerCode: codeStr,
-                        customerName: row.customerName || row['Customer Name'],
-                        region: row.region || row['Region'],
-                        department: row.department || row['Department'],
-                        outstandingAmount: 0, // Will be calculated
+                        customerName: row['Party Nam'],
+                        region: row.Region,
+                        outstandingAmount: 0,
+                        department: 'Batching Plant', // Defaulting department as it's not in the sheet
                     },
                     invoices: []
                 });
             }
 
             const current = customersDataMap.get(codeStr)!;
-            const outstandingAmount = parseFloat(row.outstandingAmount || row['Outstanding Amount'] || 0);
+            const outstandingAmount = parseFloat(row['July.Outstg.Amt'] || 0);
             
             // Add to total outstanding
             current.customer.outstandingAmount! += outstandingAmount;
 
             // Add invoice if invoiceNumber is present
-            const invoiceNumber = row.invoiceNumber || row['Invoice Number'];
+            const invoiceNumber = row['Inv. No'];
             if (invoiceNumber) {
                 current.invoices.push({
                     invoiceNumber: invoiceNumber.toString(),
-                    invoiceAmount: outstandingAmount,
-                    invoiceDate: row.invoiceDate ? new Date(row.invoiceDate).toISOString() : new Date().toISOString(),
-                    status: row.status || 'unpaid',
+                    invoiceAmount: parseFloat(row['Inv.Amt'] || 0),
+                    invoiceDate: new Date().toISOString(), // Defaulting date as it's not in the sheet
+                    status: 'unpaid',
                 });
             }
         });
@@ -351,3 +353,4 @@ export async function getUsers(firestore: Firestore): Promise<User[]> {
   const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
   return userList;
 }
+
