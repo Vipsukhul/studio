@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDown, ArrowUp, Building, CalendarDays, Users, FileText, IndianRupee } from 'lucide-react';
+import { ArrowDown, ArrowUp, Building, CalendarDays, Users, FileText, IndianRupee, MapPin } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
 import { RegionPieChart } from '@/components/charts/region-pie-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
@@ -109,7 +109,7 @@ export default function DashboardPage() {
     async function fetchData() {
       setLoading(true);
       const [mainData, recoveryTrendData] = await Promise.all([
-        getDashboardData(month, financialYear),
+        getDashboardData(month, financialYear, region),
         getOutstandingRecoveryTrend(financialYear)
       ]);
       setDashboardData(mainData);
@@ -119,7 +119,7 @@ export default function DashboardPage() {
     if (financialYear) {
         fetchData();
     }
-  }, [month, financialYear]);
+  }, [month, financialYear, region]);
 
   const handleFinancialYearChange = (newFinancialYear: string) => {
     setFinancialYear(newFinancialYear);
@@ -212,6 +212,19 @@ export default function DashboardPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-muted-foreground" />
+                <Select value={region} onValueChange={setRegion}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Select Region" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {regionOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
         </div>
       </div>
       
@@ -226,6 +239,9 @@ export default function DashboardPage() {
           <Card className="lg:col-span-4">
             <CardHeader>
               <CardTitle>Region vs. Ageing</CardTitle>
+               <CardDescription>
+                Outstanding amounts across different ageing buckets for each region.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -240,6 +256,9 @@ export default function DashboardPage() {
           <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle>Region-wise Distribution</CardTitle>
+                <CardDescription>
+                Percentage of outstanding amounts contributed by each region.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                <div className="overflow-x-auto">
@@ -257,6 +276,9 @@ export default function DashboardPage() {
           <Card>
               <CardHeader>
                   <CardTitle>Month-wise Outstanding Trend</CardTitle>
+                   <CardDescription>
+                    Tracking the outstanding balance for each region over time.
+                   </CardDescription>
               </CardHeader>
               <CardContent>
                   <div className="overflow-x-auto">
@@ -271,6 +293,9 @@ export default function DashboardPage() {
           <Card>
               <CardHeader>
                   <CardTitle>New vs. Recovered Outstanding</CardTitle>
+                  <CardDescription>
+                    Comparing newly assigned amounts vs. recovered amounts.
+                  </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -286,21 +311,10 @@ export default function DashboardPage() {
         
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
               <CardTitle>Ageing Summary by Region</CardTitle>
-              <div className="w-[180px]">
-                <Select value={region} onValueChange={setRegion}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regionOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              <CardDescription>
+                A detailed breakdown of outstanding amounts across different ageing buckets.
+              </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">

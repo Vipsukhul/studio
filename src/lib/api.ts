@@ -24,26 +24,44 @@ const delay = (ms: number) => new Promise(res => setTimeout(res, ms));
  * Here, we simulate it with mock data.
  * @param month - The selected month (for simulation purposes).
  * @param financialYear - The selected financial year.
+ * @param region - The selected region to filter data.
  */
-export async function getDashboardData(month: string, financialYear: string) {
+export async function getDashboardData(month: string, financialYear: string, region: string) {
   await delay(500);
-  console.log(`Fetching data for month: ${month} and FY: ${financialYear}`);
-  
-  const totalCustomers = mockCustomers.length;
-  
+  console.log(`Fetching data for month: ${month}, FY: ${financialYear}, Region: ${region}`);
+
+  // Simulate filtering based on region
+  const filteredCustomers = region === 'All' ? mockCustomers : mockCustomers.filter(c => c.region === region);
+  const totalCustomers = filteredCustomers.length;
+
   const customersKpi: Kpi = {
     label: 'Total Customers',
     value: totalCustomers.toString(),
-    description: `in Batching Plant`,
+    description: `in ${region === 'All' ? 'All Regions' : region}`,
   };
 
-  const existingKpis = mockKpis.filter(k => k.label !== 'Total Customers');
+  // Simulate KPI calculation for the selected region
+  const totalOutstanding = filteredCustomers.reduce((acc, c) => acc + (c.outstandingAmount || 0), 0);
+  
+  const outstandingKpi: Kpi = {
+    label: 'Total Outstanding',
+    value: `₹${Math.floor(totalOutstanding).toLocaleString('en-IN')}`,
+    description: `for ${month}`,
+  };
+
+  const existingKpis = mockKpis.filter(k => !['Total Customers', 'Total Outstanding'].includes(k.label));
+  
+  const finalKpis = [outstandingKpi, ...existingKpis, customersKpi];
+  
+  const filteredRegionDistribution = region === 'All' 
+    ? mockRegionDistribution 
+    : mockRegionDistribution.filter(d => d.region === region);
 
   return {
-    kpis: [...existingKpis, customersKpi],
-    outstandingByAge: mockOutstandingByAge,
-    regionDistribution: mockRegionDistribution,
-    monthlyTrends: mockMonthlyTrends,
+    kpis: finalKpis,
+    outstandingByAge: mockOutstandingByAge, // This data is already structured by region
+    regionDistribution: filteredRegionDistribution,
+    monthlyTrends: mockMonthlyTrends, // Monthly trends are usually shown for all regions for comparison
   };
 }
 
@@ -230,7 +248,7 @@ export async function getOutstandingRecoveryTrend(financialYear: string): Promis
  * Fetches engineer performance data from mock data.
  * @param financialYear - The selected financial year.
  */
-export async function getEngineerPerformanceData(financialYear: string = '2024-2025'): Promise<EngineerPerformance[]> {
+export async function getEngineerPerformanceData(financialYear: string): Promise<EngineerPerformance[]> {
   await delay(500);
   console.log(`Fetching engineer performance for FY: ${financialYear}`);
   const { engineerPerformance } = await import('./data');
