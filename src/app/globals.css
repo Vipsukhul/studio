@@ -94,16 +94,5 @@ body {
 @layer utilities {
   .constrained-container {
     @apply max-w-7xl mx-auto px-4 sm:px-6 lg:px-8;
-    overflow-x: auto;
-  }
-
-  .dashboard-layout {
-    @apply w-full max-w-full;
-    overflow: hidden;
-  }
-
-  .data-sheet-table {
-    @apply w-full min-w-[800px];
-    overflow-x: auto;
   }
 }
