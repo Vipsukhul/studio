@@ -44,12 +44,12 @@ export const kpis: Kpi[] = [
 ];
 
 export const monthlyTrends: MonthlyTrend[] = [
-    { month: 'Jan-24', North: 4000, West: 2400, South: 2400, East: 1800 },
-    { month: 'Feb-24', North: 3000, West: 1398, South: 2210, East: 2000 },
-    { month: 'Mar-24', North: 2000, West: 9800, South: 2290, East: 2100 },
-    { month: 'Apr-24', North: 2780, West: 3908, South: 2000, East: 2300 },
-    { month: 'May-24', North: 1890, West: 4800, South: 2181, East: 2500 },
-    { month: 'Jun-24', North: 2390, West: 3800, South: 2500, East: 2600 },
+    { month: 'Jan-24', ahmedabad: 400, banglore: 240, chennai: 240, delhi: 180, pune: 300, kolkata: 200, mumbai: 500, jaipur: 150 },
+    { month: 'Feb-24', ahmedabad: 300, banglore: 139, chennai: 221, delhi: 200, pune: 280, kolkata: 180, mumbai: 450, jaipur: 130 },
+    { month: 'Mar-24', ahmedabad: 200, banglore: 980, chennai: 229, delhi: 210, pune: 320, kolkata: 210, mumbai: 520, jaipur: 160 },
+    { month: 'Apr-24', ahmedabad: 278, banglore: 390, chennai: 200, delhi: 230, pune: 310, kolkata: 220, mumbai: 480, jaipur: 140 },
+    { month: 'May-24', ahmedabad: 189, banglore: 480, chennai: 218, delhi: 250, pune: 290, kolkata: 230, mumbai: 490, jaipur: 170 },
+    { month: 'Jun-24', ahmedabad: 239, banglore: 380, chennai: 250, delhi: 260, pune: 350, kolkata: 240, mumbai: 510, jaipur: 180 },
 ];
 
 export const invoiceTrackerData: InvoiceTrackerData[] = [
@@ -90,23 +90,39 @@ const customerNames = [
     "Red-wood Corp", "River-stone Inc", "Silver-lining Ltd", "Sky-high Inc", "Solid-state Solutions"
 ];
 
-const regions = ['North', 'South', 'East', 'West'] as const;
+const regions = ['ahmedabad','banglore','chennai','delhi','export','goa','hyderabad','indore','jaipur','kolkata','mumbai','nagpur','odisha','pune','punjab','raipur','vizag','wie'] as const;
 const agePeriods = ['0-30', '31-90', '91-180', '181-365', '>365'] as const;
 const remarksOptions = ['none', 'under follow-up', 'dispute', 'partial payment', 'payment received'] as const;
-const engineersByRegion = {
-    North: ['R. Sharma', 'S. Gupta'],
-    South: ['S. Iyer', 'K. Rao'],
-    East: ['A. Das', 'B. Chatterjee'],
-    West: ['P. Patel', 'V. Mehta']
+
+const engineersByRegion: { [key: string]: string[] } = {
+    ahmedabad: ['A. Patel', 'B. Shah'],
+    banglore: ['C. Reddy', 'D. Kumar'],
+    chennai: ['E. Pillai', 'F. Subramanian'],
+    delhi: ['G. Singh', 'H. Sharma'],
+    export: ['I. Khan', 'J. Mehta'],
+    goa: ['K. Fernandes', 'L. DSouza'],
+    hyderabad: ['M. Rao', 'N. Reddy'],
+    indore: ['O. Verma', 'P. Jain'],
+    jaipur: ['Q. Agarwal', 'R. Meena'],
+    kolkata: ['S. Banerjee', 'T. Das'],
+    mumbai: ['U. Joshi', 'V. Kulkarni'],
+    nagpur: ['W. Deshpande', 'X. Gawande'],
+    odisha: ['Y. Mohanty', 'Z. Sahu'],
+    pune: ['A. Patil', 'B. Chavan'],
+    punjab: ['C. Gill', 'D. Kaur'],
+    raipur: ['E. Sahu', 'F. Tiwari'],
+    vizag: ['G. Raju', 'H. Kumar'],
+    wie: ['I. Ali', 'J. Singh']
 };
 
-export const customers: Customer[] = Array.from({ length: 50 }, (_, i) => {
+
+export const customers: Customer[] = Array.from({ length: 100 }, (_, i) => {
     const region = regions[i % regions.length];
     const assignedEngineers = engineersByRegion[region];
     const assignedEngineer = assignedEngineers[i % assignedEngineers.length];
     
     return {
-        customerCode: `CUST${(i + 1).toString().padStart(3, '0')}`,
+        customerCode: `CUST${(i + 1).toString().padStart(4, '0')}`,
         customerName: customerNames[i % customerNames.length],
         region: region,
         agePeriod: agePeriods[i % agePeriods.length],
@@ -192,22 +208,34 @@ export function generateMonthOptions(financialYear: string) {
 
 export const regionOptions = [
     { value: 'All', label: 'All Regions' },
-    { value: 'North', label: 'North' },
-    { value: 'South', label: 'South' },
-    { value: 'East', label: 'East' },
-    { value: 'West', label: 'West' },
+    { value: 'ahmedabad', label: 'Ahmedabad' },
+    { value: 'banglore', label: 'Bangalore' },
+    { value: 'chennai', label: 'Chennai' },
+    { value: 'delhi', label: 'Delhi' },
+    { value: 'export', label: 'Export' },
+    { value: 'goa', label: 'Goa' },
+    { value: 'hyderabad', label: 'Hyderabad' },
+    { value: 'indore', label: 'Indore' },
+    { value: 'jaipur', label: 'Jaipur' },
+    { value: 'kolkata', label: 'Kolkata' },
+    { value: 'mumbai', label: 'Mumbai' },
+    { value: 'nagpur', label: 'Nagpur' },
+    { value: 'odisha', label: 'Odisha' },
+    { value: 'pune', label: 'Pune' },
+    { value: 'punjab', label: 'Punjab' },
+    { value: 'raipur', label: 'Raipur' },
+    { value: 'vizag', label: 'Vizag' },
+    { value: 'wie', label: 'WIE' }
 ];
 
-export const engineers: Engineer[] = [
-    { id: 'ENG01', name: 'R. Sharma', region: 'North' },
-    { id: 'ENG02', name: 'S. Gupta', region: 'North' },
-    { id: 'ENG03', name: 'S. Iyer', region: 'South' },
-    { id: 'ENG04', name: 'K. Rao', region: 'South' },
-    { id: 'ENG05', name: 'A. Das', region: 'East' },
-    { id: 'ENG06', name: 'B. Chatterjee', region: 'East' },
-    { id: 'ENG07', name: 'P. Patel', region: 'West' },
-    { id: 'ENG08', name: 'V. Mehta', region: 'West' },
-];
+export const engineers: Engineer[] = Object.entries(engineersByRegion).flatMap(([region, names]) => 
+    names.map((name, index) => ({
+        id: `${region.slice(0,3).toUpperCase()}${index+1}`,
+        name: name,
+        region: region as typeof regions[number]
+    }))
+);
+
 
 export const logs: LogEntry[] = [
   { id: 1, level: 'ERROR', timestamp: new Date(Date.now() - 3600000 * 0.5).toISOString(), message: 'Failed to process payment for invoice INV-78901: Connection timed out', source: 'BillingService' },
@@ -222,31 +250,30 @@ export const logs: LogEntry[] = [
 ];
 
 export const engineerPerformance: EngineerPerformance[] = [
-    { name: 'R. Sharma', region: 'North', outstandingCollected: 450000, newOutstandingAssigned: 320000, netChange: 130000 },
-    { name: 'S. Gupta', region: 'North', outstandingCollected: 380000, newOutstandingAssigned: 410000, netChange: -30000 },
-    { name: 'S. Iyer', region: 'South', outstandingCollected: 520000, newOutstandingAssigned: 280000, netChange: 240000 },
-    { name: 'K. Rao', region: 'South', outstandingCollected: 410000, newOutstandingAssigned: 390000, netChange: 20000 },
-    { name: 'A. Das', region: 'East', outstandingCollected: 290000, newOutstandingAssigned: 310000, netChange: -20000 },
-    { name: 'B. Chatterjee', region: 'East', outstandingCollected: 330000, newOutstandingAssigned: 290000, netChange: 40000 },
-    { name: 'P. Patel', region: 'West', outstandingCollected: 610000, newOutstandingAssigned: 450000, netChange: 160000 },
-    { name: 'V. Mehta', region: 'West', outstandingCollected: 580000, newOutstandingAssigned: 510000, netChange: 70000 },
+    { name: 'R. Sharma', region: 'delhi', outstandingCollected: 450000, newOutstandingAssigned: 320000, netChange: 130000 },
+    { name: 'S. Gupta', region: 'delhi', outstandingCollected: 380000, newOutstandingAssigned: 410000, netChange: -30000 },
+    { name: 'S. Iyer', region: 'chennai', outstandingCollected: 520000, newOutstandingAssigned: 280000, netChange: 240000 },
+    { name: 'K. Rao', region: 'hyderabad', outstandingCollected: 410000, newOutstandingAssigned: 390000, netChange: 20000 },
+    { name: 'A. Das', region: 'kolkata', outstandingCollected: 290000, newOutstandingAssigned: 310000, netChange: -20000 },
+    { name: 'B. Chatterjee', region: 'kolkata', outstandingCollected: 330000, newOutstandingAssigned: 290000, netChange: 40000 },
+    { name: 'P. Patel', region: 'ahmedabad', outstandingCollected: 610000, newOutstandingAssigned: 450000, netChange: 160000 },
+    { name: 'V. Mehta', region: 'mumbai', outstandingCollected: 580000, newOutstandingAssigned: 510000, netChange: 70000 },
 ];
 
 export const users: User[] = [
-    // North Region
-    { id: 'MGR01', name: 'Anjali Verma', email: 'anjali.verma@example.com', role: 'Manager', region: 'North', contact: '9876543210' },
-    { id: 'ENG01', name: 'R. Sharma', email: 'r.sharma@example.com', role: 'Engineer', region: 'North', contact: '9876543211' },
-    { id: 'ENG02', name: 'S. Gupta', email: 's.gupta@example.com', role: 'Engineer', region: 'North', contact: '9876543212' },
-    // South Region
-    { id: 'MGR02', name: 'Baskar Sundaram', email: 'baskar.s@example.com', role: 'Manager', region: 'South', contact: '9876543213' },
-    { id: 'ENG03', name: 'S. Iyer', email: 's.iyer@example.com', role: 'Engineer', region: 'South', contact: '9876543214' },
-    { id: 'ENG04', name: 'K. Rao', email: 'k.rao@example.com', role: 'Engineer', region: 'South', contact: '9876543215' },
-    // East Region
-    { id: 'MGR03', name: 'Priya Das', email: 'priya.das@example.com', role: 'Manager', region: 'East', contact: '9876543216' },
-    { id: 'ENG05', name: 'A. Das', email: 'a.das@example.com', role: 'Engineer', region: 'East', contact: '9876543217' },
-    { id: 'ENG06', name: 'B. Chatterjee', email: 'b.chatterjee@example.com', role: 'Engineer', region: 'East', contact: '9876543218' },
-    // West Region
-    { id: 'MGR04', name: 'Rajesh Patil', email: 'rajesh.patil@example.com', role: 'Manager', region: 'West', contact: '9876543219' },
-    { id: 'ENG07', name: 'P. Patel', email: 'p.patel@example.com', role: 'Engineer', region: 'West', contact: '9876543220' },
-    { id: 'ENG08', name: 'V. Mehta', email: 'v.mehta@example.com', role: 'Engineer', region: 'West', contact: '9876543221' },
+    ...Object.entries(engineersByRegion).flatMap(([region, names]) => 
+        names.map((name, index) => ({
+            id: `ENG-${region.slice(0,3).toUpperCase()}-${index+1}`,
+            name: name,
+            email: `${name.toLowerCase().replace(/\s/g, '.')}@example.com`,
+            role: 'Engineer',
+            region: region as typeof regions[number],
+            contact: `987654${Math.floor(1000 + Math.random() * 9000)}`
+        }))
+    ),
+    { id: 'MGR01', name: 'Anjali Verma', email: 'anjali.verma@example.com', role: 'Manager', region: 'delhi', contact: '9876543210' },
+    { id: 'MGR02', name: 'Baskar Sundaram', email: 'baskar.s@example.com', role: 'Manager', region: 'chennai', contact: '9876543213' },
+    { id: 'MGR03', name: 'Priya Das', email: 'priya.das@example.com', role: 'Manager', region: 'kolkata', contact: '9876543216' },
+    { id: 'MGR04', name: 'Rajesh Patil', email: 'rajesh.patil@example.com', role: 'Manager', region: 'mumbai', contact: '9876543219' },
+    { id: 'CM01', name: 'Vipul Sukhul', email: 'vipsukhul@gmail.com', role: 'Country Manager', region: 'mumbai', contact: '9999999999' }
 ];

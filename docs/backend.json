@@ -78,7 +78,7 @@
           "name": {"type": "string"},
           "email": {"type": "string", "format": "email"},
           "role": {"type": "string", "enum": ["Manager", "Engineer", "Country Manager", "Admin"]},
-          "region": {"type": "string", "enum": ["North", "South", "East", "West"]},
+          "region": {"type": "string", "enum": ["ahmedabad", "banglore", "chennai", "delhi", "export", "goa", "hyderabad", "indore", "jaipur", "kolkata", "mumbai", "nagpur", "odisha", "pune", "punjab", "raipur", "vizag", "wie"]},
           "contact": {"type": "string"}
       },
       "required": ["name", "email", "role", "region"]

@@ -57,9 +57,14 @@ export async function getDashboardData(month: string, financialYear: string, reg
     ? mockRegionDistribution 
     : mockRegionDistribution.filter(d => d.region === region);
 
+  const filteredOutstandingByAge = region === 'All'
+    ? mockOutstandingByAge
+    : mockOutstandingByAge.filter(item => item.region === region);
+
+
   return {
     kpis: finalKpis,
-    outstandingByAge: mockOutstandingByAge, // This data is already structured by region
+    outstandingByAge: filteredOutstandingByAge,
     regionDistribution: filteredRegionDistribution,
     monthlyTrends: mockMonthlyTrends, // Monthly trends are usually shown for all regions for comparison
   };
@@ -251,7 +256,6 @@ export async function getOutstandingRecoveryTrend(financialYear: string): Promis
 export async function getEngineerPerformanceData(financialYear: string): Promise<EngineerPerformance[]> {
   await delay(500);
   console.log(`Fetching engineer performance for FY: ${financialYear}`);
-  const { engineerPerformance } = await import('./data');
   return engineerPerformance;
 }
 

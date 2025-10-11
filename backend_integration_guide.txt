@@ -41,7 +41,7 @@ const userSchema = new mongoose.Schema({
   },
   region: { 
     type: String, 
-    enum: ['North', 'South', 'East', 'West']
+    enum: ['ahmedabad','banglore','chennai','delhi','export','goa','hyderabad','indore','jaipur','kolkata','mumbai','nagpur','odisha','pune','punjab','raipur','vizag','wie']
   },
   contact: { type: String }
 }, { timestamps: true });
