@@ -43,7 +43,7 @@ export default function DataSheetPage() {
   }
 
   return (
-    <>
+    <div className="constrained-container">
       <h1 className="text-3xl font-headline font-bold">Data Sheet</h1>
       <Card>
         <CardHeader>
@@ -52,10 +52,10 @@ export default function DataSheetPage() {
             Detailed view of all customer outstanding data for FY <span className="font-semibold">{financialYear}</span>. Click a row to see invoice details.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="data-sheet-table">
           <DataSheetTable data={customersData} />
         </CardContent>
       </Card>
-    </>
+    </div>
   );
 }
