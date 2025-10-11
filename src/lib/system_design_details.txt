@@ -1,0 +1,119 @@
+
+======================================
+Outstanding Tracker - System Design
+======================================
+
+1. Application Overview
+-----------------------
+The Outstanding Tracker is a comprehensive web application designed to help businesses monitor, manage, and analyze outstanding invoices and customer payments. It provides a role-based system with a detailed user dashboard for day-to-day operations and a powerful admin panel for system management and oversight. The application is built with a modern, full-stack MERN architecture.
+
+2. Tech Stack
+-------------
+
+### Frontend
+- **Framework**: Next.js 15.x (App Router)
+- **UI Library**: React 18.x
+- **Styling**: Tailwind CSS
+- **UI Components**: ShadCN/UI
+- **Charts**: Recharts
+- **Form Management**: react-hook-form
+- **File Handling**: 'xlsx' for Excel processing, 'react-dropzone' for file uploads.
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB (with Mongoose for Object Data Modeling)
+- **Authentication**: JSON Web Tokens (JWT)
+
+3. Project Structure
+--------------------
+The project is conceptually divided into a frontend and a backend.
+
+### Frontend Structure
+/
+├── src/
+│   ├── app/                # Application routes (Next.js App Router)
+│   │   ├── admin/          # Admin panel routes
+│   │   ├── dashboard/      # User dashboard routes
+│   │   ├── globals.css     # Global styles and ShadCN theme variables
+│   │   └── page.tsx        # Main user login page
+│   │
+│   ├── components/         # Reusable React components
+│   │   ├── charts/         # Chart components built with Recharts
+│   │   ├── tables/         # TanStack Table components
+│   │   └── ui/             # Core ShadCN UI components (Button, Card, etc.)
+│   │
+│   └── lib/                # Shared utilities, data, and types
+│       ├── api.ts          # Functions to call the backend REST API
+│       ├── data.ts         # Mock data for frontend development
+│       └── types.ts        # TypeScript type definitions for all data models
+│
+├── public/                 # Static assets
+└── tailwind.config.ts      # Tailwind CSS configuration
+
+### Backend Structure (Proposed)
+/
+├── backend/
+│   ├── config/             # Environment variables, database connection
+│   ├── controllers/        # Request handlers (business logic)
+│   ├── middleware/         # Custom middleware (e.g., JWT verification)
+│   ├── models/             # Mongoose schemas for MongoDB
+│   ├── routes/             # API route definitions
+│   └── server.js           # Main Express server entry point
+
+4. Data Models & Schema (Mongoose)
+------------------------------------
+- **User**:
+  - `name`: String, required
+  - `email`: String, required, unique
+  - `password`: String, required (hashed)
+  - `role`: String, enum: ['Manager', 'Engineer', 'Country Manager', 'Admin'], required
+  - `region`: String, enum: ['North', 'South', 'East', 'West']
+- **Customer**:
+  - `customerCode`: String, required, unique
+  - `customerName`: String, required
+  - `region`: String, required
+  - `assignedEngineer`: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+- **Invoice**:
+  - `invoiceNumber`: String, required, unique
+  - `invoiceAmount`: Number, required
+  - `invoiceDate`: Date, required
+  - `status`: String, enum: ['paid', 'unpaid', 'dispute'], default: 'unpaid'
+  - `customer`: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer' }, required
+- **CustomerDetails (Aggregate)**:
+  - This is not a separate model but a concept for a collection that might store aggregated or processed data like remarks, notes, and total outstanding amounts, linked to a customer.
+
+5. Core Features & Architecture
+------------------------------
+### 5.1. Authentication (JWT Flow)
+- **Login (`POST /api/auth/login`):**
+    1. User submits email and password.
+    2. Backend verifies credentials against the `users` collection.
+    3. On success, it generates a JWT containing the user's ID and role.
+    4. The JWT is sent back to the frontend.
+- **Frontend Storage**: The frontend stores the JWT in `localStorage` or a secure cookie.
+- **Authenticated Requests**: For all protected API calls, the frontend sends the JWT in the `Authorization: Bearer <token>` header.
+- **Backend Middleware**: An Express middleware on the backend verifies the incoming JWT on protected routes. If valid, it attaches the user's information to the request object (`req.user`).
+
+### 5.2. Backend API Endpoints
+The backend will expose a RESTful API. The full specification is detailed in `backend_integration_guide.txt`. Key endpoints include:
+- `GET /api/dashboard`: Fetches aggregated data for KPIs and charts.
+- `GET /api/customers`: Retrieves a list of all customers.
+- `POST /api/upload`: Handles Excel file uploads, parses the data, and bulk-inserts/updates it into the database.
+- `PUT /api/customers/:id/remark`: Updates a customer's status.
+- `GET /api/users`: Fetches all users for the team hierarchy view.
+
+### 5.3. Frontend-Backend Interaction
+- **Data Fetching**: The Next.js frontend uses functions in `src/lib/api.ts` which contain `fetch` calls to the backend endpoints.
+- **State Management**: Component-level state is managed with `useState` and `useEffect`. For complex state, React Context or a library like Zustand could be used.
+- **Role-Based Access Control (RBAC)**:
+  - **Frontend**: The UI is dynamically rendered based on the user's role stored in the JWT payload (e.g., hiding the 'Upload Data' link for Engineers).
+  - **Backend**: The API endpoints are protected by middleware that checks the user's role before allowing access to certain resources (e.g., only 'Admin' can access user management routes).
+
+### 5.4. What Should Not Be Done
+- **Do not store sensitive information in JWT payloads**: Only non-sensitive data like user ID and role should be in the token.
+- **Do not perform business logic on the frontend**: All calculations, data validation, and aggregation should be handled by the Express.js backend. The frontend should only be responsible for presenting data and capturing user input.
+- **Do not trust client-side validation alone**: While the frontend should have form validation for a good UX, all data must be re-validated on the backend before being saved to the database.
+- **Do not manage complex state with only `useState` in large components**: For shared or complex state (like the logged-in user), use React Context to avoid prop-drilling.
+
+This MERN stack architecture provides a clear separation of concerns, allowing the Next.js frontend to focus on a fast, responsive user experience, while the Node.js/Express backend handles all heavy lifting, data processing, and security.
