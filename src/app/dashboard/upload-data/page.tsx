@@ -92,7 +92,7 @@ export default function UploadDataPage() {
   };
 
   return (
-    <>
+    <div className="constrained-container py-8">
       <h1 className="text-3xl font-headline font-bold">Upload Data</h1>
       <div className="flex justify-center items-start pt-10">
         <Card className="w-full max-w-2xl">
@@ -172,6 +172,6 @@ export default function UploadDataPage() {
           </form>
         </Card>
       </div>
-    </>
+    </div>
   );
 }
