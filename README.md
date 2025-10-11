@@ -38,6 +38,8 @@ The application is divided into two main areas: the User Dashboard and the Admin
 
 ## Tech Stack
 
+### Frontend
+
 - **Framework:** [Next.js](https://nextjs.org/) (App Router)
 - **Language:** [TypeScript](https://www.typescriptlang.org/)
 - **UI Library:** [React](https://reactjs.org/)
@@ -45,6 +47,16 @@ The application is divided into two main areas: the User Dashboard and the Admin
 - **UI Components:** [ShadCN/UI](https://ui.shadcn.com/)
 - **Charts:** [Recharts](https://recharts.org/)
 - **File Handling:** [xlsx](https://www.npmjs.com/package/xlsx) for Excel processing, [react-dropzone](https://react-dropzone.js.org/) for file uploads.
+
+### Backend
+
+This project is currently frontend-only and uses mock data to simulate API responses. However, it is designed to integrate with a full-fledged backend.
+
+- **Recommended Stack:**
+  - **Runtime:** [Node.js](https://nodejs.org/)
+  - **Framework:** [Express.js](https://expressjs.com/)
+  - **Database:** [MongoDB](https://www.mongodb.com/) (with Mongoose ODM)
+- **Integration Guide:** For complete API specifications and instructions on building a compatible backend, please refer to the `backend_integration_guide.txt` file in the project root.
 
 ## Getting Started
 
