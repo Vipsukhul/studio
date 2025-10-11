@@ -227,11 +227,13 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Region vs. Ageing</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <div className="min-w-[600px]">
-                {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
-                  <AgeBarChart data={filteredAgeData} />
-                </ChartContainer>}
+            <CardContent>
+              <div className="overflow-x-auto">
+                <div className="min-w-[600px]">
+                  {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
+                    <AgeBarChart data={filteredAgeData} />
+                  </ChartContainer>}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -239,11 +241,13 @@ export default function DashboardPage() {
             <CardHeader>
               <CardTitle>Region-wise Distribution</CardTitle>
             </CardHeader>
-            <CardContent className="overflow-x-auto">
-               <div className="min-w-[400px] md:min-w-0">
-                {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
-                    <RegionPieChart data={regionDistribution} />
-                </ChartContainer>}
+            <CardContent>
+               <div className="overflow-x-auto">
+                <div className="min-w-[400px] md:min-w-0">
+                  {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
+                      <RegionPieChart data={regionDistribution} />
+                  </ChartContainer>}
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -254,11 +258,13 @@ export default function DashboardPage() {
               <CardHeader>
                   <CardTitle>Month-wise Outstanding Trend</CardTitle>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                  <div className="min-w-[600px]">
-                    {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
-                        <MonthlyLineChart data={monthlyTrends} />
-                    </ChartContainer>}
+              <CardContent>
+                  <div className="overflow-x-auto">
+                    <div className="min-w-[600px]">
+                      {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
+                          <MonthlyLineChart data={monthlyTrends} />
+                      </ChartContainer>}
+                    </div>
                   </div>
               </CardContent>
           </Card>
@@ -266,11 +272,13 @@ export default function DashboardPage() {
               <CardHeader>
                   <CardTitle>New vs. Recovered Outstanding</CardTitle>
               </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <div className="min-w-[600px]">
-                  {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full">
-                      <OutstandingRecoveryChart data={recoveryData} />
-                  </ChartContainer>}
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <div className="min-w-[600px]">
+                    {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full">
+                        <OutstandingRecoveryChart data={recoveryData} />
+                    </ChartContainer>}
+                  </div>
                 </div>
               </CardContent>
           </Card>
@@ -294,45 +302,47 @@ export default function DashboardPage() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="overflow-x-auto">
-            <div className="min-w-[700px]">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Region</TableHead>
-                    <TableHead className="text-right">0-30 Days</TableHead>
-                    <TableHead className="text-right">31-90 Days</TableHead>
-                    <TableHead className="text-right">91-180 Days</TableHead>
-                    <TableHead className="text-right">181-365 Days</TableHead>
-                    <TableHead className="text-right">>1 Year</TableHead>
-                    <TableHead className="text-right font-bold">Total</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredAgeData.map((row) => (
-                    <TableRow key={row.region}>
-                      <TableCell className="font-medium">{row.region}</TableCell>
-                      <TableCell className="text-right">{row['0-30'].toLocaleString('en-IN')}</TableCell>
-                      <TableCell className="text-right">{row['31-90'].toLocaleString('en-IN')}</TableCell>
-                      <TableCell className="text-right">{row['91-180'].toLocaleString('en-IN')}</TableCell>
-                      <TableCell className="text-right">{row['181-365'].toLocaleString('en-IN')}</TableCell>
-                      <TableCell className="text-right">{row['>365'].toLocaleString('en-IN')}</TableCell>
-                      <TableCell className="text-right font-bold">{row.total.toLocaleString('en-IN')}</TableCell>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <div className="min-w-[700px]">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Region</TableHead>
+                      <TableHead className="text-right">0-30 Days</TableHead>
+                      <TableHead className="text-right">31-90 Days</TableHead>
+                      <TableHead className="text-right">91-180 Days</TableHead>
+                      <TableHead className="text-right">181-365 Days</TableHead>
+                      <TableHead className="text-right">>1 Year</TableHead>
+                      <TableHead className="text-right font-bold">Total</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-                <TableFooter>
-                    <TableRow className="font-bold bg-muted/50">
-                        <TableCell>Grand Total</TableCell>
-                        <TableCell className="text-right">{grandTotal['0-30'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right">{grandTotal['31-90'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right">{grandTotal['91-180'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right">{grandTotal['181-365'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right">{grandTotal['>365'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right">{grandTotal.total.toLocaleString('en-IN')}</TableCell>
-                    </TableRow>
-                </TableFooter>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {filteredAgeData.map((row) => (
+                      <TableRow key={row.region}>
+                        <TableCell className="font-medium">{row.region}</TableCell>
+                        <TableCell className="text-right">{row['0-30'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right">{row['31-90'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right">{row['91-180'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right">{row['181-365'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right">{row['>365'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right font-bold">{row.total.toLocaleString('en-IN')}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                  <TableFooter>
+                      <TableRow className="font-bold bg-muted/50">
+                          <TableCell>Grand Total</TableCell>
+                          <TableCell className="text-right">{grandTotal['0-30'].toLocaleString('en-IN')}</TableCell>
+                          <TableCell className="text-right">{grandTotal['31-90'].toLocaleString('en-IN')}</TableCell>
+                          <TableCell className="text-right">{grandTotal['91-180'].toLocaleString('en-IN')}</TableCell>
+                          <TableCell className="text-right">{grandTotal['181-365'].toLocaleString('en-IN')}</TableCell>
+                          <TableCell className="text-right">{grandTotal['>365'].toLocaleString('en-IN')}</TableCell>
+                          <TableCell className="text-right">{grandTotal.total.toLocaleString('en-IN')}</TableCell>
+                      </TableRow>
+                  </TableFooter>
+                </Table>
+              </div>
             </div>
           </CardContent>
         </Card>
