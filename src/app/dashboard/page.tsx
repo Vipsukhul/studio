@@ -184,7 +184,7 @@ export default function DashboardPage() {
   return (
     <div className="constrained-container py-8">
       <div className="flex flex-col gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
+        <div className="flex flex-col gap-4">
           <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
           <div className="flex flex-wrap items-center gap-4">
                <div className="flex items-center gap-2">
