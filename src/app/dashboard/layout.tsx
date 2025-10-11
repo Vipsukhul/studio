@@ -33,10 +33,6 @@ import { useEffect, useState } from 'react';
 import { InstallPwaDialog } from '@/components/install-pwa-dialog';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { GoToTop } from '@/components/ui/go-to-top';
-import { useAuth, useUser } from '@/firebase';
-import { doc, getDoc } from 'firebase/firestore';
-import { useFirestore } from '@/firebase';
-import type { User as UserProfile } from '@/lib/types';
 
 const navItems = [
   { href: '/dashboard', label: 'Dashboard', icon: Home },
@@ -55,62 +51,27 @@ export default function DashboardLayout({
 }) {
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuth();
-  const firestore = useFirestore();
-  const { user: firebaseUser, isUserLoading } = useUser();
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [isProfileLoading, setIsProfileLoading] = useState(true);
-  
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [isClient, setIsClient] = useState(false);
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(null);
   const [showInstallDialog, setShowInstallDialog] = useState(false);
 
   useEffect(() => {
-    if (isUserLoading) return; // Wait for auth to settle
-
-    if (!firebaseUser) {
-      router.replace('/'); // Redirect unauthenticated users
-      return;
+    setIsClient(true);
+    const role = localStorage.getItem('userRole');
+    if (!role) {
+      router.replace('/');
+    } else {
+      setUserRole(role);
     }
-
-    const fetchUserProfile = async () => {
-      if (!firestore || !firebaseUser) return;
-      setIsProfileLoading(true);
-      const userDocRef = doc(firestore, 'users', firebaseUser.uid);
-      try {
-        const userDoc = await getDoc(userDocRef);
-        if (userDoc.exists()) {
-          const profile = userDoc.data() as UserProfile;
-          setUserProfile(profile);
-          localStorage.setItem('userRole', profile.role);
-          window.dispatchEvent(new Event('storage')); // Notify other components of change
-        } else {
-          toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'User profile not found. Please contact support.',
-          });
-          auth.signOut(); // Log out if profile is missing
-        }
-      } catch (error) {
-         toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Failed to fetch user profile.',
-        });
-        auth.signOut();
-      } finally {
-        setIsProfileLoading(false);
-      }
-    };
-
-    fetchUserProfile();
-
-  }, [firebaseUser, isUserLoading, firestore, auth, router, toast]);
+  }, [router]);
   
   useEffect(() => {
     const handleStorageChange = () => {
       const storedUrl = localStorage.getItem('profileImageUrl');
       setProfileImageUrl(storedUrl);
+       const role = localStorage.getItem('userRole');
+      if (role) setUserRole(role);
     };
     
     handleStorageChange();
@@ -123,11 +84,10 @@ export default function DashboardLayout({
   
   const filteredNavItems = navItems.filter(item => {
     if (!item.roles) return true;
-    return item.roles.includes(userProfile?.role || '');
+    return item.roles.includes(userRole || '');
   });
 
-  const handleLogout = async () => {
-    await auth.signOut();
+  const handleLogout = () => {
     localStorage.clear();
     toast({
       title: 'Logged Out',
@@ -136,7 +96,7 @@ export default function DashboardLayout({
     router.replace('/');
   };
 
-  if (isUserLoading || isProfileLoading) {
+  if (!isClient || !userRole) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
@@ -144,15 +104,7 @@ export default function DashboardLayout({
     );
   }
   
-  if (!userProfile) {
-     return (
-      <div className="flex flex-col items-center justify-center h-screen gap-4">
-        <p className="text-lg text-muted-foreground">Could not load user profile. Please try logging in again.</p>
-        <Button onClick={() => router.push('/')}>Go to Login</Button>
-      </div>
-    );
-  }
-
+  const userInitial = 'A';
 
   return (
     <>
@@ -220,14 +172,14 @@ export default function DashboardLayout({
             <DropdownMenuTrigger asChild>
               <Button variant="secondary" size="icon" className="rounded-full">
                 <Avatar>
-                  <AvatarImage src={profileImageUrl || userProfile?.photoURL || `https://picsum.photos/seed/${firebaseUser?.uid}/32/32`} />
-                  <AvatarFallback>{userProfile?.name?.charAt(0) || 'U'}</AvatarFallback>
+                  <AvatarImage src={profileImageUrl || `https://picsum.photos/seed/${userInitial}/32/32`} />
+                  <AvatarFallback>{userInitial}</AvatarFallback>
                 </Avatar>
                 <span className="sr-only">Toggle user menu</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>{userProfile?.name || 'My Account'}</DropdownMenuLabel>
+              <DropdownMenuLabel>My Account</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <Link href="/dashboard/settings" passHref>
                 <DropdownMenuItem>Settings</DropdownMenuItem>

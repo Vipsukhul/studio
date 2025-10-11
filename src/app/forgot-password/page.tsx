@@ -8,44 +8,26 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
-import { useAuth } from '@/firebase';
-import { sendPasswordResetEmail } from 'firebase/auth';
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const auth = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-        toast({
-            variant: 'destructive',
-            title: 'Error',
-            description: 'Authentication service is not available. Please try again later.',
-        });
-        return;
-    }
-    
     setIsLoading(true);
 
-    try {
-      await sendPasswordResetEmail(auth, email);
-      toast({
-        title: 'Reset Link Sent',
-        description: 'Please check your email for a link to reset your password.',
-      });
-      setEmail(''); // Clear the input field
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error Sending Reset Link',
-        description: error.message || 'Could not send password reset email. Please check the address and try again.',
-      });
-    } finally {
+    // Simulate sending an email
+    setTimeout(() => {
+        toast({
+            title: 'Reset Link Sent',
+            description: 'If an account exists for this email, a password reset link has been sent.',
+        });
         setIsLoading(false);
-    }
+        setEmail('');
+    }, 1500);
+
   };
 
   return (

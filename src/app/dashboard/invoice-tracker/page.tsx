@@ -9,7 +9,6 @@ import type { InvoiceTrackerData, Customer } from '@/lib/types';
 import { ArrowDown, ArrowUp } from 'lucide-react';
 import { regionOptions } from '@/lib/data';
 import { getInvoiceTrackerData, getCustomers } from '@/lib/api';
-import { useFirestore } from '@/firebase';
 
 type DetailedInvoice = {
   invoiceNumber: string;
@@ -27,7 +26,6 @@ export default function InvoiceTrackerPage() {
   const [selectedMonth, setSelectedMonth] = useState<string | null>(null);
   const [detailedInvoices, setDetailedInvoices] = useState<DetailedInvoice[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
-  const firestore = useFirestore();
 
    useEffect(() => {
     const storedFinancialYear = localStorage.getItem('financialYear');
@@ -43,12 +41,12 @@ export default function InvoiceTrackerPage() {
 
   useEffect(() => {
     async function loadInitialData() {
-        if (!financialYear || !firestore) return;
-      const customerData = await getCustomers(firestore, financialYear);
+        if (!financialYear) return;
+      const customerData = await getCustomers(financialYear);
       setCustomers(customerData);
     }
     loadInitialData();
-  }, [financialYear, firestore]);
+  }, [financialYear]);
 
   useEffect(() => {
     async function fetchData() {
@@ -76,6 +74,7 @@ export default function InvoiceTrackerPage() {
       });
     });
     
+    // In a real app, you'd filter by month. Here we just show a sample.
     setDetailedInvoices(allInvoices.slice(0, 10)); // Show a sample
     setIsDialogOpen(true);
   };

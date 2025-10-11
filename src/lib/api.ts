@@ -12,7 +12,6 @@ import {
 } from './data';
 import type { Customer, Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, InvoiceTrackerData, Engineer, Invoice, OutstandingRecoveryTrend, LogEntry, EngineerPerformance, User } from './types';
 import { createNotification } from './notifications';
-import { collection, doc, getDocs, updateDoc, writeBatch, Firestore, getDoc } from 'firebase/firestore';
 
 const API_URL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5000/api';
 
@@ -65,30 +64,27 @@ export async function getInvoiceTrackerData(region: string, financialYear: strin
 }
 
 /**
- * Fetches the list of all customers from Firestore.
- * @param firestore - The Firestore instance.
+ * Fetches the list of all customers from mock data.
  * @param financialYear - The selected financial year (used for logging).
  */
-export async function getCustomers(firestore: Firestore, financialYear: string): Promise<Customer[]> {
-  console.log(`Fetching customers for FY: ${financialYear} from Firestore`);
-  const customersCol = collection(firestore, 'customers');
-  const customerSnapshot = await getDocs(customersCol);
-  const customerList = customerSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Customer));
-  
-  // In a real app, you might fetch subcollections here or on-demand
-  return customerList;
+export async function getCustomers(financialYear: string): Promise<Customer[]> {
+  await delay(300);
+  console.log(`Fetching customers for FY: ${financialYear} from mock data`);
+  return JSON.parse(JSON.stringify(mockCustomers));
 }
 
 /**
- * Updates a customer's remark in Firestore.
- * @param firestore - The Firestore instance.
- * @param customerId - The document ID of the customer to update.
+ * Updates a customer's remark in the mock data.
+ * @param customerId - The ID of the customer to update.
  * @param newRemark - The new remark to set.
  */
-export async function updateCustomerRemark(firestore: Firestore, customerId: string, newRemark: Customer['remarks']) {
-  console.log(`Updating remark for customer ${customerId} to "${newRemark}" in Firestore`);
-  const customerDoc = doc(firestore, 'customers', customerId);
-  await updateDoc(customerDoc, { remarks: newRemark });
+export async function updateCustomerRemark(customerId: string, newRemark: Customer['remarks']) {
+  await delay(200);
+  console.log(`Updating remark for customer ${customerId} to "${newRemark}" in mock data`);
+  const customer = mockCustomers.find(c => c.customerCode === customerId);
+  if (customer) {
+    customer.remarks = newRemark;
+  }
   
   createNotification({
       from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
@@ -98,15 +94,17 @@ export async function updateCustomerRemark(firestore: Firestore, customerId: str
 }
 
 /**
- * Updates a customer's notes in Firestore.
- * @param firestore - The Firestore instance.
- * @param customerId - The document ID of the customer to update.
+ * Updates a customer's notes in the mock data.
+ * @param customerId - The ID of the customer to update.
  * @param newNotes - The new notes to set.
  */
-export async function updateCustomerNotes(firestore: Firestore, customerId: string, newNotes: string) {
-  console.log(`Updating notes for customer ${customerId} in Firestore`);
-  const customerDoc = doc(firestore, 'customers', customerId);
-  await updateDoc(customerDoc, { notes: newNotes });
+export async function updateCustomerNotes(customerId: string, newNotes: string) {
+  await delay(200);
+  console.log(`Updating notes for customer ${customerId} in mock data`);
+  const customer = mockCustomers.find(c => c.customerCode === customerId);
+  if (customer) {
+    customer.notes = newNotes;
+  }
 
   createNotification({
       from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
@@ -116,16 +114,15 @@ export async function updateCustomerNotes(firestore: Firestore, customerId: stri
 }
 
 /**
- * Processes an uploaded Excel file and uploads the data to Firestore.
- * @param firestore - The Firestore instance.
+ * Processes an uploaded Excel file.
  * @param file - The Excel file to process.
  * @param month - The month for which data is being uploaded.
  */
-export function processAndUploadFile(firestore: Firestore, file: File, month: string): Promise<{ count: number; data: Customer[] }> {
+export function processAndUploadFile(file: File, month: string): Promise<{ count: number; data: Customer[] }> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
 
-    reader.onload = async (e: ProgressEvent<FileReader>) => {
+    reader.onload = (e: ProgressEvent<FileReader>) => {
       if (!e.target?.result) {
         return reject(new Error('Could not read file.'));
       }
@@ -141,17 +138,8 @@ export function processAndUploadFile(firestore: Firestore, file: File, month: st
         }
         
         const customersData = jsonData as Customer[]; // Type assertion
-
-        // Use a batch write to upload all customers at once
-        const batch = writeBatch(firestore);
-        customersData.forEach((customer) => {
-          const docRef = doc(collection(firestore, 'customers')); // Creates a new doc with auto-ID
-          batch.set(docRef, customer);
-        });
         
-        await batch.commit();
-        
-        console.log(`Successfully uploaded ${customersData.length} customer records to Firestore.`);
+        console.log(`Successfully processed ${customersData.length} customer records.`);
         
         createNotification({
             from: { name: 'System', role: 'System' },
@@ -161,7 +149,7 @@ export function processAndUploadFile(firestore: Firestore, file: File, month: st
         
         resolve({ count: customersData.length, data: customersData });
       } catch (error) {
-        console.error("Error processing and uploading file:", error);
+        console.error("Error processing file:", error);
         reject(error);
       }
     };
@@ -184,15 +172,17 @@ export async function getEngineersByRegion(region: string): Promise<Engineer[]> 
 }
 
 /**
- * Updates the assigned engineer for a customer in Firestore.
- * @param firestore - The Firestore instance.
+ * Updates the assigned engineer for a customer in the mock data.
  * @param customerId - The document ID of the customer to update.
  * @param engineerName - The name of the engineer to assign.
  */
-export async function updateAssignedEngineer(firestore: Firestore, customerId: string, engineerName: string) {
-    console.log(`Assigning engineer ${engineerName} to customer ${customerId} in Firestore`);
-    const customerDoc = doc(firestore, 'customers', customerId);
-    await updateDoc(customerDoc, { assignedEngineer: engineerName });
+export async function updateAssignedEngineer(customerId: string, engineerName: string) {
+    await delay(200);
+    console.log(`Assigning engineer ${engineerName} to customer ${customerId} in mock data`);
+    const customer = mockCustomers.find(c => c.customerCode === customerId);
+    if (customer) {
+        customer.assignedEngineer = engineerName;
+    }
 
     createNotification({
         from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
@@ -202,16 +192,21 @@ export async function updateAssignedEngineer(firestore: Firestore, customerId: s
 }
 
 /**
- * Updates an invoice's dispute status in a subcollection in Firestore.
- * @param firestore - The Firestore instance.
+ * Updates an invoice's dispute status in the mock data.
  * @param customerId - The document ID of the customer.
  * @param invoiceNumber - The ID of the invoice document.
  * @param newStatus - The new dispute status.
  */
-export async function updateInvoiceDisputeStatus(firestore: Firestore, customerId: string, invoiceId: string, newStatus: 'dispute' | 'paid' | 'unpaid') {
-  console.log(`Updating invoice ${invoiceId} for customer ${customerId} to status "${newStatus}" in Firestore`);
-  const invoiceDocRef = doc(firestore, 'customers', customerId, 'invoices', invoiceId);
-  await updateDoc(invoiceDocRef, { status: newStatus });
+export async function updateInvoiceDisputeStatus(customerId: string, invoiceId: string, newStatus: 'dispute' | 'paid' | 'unpaid') {
+  await delay(200);
+  console.log(`Updating invoice ${invoiceId} for customer ${customerId} to status "${newStatus}" in mock data`);
+  const customer = mockCustomers.find(c => c.customerCode === customerId);
+  if(customer && customer.invoices) {
+      const invoice = customer.invoices.find(i => i.invoiceNumber === invoiceId);
+      if(invoice) {
+          invoice.status = newStatus;
+      }
+  }
 
   createNotification({
       from: { name: 'User', role: localStorage.getItem('userRole') || 'User' },
@@ -256,27 +251,20 @@ export async function uploadImageToCloudinary(file: File): Promise<string> {
 }
 
 /**
- * Fetches all users (managers and engineers) from Firestore.
- * @param firestore The Firestore instance.
+ * Fetches all users (managers and engineers) from mock data.
  */
-export async function getUsers(firestore: Firestore): Promise<User[]> {
-    console.log(`Fetching users from Firestore`);
-    const usersCol = collection(firestore, 'users');
-    const userSnapshot = await getDocs(usersCol);
-    const userList = userSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
-    return userList;
+export async function getUsers(): Promise<User[]> {
+    await delay(300);
+    console.log(`Fetching users from mock data`);
+    return mockUsers;
 }
 
 /**
- * Fetches a single user profile from Firestore by UID.
- * @param firestore The Firestore instance.
+ * Fetches a single user profile from mock data by UID.
  * @param uid The user's UID.
  */
-export async function getUserProfile(firestore: Firestore, uid: string): Promise<User | null> {
-  const userDocRef = doc(firestore, 'users', uid);
-  const userDoc = await getDoc(userDocRef);
-  if (userDoc.exists()) {
-    return { id: userDoc.id, ...userDoc.data() } as User;
-  }
-  return null;
+export async function getUserProfile(uid: string): Promise<User | null> {
+  await delay(100);
+  const user = mockUsers.find(u => u.id === uid);
+  return user || null;
 }

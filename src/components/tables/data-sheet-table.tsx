@@ -51,11 +51,10 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
 import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus } from '@/lib/api';
-import { useFirestore } from '@/firebase';
 
 import type { Customer, Invoice, Engineer } from "@/lib/types"
 
-const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly, firestore }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean, firestore: any }) => {
+const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean }) => {
     const { toast } = useToast();
 
     const handleDisputeChange = async (invoiceId: string, newStatus: string) => {
@@ -63,7 +62,7 @@ const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly, firestore }: { 
         toast({ title: 'Updating invoice...', description: `Setting status for invoice ${invoiceId} to ${status}.`});
         try {
             if (!customer.id) throw new Error("Customer ID is missing");
-            await updateInvoiceDisputeStatus(firestore, customer.id, invoiceId, status);
+            await updateInvoiceDisputeStatus(customer.id, invoiceId, status);
             onInvoiceUpdate(invoiceId, status);
             toast({ title: 'Success', description: 'Invoice status updated.'});
         } catch(error) {
@@ -97,7 +96,7 @@ const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly, firestore }: { 
               <TableCell>
                  <Select
                     value={invoice.status === 'dispute' ? 'dispute' : 'not-disputed'}
-                    onValueChange={(value) => handleDisputeChange(invoice.id!, value)}
+                    onValueChange={(value) => handleDisputeChange(invoice.invoiceNumber, value)}
                     disabled={isReadOnly}
                  >
                     <SelectTrigger className='w-28'>
@@ -128,7 +127,6 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [userRole, setUserRole] = React.useState<string | null>(null);
-  const firestore = useFirestore();
 
   const { toast } = useToast();
 
@@ -143,10 +141,10 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
     toast({ title: 'Updating status...', description: `Setting remark for customer to ${newRemark}.` });
     try {
-      await updateCustomerRemark(firestore, customerId, newRemark);
+      await updateCustomerRemark(customerId, newRemark);
       setTableData((prevData) =>
         prevData.map((customer) =>
-          customer.id === customerId
+          customer.customerCode === customerId
             ? { ...customer, remarks: newRemark }
             : customer
         )
@@ -159,10 +157,10 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
 
   const handleNotesChange = async (customerId: string, newNotes: string) => {
     try {
-      await updateCustomerNotes(firestore, customerId, newNotes);
+      await updateCustomerNotes(customerId, newNotes);
       setTableData((prevData) =>
         prevData.map((customer) =>
-          customer.id === customerId
+          customer.customerCode === customerId
             ? { ...customer, notes: newNotes }
             : customer
         )
@@ -175,10 +173,10 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
 
   const handleEngineerChange = async (customerId: string, newEngineer: string) => {
     try {
-      await updateAssignedEngineer(firestore, customerId, newEngineer);
+      await updateAssignedEngineer(customerId, newEngineer);
       setTableData((prevData) =>
         prevData.map((customer) =>
-          customer.id === customerId ? { ...customer, assignedEngineer: newEngineer } : customer
+          customer.customerCode === customerId ? { ...customer, assignedEngineer: newEngineer } : customer
         )
       );
       toast({ title: "Success", description: "Engineer assigned successfully." });
@@ -191,7 +189,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         if (!selectedCustomer) return;
 
         const updatedInvoices = selectedCustomer.invoices?.map(inv => 
-            inv.id === invoiceId ? { ...inv, status: newStatus } : inv
+            inv.invoiceNumber === invoiceId ? { ...inv, status: newStatus } : inv
         );
 
         const updatedCustomer = { ...selectedCustomer, invoices: updatedInvoices };
@@ -215,7 +213,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     return (
         <Select
             value={row.original.assignedEngineer}
-            onValueChange={(value) => handleEngineerChange(row.original.id, value)}
+            onValueChange={(value) => handleEngineerChange(row.original.customerCode, value)}
             disabled={isReadOnly}
         >
             <SelectTrigger className="w-[180px]">
@@ -273,7 +271,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         cell: ({ row }) => (
           <Select
             value={row.original.remarks}
-            onValueChange={(value) => handleRemarkChange(row.original.id!, value as Customer['remarks'])}
+            onValueChange={(value) => handleRemarkChange(row.original.customerCode, value as Customer['remarks'])}
             disabled={isReadOnly}
           >
             <SelectTrigger className="w-[180px]">
@@ -298,7 +296,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
 
             const handleBlur = () => {
                 if (notes !== row.original.notes) {
-                    handleNotesChange(row.original.id!, notes);
+                    handleNotesChange(row.original.customerCode, notes);
                 }
             };
             
@@ -477,7 +475,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-4">
-            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} isReadOnly={isReadOnly} firestore={firestore} />}
+            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} isReadOnly={isReadOnly} />}
           </div>
         </DialogContent>
       </Dialog>

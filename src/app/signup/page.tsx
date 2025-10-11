@@ -10,13 +10,8 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
-import { useAuth, useFirestore, setDocumentNonBlocking } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { doc } from 'firebase/firestore';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { regionOptions } from '@/lib/data';
-import type { User as UserProfile } from '@/lib/types';
-
 
 export default function SignupPage() {
   const [email, setEmail] = useState('');
@@ -27,12 +22,9 @@ export default function SignupPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuth();
-  const firestore = useFirestore();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth || !firestore) return;
 
     if (password.length < 6) {
       toast({
@@ -45,39 +37,15 @@ export default function SignupPage() {
     
     setIsLoading(true);
     
-    try {
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-      
-      const userProfile: UserProfile = {
-        id: user.uid,
-        name,
-        email,
-        role: 'Engineer', // Default role for new signups
-        region: region as UserProfile['region'],
-        contact: '', // Add a field for contact if needed
-      };
+    // Simulate a signup process
+    setTimeout(() => {
+        toast({
+            title: 'Signup Successful',
+            description: "Your account has been created. Please log in.",
+        });
+        router.push('/');
+    }, 1500);
 
-      const userDocRef = doc(firestore, 'users', user.uid);
-      
-      // Use non-blocking write
-      setDocumentNonBlocking(userDocRef, userProfile, { merge: true });
-
-      toast({
-        title: 'Signup Successful',
-        description: "Your account has been created. Redirecting to dashboard...",
-      });
-
-      router.push('/dashboard');
-
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Signup Failed',
-        description: error.message || 'Could not create your account.',
-      });
-      setIsLoading(false);
-    }
   };
 
   return (

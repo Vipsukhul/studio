@@ -10,8 +10,14 @@ import { useToast } from '@/hooks/use-toast';
 import { Logo } from '@/components/logo';
 import Link from 'next/link';
 import { Eye, EyeOff } from 'lucide-react';
-import { useAuth, useUser } from '@/firebase';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { customers } from '@/lib/data';
+
+// Mock users - in a real app, this would be fetched from a database
+const mockUsers = {
+  'manager@example.com': { password: 'password', role: 'Manager' },
+  'engineer@example.com': { password: 'password', role: 'Engineer' },
+  'vipsukhul@gmail.com': { password: 'password', role: 'Country Manager' },
+};
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -20,53 +26,48 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
-  const auth = useAuth();
-  const { user, isUserLoading } = useUser();
 
   // Redirect if user is already logged in
   useEffect(() => {
-    if (!isUserLoading && user) {
+    const userRole = localStorage.getItem('userRole');
+    if (userRole) {
       router.push('/dashboard');
     }
-  }, [user, isUserLoading, router]);
+  }, [router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth) {
-      toast({
-        variant: 'destructive',
-        title: 'Authentication Error',
-        description: 'Firebase auth service is not available. Please try again later.',
-      });
-      return;
-    }
     setIsLoading(true);
 
-    try {
-      await signInWithEmailAndPassword(auth, email, password);
-      toast({
-        title: 'Login Successful',
-        description: "Welcome back! Redirecting to your dashboard.",
-      });
-      // The useEffect will handle the redirect
-    } catch (error: any) {
-      let errorMessage = 'An unknown error occurred.';
-       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password. Please try again.';
+    setTimeout(() => {
+      // @ts-ignore
+      const user = mockUsers[email];
+      if (user && user.password === password) {
+        toast({
+          title: 'Login Successful',
+          description: "Welcome back! Redirecting to your dashboard.",
+        });
+        localStorage.setItem('userRole', user.role);
+        window.dispatchEvent(new Event('storage'));
+        router.push('/dashboard');
       } else {
-        errorMessage = error.message;
+        toast({
+          variant: 'destructive',
+          title: 'Login Failed',
+          description: 'Invalid email or password. Please try again.',
+        });
+        setIsLoading(false);
       }
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: errorMessage,
-      });
-      setIsLoading(false);
-    }
+    }, 1000);
   };
+  
+    // This part is important for initial render check
+  const [isClient, setIsClient] = useState(false);
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-  // Don't render anything while checking auth state on initial load
-  if (isUserLoading || user) {
+  if (!isClient || localStorage.getItem('userRole')) {
      return (
       <div className="flex items-center justify-center h-screen">
         <div className="w-16 h-16 border-4 border-dashed rounded-full animate-spin border-primary"></div>
@@ -102,7 +103,7 @@ export default function LoginPage() {
             <div className="grid gap-2">
                <div className="flex items-center">
                 <Label htmlFor="password">Password</Label>
-                <Link
+                 <Link
                   href="/forgot-password"
                   className="ml-auto inline-block text-sm underline"
                 >
@@ -133,7 +134,7 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading ? 'Signing In...' : 'Sign In'}
             </Button>
-            <div className="text-center text-sm">
+             <div className="text-center text-sm">
               Don&apos;t have an account?{' '}
               <Link href="/signup" className="underline">
                 Sign up

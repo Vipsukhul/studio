@@ -6,19 +6,16 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import type { User } from '@/lib/types';
 import { getUsers } from '@/lib/api';
-import { useFirestore } from '@/firebase';
 
 export default function TeamHierarchyPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
-  const firestore = useFirestore();
 
   useEffect(() => {
     async function loadUsers() {
-      if (!firestore) return;
       setLoading(true);
       try {
-        const userList = await getUsers(firestore);
+        const userList = await getUsers();
         setUsers(userList);
       } catch (error) {
         console.error("Failed to fetch users:", error);
@@ -27,7 +24,7 @@ export default function TeamHierarchyPage() {
       }
     }
     loadUsers();
-  }, [firestore]);
+  }, []);
 
   if (loading) {
     return (

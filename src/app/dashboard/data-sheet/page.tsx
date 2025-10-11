@@ -5,13 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { DataSheetTable } from "@/components/tables/data-sheet-table";
 import type { Customer } from "@/lib/types";
 import { getCustomers } from '@/lib/api';
-import { useFirestore } from '@/firebase';
 
 export default function DataSheetPage() {
   const [customersData, setCustomersData] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [financialYear, setFinancialYear] = useState('2024-2025');
-  const firestore = useFirestore();
 
    useEffect(() => {
     const storedFinancialYear = localStorage.getItem('financialYear');
@@ -27,14 +25,14 @@ export default function DataSheetPage() {
 
   useEffect(() => {
     async function loadData() {
-      if (!financialYear || !firestore) return;
+      if (!financialYear) return;
       setLoading(true);
-      const data = await getCustomers(firestore, financialYear);
+      const data = await getCustomers(financialYear);
       setCustomersData(data);
       setLoading(false);
     }
     loadData();
-  }, [financialYear, firestore]);
+  }, [financialYear]);
 
   if (loading) {
     return (
