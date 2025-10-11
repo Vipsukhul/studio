@@ -1,11 +1,58 @@
+
 'use client';
 import { useEffect, useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { User } from '@/lib/types';
 import { getUsers } from '@/lib/api';
+import { regionOptions } from '@/lib/data';
+
+function UserTable({ users }: { users: User[] }) {
+  if (users.length === 0) {
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        <p>No users found in this region.</p>
+      </div>
+    );
+  }
+
+  return (
+    <Table>
+      <TableHeader>
+        <TableRow>
+          <TableHead>User</TableHead>
+          <TableHead>Role</TableHead>
+          <TableHead>Contact</TableHead>
+        </TableRow>
+      </TableHeader>
+      <TableBody>
+        {users.map((user) => (
+          <TableRow key={user.id}>
+            <TableCell>
+              <div className="flex items-center gap-3">
+                <Avatar>
+                  <AvatarImage src={user.photoURL || `https://picsum.photos/seed/${user.id}/32/32`} />
+                  <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
+                </Avatar>
+                <div>
+                  <p className="font-medium">{user.name}</p>
+                  <p className="text-sm text-muted-foreground">{user.email}</p>
+                </div>
+              </div>
+            </TableCell>
+            <TableCell>
+              <Badge variant="secondary">{user.role}</Badge>
+            </TableCell>
+            <TableCell>{user.contact}</TableCell>
+          </TableRow>
+        ))}
+      </TableBody>
+    </Table>
+  );
+}
 
 export default function TeamHierarchyPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -34,50 +81,38 @@ export default function TeamHierarchyPage() {
     );
   }
 
+  const filteredUsers = (region: string) => {
+    if (region === 'All') return users;
+    return users.filter(user => user.region === region);
+  };
+
   return (
     <>
       <h1 className="text-3xl font-headline font-bold">Team Hierarchy</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription>A complete list of all registered users in the system.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>User</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead>Region</TableHead>
-                <TableHead>Contact</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {users.map((user) => (
-                <TableRow key={user.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-3">
-                      <Avatar>
-                        <AvatarImage src={user.photoURL || `https://picsum.photos/seed/${user.id}/32/32`} />
-                        <AvatarFallback>{user.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{user.name}</p>
-                        <p className="text-sm text-muted-foreground">{user.email}</p>
-                      </div>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant="secondary">{user.role}</Badge>
-                  </TableCell>
-                  <TableCell>{user.region}</TableCell>
-                  <TableCell>{user.contact}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="All">
+        <Card>
+          <CardHeader>
+            <div className="flex flex-col md:flex-row justify-between md:items-center">
+                <div>
+                    <CardTitle>All Users</CardTitle>
+                    <CardDescription>A complete list of all registered users in the system, filtered by region.</CardDescription>
+                </div>
+                <TabsList className="mt-4 md:mt-0">
+                    {regionOptions.map(option => (
+                        <TabsTrigger key={option.value} value={option.value}>{option.label}</TabsTrigger>
+                    ))}
+                </TabsList>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {regionOptions.map(option => (
+                <TabsContent key={option.value} value={option.value}>
+                    <UserTable users={filteredUsers(option.value)} />
+                </TabsContent>
+            ))}
+          </CardContent>
+        </Card>
+      </Tabs>
     </>
   );
 }
