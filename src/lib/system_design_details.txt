@@ -11,7 +11,7 @@ The Outstanding Tracker is a comprehensive web application designed to help busi
 -------------
 
 ### Frontend
-- **Framework**: Next.js 15.x (App Router)
+- **Framework**: Next.js (with React.js)
 - **UI Library**: React
 - **Styling**: Tailwind CSS
 - **UI Components**: ShadCN/UI
