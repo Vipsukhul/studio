@@ -182,163 +182,161 @@ export default function DashboardPage() {
   } as const;
 
   return (
-    <div className="constrained-container py-8">
-      <div className="flex flex-col gap-6">
-        <div className="flex flex-col gap-4">
-          <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
-          <div className="flex flex-wrap items-center gap-4">
-               <div className="flex items-center gap-2">
-                  <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                  <Select value={financialYear} onValueChange={handleFinancialYearChange}>
-                      <SelectTrigger className="w-full sm:w-[180px]">
-                          <SelectValue placeholder="Select FY" />
-                      </SelectTrigger>
-                      <SelectContent>
-                      {financialYearOptions.map(option => (
-                          <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                      ))}
-                      </SelectContent>
-                  </Select>
-              </div>
-              <div className="flex items-center gap-2">
+    <>
+      <div className="flex flex-col gap-4">
+        <h1 className="text-3xl font-headline font-bold">Dashboard</h1>
+        <div className="flex flex-wrap items-center gap-4">
+             <div className="flex items-center gap-2">
                 <CalendarDays className="h-5 w-5 text-muted-foreground" />
-                <Select value={month} onValueChange={setMonth}>
-                  <SelectTrigger className="w-full sm:w-[180px]">
-                    <SelectValue placeholder="Select Month" />
+                <Select value={financialYear} onValueChange={handleFinancialYearChange}>
+                    <SelectTrigger className="w-full sm:w-[180px]">
+                        <SelectValue placeholder="Select FY" />
+                    </SelectTrigger>
+                    <SelectContent>
+                    {financialYearOptions.map(option => (
+                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                    </SelectContent>
+                </Select>
+            </div>
+            <div className="flex items-center gap-2">
+              <CalendarDays className="h-5 w-5 text-muted-foreground" />
+              <Select value={month} onValueChange={setMonth}>
+                <SelectTrigger className="w-full sm:w-[180px]">
+                  <SelectValue placeholder="Select Month" />
+                </SelectTrigger>
+                <SelectContent>
+                  {monthOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+        </div>
+      </div>
+      
+      <div className="space-y-6 mt-6">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
+          {kpis.map((kpi) => (
+            <KpiCard key={kpi.label} kpi={kpi} />
+          ))}
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+          <Card className="lg:col-span-4">
+            <CardHeader>
+              <CardTitle>Region vs. Ageing</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <div className="min-w-[600px]">
+                {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
+                  <AgeBarChart data={filteredAgeData} />
+                </ChartContainer>}
+              </div>
+            </CardContent>
+          </Card>
+          <Card className="lg:col-span-3">
+            <CardHeader>
+              <CardTitle>Region-wise Distribution</CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+               <div className="min-w-[400px] md:min-w-0">
+                {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
+                    <RegionPieChart data={regionDistribution} />
+                </ChartContainer>}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="grid gap-4 md:grid-cols-2">
+          <Card>
+              <CardHeader>
+                  <CardTitle>Month-wise Outstanding Trend</CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                  <div className="min-w-[600px]">
+                    {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
+                        <MonthlyLineChart data={monthlyTrends} />
+                    </ChartContainer>}
+                  </div>
+              </CardContent>
+          </Card>
+          <Card>
+              <CardHeader>
+                  <CardTitle>New vs. Recovered Outstanding</CardTitle>
+              </CardHeader>
+              <CardContent className="overflow-x-auto">
+                <div className="min-w-[600px]">
+                  {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full">
+                      <OutstandingRecoveryChart data={recoveryData} />
+                  </ChartContainer>}
+                </div>
+              </CardContent>
+          </Card>
+        </div>
+        
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle>Ageing Summary by Region</CardTitle>
+              <div className="w-[180px]">
+                <Select value={region} onValueChange={setRegion}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select Region" />
                   </SelectTrigger>
                   <SelectContent>
-                    {monthOptions.map(option => (
+                    {regionOptions.map(option => (
                       <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
-          </div>
-        </div>
-        
-        <div className="space-y-6">
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
-            {kpis.map((kpi) => (
-              <KpiCard key={kpi.label} kpi={kpi} />
-            ))}
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
-            <Card className="lg:col-span-4">
-              <CardHeader>
-                <CardTitle>Region vs. Ageing</CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                <div className="min-w-[600px]">
-                  {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
-                    <AgeBarChart data={filteredAgeData} />
-                  </ChartContainer>}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="lg:col-span-3">
-              <CardHeader>
-                <CardTitle>Region-wise Distribution</CardTitle>
-              </CardHeader>
-              <CardContent className="overflow-x-auto">
-                 <div className="min-w-[400px] md:min-w-0">
-                  {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
-                      <RegionPieChart data={regionDistribution} />
-                  </ChartContainer>}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Month-wise Outstanding Trend</CardTitle>
-                </CardHeader>
-                <CardContent className="overflow-x-auto">
-                    <div className="min-w-[600px]">
-                      {isClient && <ChartContainer config={monthlyChartConfig} className="min-h-[350px] w-full">
-                          <MonthlyLineChart data={monthlyTrends} />
-                      </ChartContainer>}
-                    </div>
-                </CardContent>
-            </Card>
-            <Card>
-                <CardHeader>
-                    <CardTitle>New vs. Recovered Outstanding</CardTitle>
-                </CardHeader>
-                <CardContent className="overflow-x-auto">
-                  <div className="min-w-[600px]">
-                    {isClient && <ChartContainer config={recoveryChartConfig} className="min-h-[350px] w-full">
-                        <OutstandingRecoveryChart data={recoveryData} />
-                    </ChartContainer>}
-                  </div>
-                </CardContent>
-            </Card>
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <CardTitle>Ageing Summary by Region</CardTitle>
-                <div className="w-[180px]">
-                  <Select value={region} onValueChange={setRegion}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select Region" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {regionOptions.map(option => (
-                        <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="overflow-x-auto">
-              <div className="min-w-[700px]">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Region</TableHead>
-                      <TableHead className="text-right">0-30 Days</TableHead>
-                      <TableHead className="text-right">31-90 Days</TableHead>
-                      <TableHead className="text-right">91-180 Days</TableHead>
-                      <TableHead className="text-right">181-365 Days</TableHead>
-                      <TableHead className="text-right">>1 Year</TableHead>
-                      <TableHead className="text-right font-bold">Total</TableHead>
+            </div>
+          </CardHeader>
+          <CardContent className="overflow-x-auto">
+            <div className="min-w-[700px]">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Region</TableHead>
+                    <TableHead className="text-right">0-30 Days</TableHead>
+                    <TableHead className="text-right">31-90 Days</TableHead>
+                    <TableHead className="text-right">91-180 Days</TableHead>
+                    <TableHead className="text-right">181-365 Days</TableHead>
+                    <TableHead className="text-right">>1 Year</TableHead>
+                    <TableHead className="text-right font-bold">Total</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredAgeData.map((row) => (
+                    <TableRow key={row.region}>
+                      <TableCell className="font-medium">{row.region}</TableCell>
+                      <TableCell className="text-right">{row['0-30'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right">{row['31-90'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right">{row['91-180'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right">{row['181-365'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right">{row['>365'].toLocaleString('en-IN')}</TableCell>
+                      <TableCell className="text-right font-bold">{row.total.toLocaleString('en-IN')}</TableCell>
                     </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredAgeData.map((row) => (
-                      <TableRow key={row.region}>
-                        <TableCell className="font-medium">{row.region}</TableCell>
-                        <TableCell className="text-right">{row['0-30'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right">{row['31-90'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right">{row['91-180'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right">{row['181-365'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right">{row['>365'].toLocaleString('en-IN')}</TableCell>
-                        <TableCell className="text-right font-bold">{row.total.toLocaleString('en-IN')}</TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                  <TableFooter>
-                      <TableRow className="font-bold bg-muted/50">
-                          <TableCell>Grand Total</TableCell>
-                          <TableCell className="text-right">{grandTotal['0-30'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal['31-90'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal['91-180'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal['181-365'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal['>365'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal.total.toLocaleString('en-IN')}</TableCell>
-                      </TableRow>
-                  </TableFooter>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                  ))}
+                </TableBody>
+                <TableFooter>
+                    <TableRow className="font-bold bg-muted/50">
+                        <TableCell>Grand Total</TableCell>
+                        <TableCell className="text-right">{grandTotal['0-30'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right">{grandTotal['31-90'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right">{grandTotal['91-180'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right">{grandTotal['181-365'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right">{grandTotal['>365'].toLocaleString('en-IN')}</TableCell>
+                        <TableCell className="text-right">{grandTotal.total.toLocaleString('en-IN')}</TableCell>
+                    </TableRow>
+                </TableFooter>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
       </div>
-    </div>
+    </>
   );
 }
