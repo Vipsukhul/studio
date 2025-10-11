@@ -10,6 +10,7 @@ const spaceGrotesk = Space_Grotesk({ subsets: ["latin"], variable: "--font-space
 export const metadata: Metadata = {
   title: "Outstanding Tracker",
   description: "Manage and track outstanding invoices and customer payments.",
+  manifest: "/manifest.webmanifest",
 };
 
 export default function RootLayout({
