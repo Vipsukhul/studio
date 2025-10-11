@@ -1,176 +1,182 @@
-# Backend Integration Guide for Outstanding Tracker Frontend
+# Outstanding Tracker: Complete Backend Integration Guide
 
 This document provides the full technical specifications for building a Node.js/Express/MongoDB backend that is compatible with the existing Next.js frontend of the Outstanding Tracker application.
 
-## 1. Overview
+======================================
+1. System Design & Architecture
+======================================
 
-The frontend is built with Next.js and expects to communicate with a RESTful API. It uses a token-based authentication system (`Bearer` token in the `Authorization` header). The backend should handle all business logic, database interactions, and authentication.
+### 1.1. Tech Stack (MERN)
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB (with Mongoose for Object Data Modeling)
+- **Authentication**: JSON Web Tokens (JWT)
 
-**Base API URL Expectation:** The frontend is configured to make requests to a base URL. For local development, this would typically be `http://localhost:5000/api`.
+### 1.2. Proposed Backend Project Structure
+/
+├── backend/
+│   ├── config/             # Environment variables, database connection (db.js)
+│   ├── controllers/        # Request handlers containing all business logic
+│   ├── middleware/         # Custom middleware (e.g., JWT verification, error handling)
+│   ├── models/             # Mongoose schemas for MongoDB data models
+│   ├── routes/             # API route definitions that link to controllers
+│   └── server.js           # Main Express server entry point
 
-**CORS:** The backend server must be configured to accept requests from the frontend's origin (e.g., `http://localhost:9002` in development).
+======================================
+2. Data Models & Schema (Mongoose)
+======================================
 
-## 2. Authentication
+### 2.1. User Model (`models/User.js`)
+```javascript
+const mongoose = require('mongoose');
 
-The frontend has a standard email/password login flow.
+const userSchema = new mongoose.Schema({
+  name: { type: String, required: true },
+  email: { type: String, required: true, unique: true },
+  password: { type: String, required: true }, // Should be stored as a hash
+  role: { 
+    type: String, 
+    enum: ['Manager', 'Engineer', 'Country Manager', 'Admin'], 
+    required: true 
+  },
+  region: { 
+    type: String, 
+    enum: ['North', 'South', 'East', 'West']
+  },
+  contact: { type: String }
+}, { timestamps: true });
 
-### Login Endpoint
+module.exports = mongoose.model('User', userSchema);
+```
 
-- **Endpoint:** `POST /api/auth/login`
-- **Request Body:**
-  ```json
-  {
-    "email": "user@example.com",
-    "password": "user_password"
-  }
-  ```
-- **Success Response (200 OK):** The backend should validate the credentials, and if successful, return a JWT token and a user object.
+### 2.2. Customer Model (`models/Customer.js`)
+```javascript
+const mongoose = require('mongoose');
+
+const customerSchema = new mongoose.Schema({
+  customerCode: { type: String, required: true, unique: true },
+  customerName: { type: String, required: true },
+  region: { type: String, required: true },
+  outstandingAmount: { type: Number, default: 0 },
+  remarks: { 
+    type: String, 
+    enum: ["payment received", "partial payment", "under follow-up", "dispute", "write-off", "none"],
+    default: 'none'
+  },
+  notes: { type: String, default: '' },
+  assignedEngineer: { type: mongoose.Schema.Types.ObjectId, ref: 'User' }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Customer', customerSchema);
+```
+
+### 2.3. Invoice Model (`models/Invoice.js`)
+```javascript
+const mongoose = require('mongoose');
+
+const invoiceSchema = new mongoose.Schema({
+  invoiceNumber: { type: String, required: true, unique: true },
+  invoiceAmount: { type: Number, required: true },
+  invoiceDate: { type: Date, required: true },
+  status: { 
+    type: String, 
+    enum: ['paid', 'unpaid', 'dispute'], 
+    default: 'unpaid' 
+  },
+  customer: { type: mongoose.Schema.Types.ObjectId, ref: 'Customer', required: true }
+}, { timestamps: true });
+
+module.exports = mongoose.model('Invoice', invoiceSchema);
+```
+
+======================================
+3. Authentication Flow (JWT)
+======================================
+- **Login (`POST /api/auth/login`):**
+    1. User submits email and password.
+    2. Backend finds user by email, then compares the submitted password with the hashed password in the database (using a library like `bcrypt`).
+    3. On success, it generates a JWT containing the user's ID, role, and other non-sensitive info. The token should have an expiration date.
+    4. The JWT is sent back to the frontend.
+- **Frontend Storage**: The frontend stores the JWT in `localStorage` or a secure cookie.
+- **Authenticated Requests**: For all protected API calls, the frontend sends the JWT in the `Authorization: Bearer <token>` header.
+- **Backend Middleware (`middleware/auth.js`):** An Express middleware on the backend verifies the incoming JWT on protected routes. If the token is valid, it decodes the payload and attaches the user's information to the request object (e.g., `req.user`), which can then be used by controllers for authorization.
+
+======================================
+4. API Endpoint Specifications
+======================================
+
+### 4.1. General Setup
+- **Base API URL Expectation**: The frontend is configured to make requests to a base URL. For local development, this would typically be `http://localhost:5000/api`.
+- **CORS**: The backend server must be configured with the `cors` middleware to accept requests from the frontend's origin (e.g., `http://localhost:9002` in development).
+
+### 4.2. Authentication Endpoints
+- **Endpoint**: `POST /api/auth/login`
+- **Request Body**: `{ "email": "user@example.com", "password": "user_password" }`
+- **Success Response (200 OK)**:
   ```json
   {
     "token": "your_jwt_token_here",
     "user": {
-      "id": "some_user_id",
+      "id": "user_mongodb_object_id",
       "name": "User Name",
-      "role": "Manager", // e.g., 'Manager', 'Engineer', 'Country Manager', 'Admin'
-      "department": "Batching Plant" // e.g., 'Batching Plant' or 'Pump'
+      "role": "Manager",
+      "department": "Batching Plant"
     }
   }
   ```
-- **Error Response (400/401):**
-  ```json
-  {
-    "error": "Invalid email or password."
-  }
-  ```
+- **Error Response (400/401)**: `{ "error": "Invalid email or password." }`
 
-## 3. Main Data API Endpoints
+### 4.3. Main Data API Endpoints (Protected)
+- **Get Dashboard Data**: `GET /api/dashboard`
+  - **Query Params**: `month`, `department`, `financialYear`.
+  - **Success Response (200 OK)**: Should return a JSON object with `kpis`, `outstandingByAge`, `regionDistribution`, and `monthlyTrends`.
 
-These endpoints are called by the frontend to populate the dashboard, charts, and tables. They should be protected and require a valid JWT.
+- **Get Customers (for Data Sheet)**: `GET /api/customers`
+  - **Query Params**: `department`, `financialYear`.
+  - **Success Response (200 OK)**: Return an array of `Customer` objects, populating the `invoices` array for each customer.
 
----
+- **Get Invoice Tracker Data**: `GET /api/invoice-tracker`
+  - **Query Params**: `region`, `department`, `financialYear`.
+  - **Success Response (200 OK)**: Return an array matching `InvoiceTrackerData` type.
 
-### **Get Dashboard Data**
-- **Endpoint:** `GET /api/dashboard`
-- **Query Parameters:** `month` (e.g., "May-25"), `department` (e.g., "Batching Plant"), `financialYear` (e.g., "2024-2025").
-- **Success Response (200 OK):** Should return a JSON object containing data for the main dashboard. The structure should match the types in `src/lib/types.ts`.
-  ```json
-  {
-    "kpis": [
-      { "label": "Total Outstanding", "value": "₹1,23,45,678", "change": "+5.2%", "description": "vs. last month" },
-      // ... other KPIs
-    ],
-    "outstandingByAge": [
-      { "region": "North", "department": "Batching Plant", "0-30": 50000, "total": 50000 /*, etc. */ },
-      // ... other regions
-    ],
-    "regionDistribution": [
-      { "region": "North", "amount": 1250000 },
-      // ... other regions
-    ],
-    "monthlyTrends": [
-      { "month": "Jan-24", "North": 4000, "West": 2400 /*, etc. */ },
-      // ... other months
-    ]
-  }
-  ```
----
+- **Get All Users (for Team Hierarchy)**: `GET /api/users`
+  - **Success Response (200 OK)**: Return an array of all `User` objects.
 
-### **Get Customers (for Data Sheet)**
-- **Endpoint:** `GET /api/customers`
-- **Query Parameters:** `department` (e.g., "Pump"), `financialYear` (e.g., "2024-2025").
-- **Success Response (200 OK):** Return an array of `Customer` objects. Each customer object must include an `invoices` array.
-  ```json
-  [
-    {
-      "id": "doc_id_1",
-      "customerCode": "CUST001",
-      "customerName": "Apex Innovations",
-      "region": "North",
-      "department": "Batching Plant",
-      "outstandingAmount": 150000,
-      "remarks": "under follow-up",
-      "notes": "Follow up next week",
-      "assignedEngineer": "R. Sharma",
-      "invoices": [
-        { "invoiceNumber": "INV-123", "invoiceAmount": 75000, "invoiceDate": "2024-05-15T00:00:00.000Z", "status": "unpaid" },
-        { "invoiceNumber": "INV-124", "invoiceAmount": 75000, "invoiceDate": "2024-06-01T00:00:00.000Z", "status": "unpaid" }
-      ]
-    }
-    // ... other customers
-  ]
-  ```
----
+### 4.4. Data Mutation Endpoints (Protected)
+- **Update Customer Remark**: `PUT /api/customers/:id/remark`
+  - **Request Body**: `{ "newRemark": "payment received" }`
+  - **Success Response**: `200 OK` with `{ "success": true }`
 
-### **Get Invoice Tracker Data**
-- **Endpoint:** `GET /api/invoice-tracker`
-- **Query Parameters:** `region`, `department`, `financialYear`.
-- **Success Response (200 OK):** Return an array matching `InvoiceTrackerData`.
-  ```json
-  [
-    { "monthYear": "Apr-25", "department": "Batching Plant", "previousMonthInvoices": 520, "previousMonthAmount": 9800000, /* etc. */ }
-  ]
-  ```
----
+- **Update Customer Notes**: `PUT /api/customers/:id/notes`
+  - **Request Body**: `{ "newNotes": "Customer promised payment by EOD." }`
+  - **Success Response**: `200 OK` with `{ "success": true }`
 
-### **Get All Users (for Team Hierarchy)**
-- **Endpoint:** `GET /api/users`
-- **Success Response (200 OK):** Return an array of all `User` objects.
-  ```json
-  [
-    { "id": "USR01", "name": "Anjali Verma", "email": "a.v@example.com", "role": "Manager", "region": "North", "department": "Batching Plant", "contact": "987..." }
-  ]
-  ```
----
+- **Update Assigned Engineer**: `PUT /api/customers/:id/assign-engineer`
+  - **Request Body**: `{ "engineerId": "mongodb_object_id_of_engineer" }`
+  - **Success Response**: `200 OK` with `{ "success": true }`
 
-## 4. Data Mutation Endpoints
+- **Update Invoice Dispute Status**: `PUT /api/customers/:customerId/invoices/:invoiceNumber/dispute`
+  - **Request Body**: `{ "newStatus": "dispute" }` (Can be 'dispute', 'unpaid', 'paid')
+  - **Success Response**: `200 OK` with `{ "success": true }`
 
-These endpoints handle updates from the Data Sheet page.
+### 4.5. File Upload Endpoint (Protected)
+- **Endpoint**: `POST /api/upload`
+- **Request Type**: `multipart/form-data`
+- **Form Fields**: `file` (the `.xlsx` file), `month`, `financialYear`.
+- **Backend Logic**:
+  1. Use a library like `multer` to handle the file stream.
+  2. Use `xlsx` or `exceljs` to parse the Excel data into records.
+  3. Save the parsed data to the database, associating it with the correct customer, month, and financial year.
+  4. Role-based access control middleware should ensure only 'Country Manager' or 'Admin' can use this endpoint.
+- **Success Response (200 OK)**: `{ "count": 150, "message": "Upload successful." }`
+- **Error Response (400/500)**: `{ "error": "File processing failed." }`
 
-- **Update Customer Remark:**
-  - **Endpoint:** `PUT /api/customers/:id/remark`
-  - **Request Body:** `{ "newRemark": "payment received" }`
-  - **Success Response:** `200 OK` with `{ "success": true }`
+======================================
+5. Important Guidelines (What Not to Do)
+======================================
+- **Do not store sensitive information in JWT payloads**: Only non-sensitive data like user ID and role should be in the token.
+- **Do not perform critical business logic on the frontend**: All calculations, data validation, and aggregation should be handled by the Express.js backend. The frontend should only be responsible for presenting data and capturing user input.
+- **Do not trust client-side validation alone**: While the frontend should have form validation for a good UX, all incoming data must be re-validated on the backend before being saved to the database.
+- **Do not expose raw database errors to the user**: Use a centralized error handler in Express to catch errors and send generic, friendly error messages to the frontend.
 
-- **Update Customer Notes:**
-  - **Endpoint:** `PUT /api/customers/:id/notes`
-  - **Request Body:** `{ "newNotes": "Customer promised payment by EOD." }`
-  - **Success Response:** `200 OK` with `{ "success": true }`
-
-- **Update Assigned Engineer:**
-  - **Endpoint:** `PUT /api/customers/:id/assign-engineer`
-  - **Request Body:** `{ "engineerName": "S. Gupta" }`
-  - **Success Response:** `200 OK` with `{ "success": true }`
-
-- **Update Invoice Dispute Status:**
-  - **Endpoint:** `PUT /api/customers/:customerId/invoices/:invoiceNumber/dispute`
-  - **Request Body:** `{ "newStatus": "dispute" }` (Can be 'dispute' or 'unpaid')
-  - **Success Response:** `200 OK` with `{ "success": true }`
-
-## 5. File Upload
-
-- **Endpoint:** `POST /api/upload`
-- **Request Type:** `multipart/form-data`
-- **Form Fields:**
-  - `file`: The `.xlsx` file itself.
-  - `month`: The selected month string (e.g., "May-25").
-  - `financialYear`: The selected financial year string (e.g., "2024-2025").
-- **Backend Logic:**
-  1. The backend should use a library like `multer` to handle the file stream and `xlsx` or `exceljs` to parse the Excel data.
-  2. Parse the rows into an array of invoice/customer records.
-  3. Save the parsed data to the database, associating it with the correct month and financial year.
-  4. Role-based access control should ensure only authorized roles (e.g., 'Country Manager', 'Admin') can use this endpoint.
-- **Success Response (200 OK):**
-  ```json
-  {
-    "count": 150, // Number of records processed
-    "message": "Upload successful. 150 records were processed."
-  }
-  ```
-- **Error Response (400/500):**
-  ```json
-  {
-    "error": "File processing failed: Invalid column structure."
-  }
-  ```
-
-With these specifications, you can build a backend that will seamlessly integrate with the frontend application. Good luck, my friend! Let's rock this.
+With these specifications, you can build a backend that will seamlessly integrate with the frontend application. Good luck!
