@@ -236,7 +236,7 @@ export default function UserManagementPage() {
             title: 'Permissions Updated',
             description: `Role for ${email} has been updated to ${newRole}.`,
         });
-    }
+    };
 
   return (
     <>
