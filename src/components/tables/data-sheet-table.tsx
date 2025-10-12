@@ -395,10 +395,24 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     return false;
   };
 
+  const selectedRegion = table.getColumn("region")?.getFilterValue() as string;
+
   const uniqueEngineers = React.useMemo(() => {
-    const engineerNames = new Set(data.map(c => c.assignedEngineer).filter(Boolean));
-    return Array.from(engineerNames);
-  }, [data]);
+    const engineerMap = new Map<string, string>(); // name -> region
+    data.forEach(c => {
+      if (c.assignedEngineer && c.region) {
+        engineerMap.set(c.assignedEngineer, c.region);
+      }
+    });
+
+    const allEngineers = Array.from(engineerMap.keys());
+
+    if (selectedRegion && selectedRegion !== 'All') {
+      return allEngineers.filter(engineer => engineerMap.get(engineer) === selectedRegion);
+    }
+    
+    return allEngineers;
+  }, [data, selectedRegion]);
 
 
   return (
