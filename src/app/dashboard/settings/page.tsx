@@ -20,7 +20,7 @@ export default function SettingsPage() {
   const [email, setEmail] = useState('test@example.com');
   const [contact, setContact] = useState('123-456-7890');
   const [address, setAddress] = useState('123 Main St, Anytown, USA');
-  const [region, setRegion] = useState('North');
+  const [region, setRegion] = useState('pune');
   const [role, setRole] = useState('');
   const [profileImageUrl, setProfileImageUrl] = useState<string | null>(`https://picsum.photos/seed/user/128/128`);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);

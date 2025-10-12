@@ -5,7 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { User } from '@/lib/types';
 import { getUsers } from '@/lib/api';
 import { regionOptions } from '@/lib/data';
@@ -57,6 +57,7 @@ function UserTable({ users }: { users: User[] }) {
 export default function TeamHierarchyPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRegion, setSelectedRegion] = useState('All');
 
   useEffect(() => {
     async function loadUsers() {
@@ -89,30 +90,31 @@ export default function TeamHierarchyPage() {
   return (
     <>
       <h1 className="text-3xl font-headline font-bold">Team Hierarchy</h1>
-      <Tabs defaultValue="All">
-        <Card>
-          <CardHeader>
-            <div className="flex flex-col md:flex-row justify-between md:items-center">
-                <div>
-                    <CardTitle>All Users</CardTitle>
-                    <CardDescription>A complete list of all registered users in the system, filtered by region.</CardDescription>
-                </div>
-                <TabsList className="mt-4 md:mt-0">
-                    {regionOptions.map(option => (
-                        <TabsTrigger key={option.value} value={option.value}>{option.label}</TabsTrigger>
-                    ))}
-                </TabsList>
+      <Card>
+        <CardHeader>
+          <div className="flex flex-col md:flex-row justify-between md:items-center">
+            <div>
+              <CardTitle>All Users</CardTitle>
+              <CardDescription>A complete list of all registered users in the system, filtered by region.</CardDescription>
             </div>
-          </CardHeader>
-          <CardContent>
-            {regionOptions.map(option => (
-                <TabsContent key={option.value} value={option.value}>
-                    <UserTable users={filteredUsers(option.value)} />
-                </TabsContent>
-            ))}
-          </CardContent>
-        </Card>
-      </Tabs>
+            <div className="mt-4 md:mt-0 w-full md:w-auto">
+              <Select value={selectedRegion} onValueChange={setSelectedRegion}>
+                <SelectTrigger className="w-full md:w-[200px]">
+                  <SelectValue placeholder="Select a Region" />
+                </SelectTrigger>
+                <SelectContent>
+                  {regionOptions.map(option => (
+                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <UserTable users={filteredUsers(selectedRegion)} />
+        </CardContent>
+      </Card>
     </>
   );
 }

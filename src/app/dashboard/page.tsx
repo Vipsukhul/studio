@@ -1,12 +1,12 @@
 'use client';
 import { useEffect, useState, useMemo } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow, TableFooter } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { ArrowDown, ArrowUp, Building, CalendarDays, Users, FileText, IndianRupee } from 'lucide-react';
+import { ArrowDown, ArrowUp, CalendarDays, Users, FileText, IndianRupee, MapPin } from 'lucide-react';
 import { AgeBarChart } from '@/components/charts/age-bar-chart';
-import { RegionPieChart } from '@/components/charts/region-pie-chart';
+import { RegionBarChart } from '@/components/charts/region-bar-chart';
 import { MonthlyLineChart } from '@/components/charts/monthly-line-chart';
 import { OutstandingRecoveryChart } from '@/components/charts/outstanding-recovery-chart';
 import { generateMonthOptions, regionOptions, financialYearOptions } from '@/lib/data';
@@ -109,7 +109,7 @@ export default function DashboardPage() {
     async function fetchData() {
       setLoading(true);
       const [mainData, recoveryTrendData] = await Promise.all([
-        getDashboardData(month, financialYear),
+        getDashboardData(month, financialYear, region),
         getOutstandingRecoveryTrend(financialYear)
       ]);
       setDashboardData(mainData);
@@ -119,7 +119,7 @@ export default function DashboardPage() {
     if (financialYear) {
         fetchData();
     }
-  }, [month, financialYear]);
+  }, [month, financialYear, region]);
 
   const handleFinancialYearChange = (newFinancialYear: string) => {
     setFinancialYear(newFinancialYear);
@@ -138,12 +138,8 @@ export default function DashboardPage() {
   }
 
   const { kpis, outstandingByAge, regionDistribution, monthlyTrends } = dashboardData;
-
-  const filteredAgeData = region === 'All'
-    ? outstandingByAge
-    : outstandingByAge.filter(item => item.region === region);
     
-  const grandTotal = filteredAgeData.reduce((acc, curr) => {
+  const grandTotal = outstandingByAge.reduce((acc, curr) => {
     acc['0-30'] += curr['0-30'];
     acc['31-90'] += curr['31-90'];
     acc['91-180'] += curr['91-180'];
@@ -158,22 +154,26 @@ export default function DashboardPage() {
     '31-90': { label: '31-90 Days', color: 'hsl(var(--chart-2))' },
     '91-180': { label: '91-180 Days', color: 'hsl(var(--chart-3))' },
     '181-365': { label: '181-365 Days', color: 'hsl(var(--chart-4))' },
-    '>365': { label: '>1 Year', color: 'hsl(var(--chart-3))' },
+    '>365': { label: '>1 Year', color: 'hsl(var(--chart-5))' },
   } as const;
 
   const regionChartConfig = {
     amount: { label: 'Amount' },
-    North: { label: 'North', color: 'hsl(var(--chart-1))' },
-    South: { label: 'South', color: 'hsl(var(--chart-2))' },
-    East: { label: 'East', color: 'hsl(var(--chart-3))' },
-    West: { label: 'West', color: 'hsl(var(--chart-4))' },
+    ...regionOptions.reduce((acc, option) => {
+        if (option.value !== 'All') {
+            acc[option.value] = { label: option.label, color: `hsl(var(--chart-${(Object.keys(acc).length % 5) + 1}))` };
+        }
+        return acc;
+    }, {} as any)
   } as const;
   
   const monthlyChartConfig = {
-    North: { label: 'North', color: 'hsl(var(--chart-1))' },
-    West: { label: 'West', color: 'hsl(var(--chart-2))' },
-    South: { label: 'South', color: 'hsl(var(--chart-3))' },
-    East: { label: 'East', color: 'hsl(var(--chart-4))' },
+    ...regionOptions.reduce((acc, option) => {
+        if (option.value !== 'All') {
+            acc[option.value] = { label: option.label, color: `hsl(var(--chart-${(Object.keys(acc).length % 5) + 1}))` };
+        }
+        return acc;
+    }, {} as any)
   } as const;
 
   const recoveryChartConfig = {
@@ -212,6 +212,19 @@ export default function DashboardPage() {
                 </SelectContent>
               </Select>
             </div>
+            <div className="flex items-center gap-2">
+                <MapPin className="h-5 w-5 text-muted-foreground" />
+                <Select value={region} onValueChange={setRegion}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Select Region" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {regionOptions.map(option => (
+                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
         </div>
       </div>
       
@@ -226,12 +239,15 @@ export default function DashboardPage() {
           <Card className="lg:col-span-4">
             <CardHeader>
               <CardTitle>Region vs. Ageing</CardTitle>
+               <CardDescription>
+                Outstanding amounts across different ageing buckets for each region.
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
                 <div className="min-w-[600px]">
                   {isClient && <ChartContainer config={ageChartConfig} className="min-h-[350px] w-full">
-                    <AgeBarChart data={filteredAgeData} />
+                    <AgeBarChart data={outstandingByAge} />
                   </ChartContainer>}
                 </div>
               </div>
@@ -240,12 +256,15 @@ export default function DashboardPage() {
           <Card className="lg:col-span-3">
             <CardHeader>
               <CardTitle>Region-wise Distribution</CardTitle>
+                <CardDescription>
+                Outstanding amounts contributed by each region.
+                </CardDescription>
             </CardHeader>
             <CardContent>
                <div className="overflow-x-auto">
                 <div className="min-w-[400px] md:min-w-0">
                   {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
-                      <RegionPieChart data={regionDistribution} />
+                      <RegionBarChart data={regionDistribution} />
                   </ChartContainer>}
                 </div>
               </div>
@@ -257,6 +276,9 @@ export default function DashboardPage() {
           <Card>
               <CardHeader>
                   <CardTitle>Month-wise Outstanding Trend</CardTitle>
+                   <CardDescription>
+                    Tracking the outstanding balance for each region over time.
+                   </CardDescription>
               </CardHeader>
               <CardContent>
                   <div className="overflow-x-auto">
@@ -271,6 +293,9 @@ export default function DashboardPage() {
           <Card>
               <CardHeader>
                   <CardTitle>New vs. Recovered Outstanding</CardTitle>
+                  <CardDescription>
+                    Comparing newly assigned amounts vs. recovered amounts.
+                  </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
@@ -286,21 +311,10 @@ export default function DashboardPage() {
         
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
               <CardTitle>Ageing Summary by Region</CardTitle>
-              <div className="w-[180px]">
-                <Select value={region} onValueChange={setRegion}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select Region" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {regionOptions.map(option => (
-                      <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+              <CardDescription>
+                A detailed breakdown of outstanding amounts across different ageing buckets.
+              </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -318,9 +332,9 @@ export default function DashboardPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredAgeData.map((row) => (
+                    {outstandingByAge.map((row) => (
                       <TableRow key={row.region}>
-                        <TableCell className="font-medium">{row.region}</TableCell>
+                        <TableCell className="font-medium capitalize">{row.region}</TableCell>
                         <TableCell className="text-right">{row['0-30'].toLocaleString('en-IN')}</TableCell>
                         <TableCell className="text-right">{row['31-90'].toLocaleString('en-IN')}</TableCell>
                         <TableCell className="text-right">{row['91-180'].toLocaleString('en-IN')}</TableCell>
@@ -330,17 +344,19 @@ export default function DashboardPage() {
                       </TableRow>
                     ))}
                   </TableBody>
-                  <TableFooter>
-                      <TableRow className="font-bold bg-muted/50">
-                          <TableCell>Grand Total</TableCell>
-                          <TableCell className="text-right">{grandTotal['0-30'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal['31-90'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal['91-180'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal['181-365'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal['>365'].toLocaleString('en-IN')}</TableCell>
-                          <TableCell className="text-right">{grandTotal.total.toLocaleString('en-IN')}</TableCell>
-                      </TableRow>
-                  </TableFooter>
+                  {region === 'All' && (
+                    <TableFooter>
+                        <TableRow className="font-bold bg-muted/50">
+                            <TableCell>Grand Total</TableCell>
+                            <TableCell className="text-right">{grandTotal['0-30'].toLocaleString('en-IN')}</TableCell>
+                            <TableCell className="text-right">{grandTotal['31-90'].toLocaleString('en-IN')}</TableCell>
+                            <TableCell className="text-right">{grandTotal['91-180'].toLocaleString('en-IN')}</TableCell>
+                            <TableCell className="text-right">{grandTotal['181-365'].toLocaleString('en-IN')}</TableCell>
+                            <TableCell className="text-right">{grandTotal['>365'].toLocaleString('en-IN')}</TableCell>
+                            <TableCell className="text-right">{grandTotal.total.toLocaleString('en-IN')}</TableCell>
+                        </TableRow>
+                    </TableFooter>
+                  )}
                 </Table>
               </div>
             </div>

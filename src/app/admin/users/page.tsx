@@ -48,7 +48,7 @@ const initialUsers = [
     name: 'Vipul Sukhul',
     email: 'vipsukhul@gmail.com',
     role: 'Admin',
-    region: 'North',
+    region: 'mumbai',
     status: 'Active',
     lastLogin: '2024-07-29',
     initials: 'VS',
@@ -58,7 +58,7 @@ const initialUsers = [
     name: 'Supriy Sukhadeve',
     email: 'supriysukhadeve12@gmail.com',
     role: 'Admin',
-    region: 'North',
+    region: 'pune',
     status: 'Active',
     lastLogin: '2024-07-29',
     initials: 'SS',
@@ -68,7 +68,7 @@ const initialUsers = [
     name: 'Jane Doe',
     email: 'jane.doe@example.com',
     role: 'Engineer',
-    region: 'West',
+    region: 'banglore',
     status: 'Active',
     lastLogin: '2024-07-28',
     initials: 'JD',
@@ -78,7 +78,7 @@ const initialUsers = [
     name: 'John Smith',
     email: 'john.smith@example.com',
     role: 'Engineer',
-    region: 'South',
+    region: 'chennai',
     status: 'Inactive',
     lastLogin: '2024-06-15',
     initials: 'JS',
@@ -88,7 +88,7 @@ const initialUsers = [
     name: 'S. Iyer',
     email: 's.iyer@example.com',
     role: 'Engineer',
-    region: 'South',
+    region: 'chennai',
     status: 'Active',
     lastLogin: '2024-07-29',
     initials: 'SI',
@@ -280,7 +280,7 @@ export default function UserManagementPage() {
                         </div>
                     </div>
                   </TableCell>
-                  <TableCell>{user.region}</TableCell>
+                  <TableCell className="capitalize">{user.region}</TableCell>
                   <TableCell>
                      <Select value={user.role} onValueChange={(value) => handleRoleChange(user.email, value)}>
                         <SelectTrigger className="w-[180px]">
@@ -321,7 +321,7 @@ export default function UserManagementPage() {
                               <AlertDialogDescription>
                                 This action cannot be undone. This will permanently delete the user
                                 account and remove their data from our servers.
-                              </AlertDialogDescription>
+                              </Description>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
