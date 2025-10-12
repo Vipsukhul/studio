@@ -15,10 +15,10 @@ export function Footer() {
             </div>
           <p className="text-sm text-muted-foreground">© {new Date().getFullYear()} vipsukhul. All rights reserved.</p>
           <div className="flex -mx-2">
-            <a href="#" className="mx-2 text-muted-foreground transition-colors duration-300 hover:text-primary" aria-label="LinkedIn">
+            <a href="https://www.linkedin.com/in/vipul-sukhdeve-692b29221?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app" target="_blank" rel="noopener noreferrer" className="mx-2 text-muted-foreground transition-colors duration-300 hover:text-primary" aria-label="LinkedIn">
               <Linkedin className="h-5 w-5" />
             </a>
-            <a href="#" className="mx-2 text-muted-foreground transition-colors duration-300 hover:text-primary" aria-label="Twitter">
+            <a href="https://x.com/Vipul1212k?t=AFpRI5I55_j3QdngFvqzCQ&s=09" target="_blank" rel="noopener noreferrer" className="mx-2 text-muted-foreground transition-colors duration-300 hover:text-primary" aria-label="Twitter">
               <Twitter className="h-5 w-5" />
             </a>
           </div>
