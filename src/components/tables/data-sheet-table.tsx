@@ -139,8 +139,9 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     // In a real app, the current user would come from a context or auth hook.
     // For this mock, we'll find an example user based on role.
     async function fetchCurrentUser() {
+        // This is a mock implementation. In a real app, you'd get the current logged in user's ID
         if (role === 'Engineer') {
-            const user = await getUserProfile('ENG-che-2'); // Mocking S. Iyer
+            const user = await getUserProfile('ENG-che-1'); // Mocking E. Pillai
             setCurrentUser(user);
         } else if (role === 'Manager') {
              const user = await getUserProfile('MGR01');
@@ -379,7 +380,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   })
   
   const isCustomerDetailsReadOnly = (customer: Customer | null): boolean => {
-    if (!customer) return true;
+    if (!customer || !userRole) return true;
     if (userRole === 'Engineer') {
       return currentUser?.name !== customer.assignedEngineer;
     }
@@ -516,5 +517,3 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     </div>
   )
 }
-
-    
