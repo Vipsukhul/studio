@@ -50,9 +50,9 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus } from '@/lib/api';
+import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus, getUserProfile } from '@/lib/api';
 
-import type { Customer, Invoice, Engineer } from "@/lib/types"
+import type { Customer, Invoice, Engineer, User } from "@/lib/types"
 
 const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean }) => {
     const { toast } = useToast();
@@ -127,6 +127,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
 
   const { toast } = useToast();
 
@@ -134,9 +135,24 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     setTableData(data);
     const role = localStorage.getItem('userRole');
     setUserRole(role);
-  }, [data]);
+    
+    // In a real app, the current user would come from a context or auth hook.
+    // For this mock, we'll find an example user based on role.
+    async function fetchCurrentUser() {
+        if (role === 'Engineer') {
+            const user = await getUserProfile('ENG-che-2'); // Mocking S. Iyer
+            setCurrentUser(user);
+        } else if (role === 'Manager') {
+             const user = await getUserProfile('MGR01');
+             setCurrentUser(user);
+        } else if (role === 'Country Manager') {
+            const user = await getUserProfile('CM01');
+            setCurrentUser(user);
+        }
+    }
+    fetchCurrentUser();
 
-  const isReadOnly = userRole === 'Engineer';
+  }, [data]);
 
   const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
     toast({ title: 'Updating status...', description: `Setting remark for customer to ${newRemark}.` });
@@ -201,10 +217,19 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         ));
     };
 
+    const isCellEditable = (row: any) => {
+        if (userRole === 'Engineer') {
+            return currentUser?.name === row.original.assignedEngineer;
+        }
+        return true; // Managers and Admins can edit everything
+    };
+
 
   const AssignedToCell = ({ row }: { row: any }) => {
     const customerRegion = row.original.region;
     const [engineers, setEngineers] = React.useState<Engineer[]>([]);
+    const isManagerOrAdmin = userRole === 'Manager' || userRole === 'Country Manager' || userRole === 'Admin';
+
 
     React.useEffect(() => {
         getEngineersByRegion(customerRegion).then(setEngineers);
@@ -214,7 +239,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         <Select
             value={row.original.assignedEngineer}
             onValueChange={(value) => handleEngineerChange(row.original.customerCode, value)}
-            disabled={isReadOnly}
+            disabled={!isManagerOrAdmin}
         >
             <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Assign an engineer" />
@@ -272,7 +297,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
           <Select
             value={row.original.remarks}
             onValueChange={(value) => handleRemarkChange(row.original.customerCode, value as Customer['remarks'])}
-            disabled={isReadOnly}
+            disabled={!isCellEditable(row)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Set remark" />
@@ -293,6 +318,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         header: "Notes",
         cell: ({ row }) => {
             const [notes, setNotes] = React.useState(row.original.notes || '');
+            const editable = isCellEditable(row);
 
             const handleBlur = () => {
                 if (notes !== row.original.notes) {
@@ -313,8 +339,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
                 className="min-w-[200px]"
-                // Engineer can add notes even if read-only for other fields
-                // readOnly={isReadOnly} 
+                readOnly={!editable}
             />;
         }
     },
@@ -352,6 +377,15 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       rowSelection,
     },
   })
+  
+  const isCustomerDetailsReadOnly = (customer: Customer | null): boolean => {
+    if (!customer) return true;
+    if (userRole === 'Engineer') {
+      return currentUser?.name !== customer.assignedEngineer;
+    }
+    return false;
+  };
+
 
   return (
     <div className="w-full">
@@ -475,10 +509,12 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-4">
-            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} isReadOnly={isReadOnly} />}
+            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} isReadOnly={isCustomerDetailsReadOnly(selectedCustomer)} />}
           </div>
         </DialogContent>
       </Dialog>
     </div>
   )
 }
+
+    
