@@ -5,6 +5,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   Eye,
+  Filter,
 } from "lucide-react"
 import {
   ColumnDef,
@@ -43,6 +44,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Label } from "@/components/ui/label"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -51,8 +58,11 @@ import {
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
 import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus, getUserProfile } from '@/lib/api';
+import { regionOptions } from '@/lib/data';
 
 import type { Customer, Invoice, Engineer, User } from "@/lib/types"
+
+const remarksOptions: Customer['remarks'][] = ['none', 'payment received', 'partial payment', 'under follow-up', 'dispute', 'write-off'];
 
 const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean }) => {
     const { toast } = useToast();
@@ -137,11 +147,9 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     setUserRole(role);
     
     // In a real app, the current user would come from a context or auth hook.
-    // For this mock, we'll find an example user based on role.
     async function fetchCurrentUser() {
-        // This is a mock implementation. In a real app, you'd get the current logged in user's ID
         if (role === 'Engineer') {
-            const user = await getUserProfile('ENG-che-1'); // Mocking E. Pillai
+            const user = await getUserProfile('ENG-che-1'); 
             setCurrentUser(user);
         } else if (role === 'Manager') {
              const user = await getUserProfile('MGR01');
@@ -222,9 +230,8 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         if (userRole === 'Engineer') {
             return currentUser?.name === row.original.assignedEngineer;
         }
-        return true; // Managers and Admins can edit everything
+        return true; 
     };
-
 
   const AssignedToCell = ({ row }: { row: any }) => {
     const customerRegion = row.original.region;
@@ -272,6 +279,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     {
       accessorKey: "region",
       header: "Region",
+       cell: ({ row }) => <span className="capitalize">{row.getValue("region")}</span>
     },
     {
       accessorKey: "outstandingAmount",
@@ -387,18 +395,95 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     return false;
   };
 
+  const uniqueEngineers = React.useMemo(() => {
+    const engineerNames = new Set(data.map(c => c.assignedEngineer).filter(Boolean));
+    return Array.from(engineerNames);
+  }, [data]);
+
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter by customer name..."
-          value={(table.getColumn("customerName")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("customerName")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+      <div className="flex items-center py-4 gap-2">
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filter
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="start">
+                <div className="grid gap-4">
+                    <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Filters</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Refine the customer data view.
+                        </p>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Customer Name</Label>
+                        <Input
+                          placeholder="Filter by customer name..."
+                          value={(table.getColumn("customerName")?.getFilterValue() as string) ?? ""}
+                          onChange={(event) =>
+                            table.getColumn("customerName")?.setFilterValue(event.target.value)
+                          }
+                          className="max-w-sm"
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="region">Region</Label>
+                        <Select
+                            value={table.getColumn("region")?.getFilterValue() as string ?? ""}
+                            onValueChange={(value) => table.getColumn("region")?.setFilterValue(value === 'All' ? '' : value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a region" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {regionOptions.map(option => (
+                                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="remarks">Remarks</Label>
+                        <Select
+                            value={table.getColumn("remarks")?.getFilterValue() as string ?? ""}
+                            onValueChange={(value) => table.getColumn("remarks")?.setFilterValue(value === 'All' ? '' : value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select remarks" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All">All Remarks</SelectItem>
+                                {remarksOptions.map(option => (
+                                    <SelectItem key={option} value={option} className="capitalize">{option}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="grid gap-2">
+                        <Label htmlFor="engineer">Engineer</Label>
+                        <Select
+                            value={table.getColumn("assignedEngineer")?.getFilterValue() as string ?? ""}
+                            onValueChange={(value) => table.getColumn("assignedEngineer")?.setFilterValue(value === 'All' ? '' : value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select engineer" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All">All Engineers</SelectItem>
+                                {uniqueEngineers.map(engineer => (
+                                    <SelectItem key={engineer} value={engineer}>{engineer}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
