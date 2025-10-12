@@ -1,3 +1,5 @@
+export type Region = 'ahmedabad' | 'banglore' | 'chennai' | 'delhi' | 'export' | 'goa' | 'hyderabad' | 'indore' | 'jaipur' | 'kolkata' | 'mumbai' | 'nagpur' | 'odisha' | 'pune' | 'punjab' | 'raipur' | 'vizag' | 'wie';
+
 export interface Outstanding {
   id?: string;
   invoiceId?: string;
@@ -20,7 +22,7 @@ export interface Customer {
   id?: string; // Document ID from Firestore
   customerCode: string;
   customerName: string;
-  region: string;
+  region: Region;
   agePeriod?: '0-30' | '31-90' | '91-180' | '181-365' | '>365';
   outstandingAmount?: number;
   invoices?: Invoice[]; // Optional, as they are a subcollection
@@ -70,7 +72,7 @@ export interface InvoiceTrackerData {
 export interface Engineer {
   id: string;
   name: string;
-  region: 'North' | 'South' | 'East' | 'West';
+  region: Region;
 }
 
 export interface OutstandingRecoveryTrend {
@@ -112,7 +114,7 @@ export interface User {
   name: string;
   email: string;
   role: 'Manager' | 'Engineer' | 'Country Manager' | 'Admin';
-  region: 'North' | 'South' | 'East' | 'West';
+  region: Region;
   contact: string;
   photoURL?: string;
 }
