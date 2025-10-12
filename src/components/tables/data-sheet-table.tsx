@@ -5,6 +5,7 @@ import {
   ArrowUpDown,
   ChevronDown,
   Eye,
+  Filter,
 } from "lucide-react"
 import {
   ColumnDef,
@@ -43,6 +44,12 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import { Label } from "@/components/ui/label"
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -50,9 +57,12 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useToast } from "@/hooks/use-toast";
-import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus } from '@/lib/api';
+import { updateCustomerRemark, updateCustomerNotes, updateAssignedEngineer, getEngineersByRegion, updateInvoiceDisputeStatus, getUserProfile } from '@/lib/api';
+import { regionOptions } from '@/lib/data';
 
-import type { Customer, Invoice, Engineer } from "@/lib/types"
+import type { Customer, Invoice, Engineer, User } from "@/lib/types"
+
+const remarksOptions: Customer['remarks'][] = ['none', 'payment received', 'partial payment', 'under follow-up', 'dispute', 'write-off'];
 
 const InvoiceDetails = ({ customer, onInvoiceUpdate, isReadOnly }: { customer: Customer, onInvoiceUpdate: (invoiceNumber: string, newStatus: Invoice['status']) => void, isReadOnly: boolean }) => {
     const { toast } = useToast();
@@ -127,6 +137,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
   const [rowSelection, setRowSelection] = React.useState({})
   const [selectedCustomer, setSelectedCustomer] = React.useState<Customer | null>(null);
   const [userRole, setUserRole] = React.useState<string | null>(null);
+  const [currentUser, setCurrentUser] = React.useState<User | null>(null);
 
   const { toast } = useToast();
 
@@ -134,9 +145,23 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     setTableData(data);
     const role = localStorage.getItem('userRole');
     setUserRole(role);
-  }, [data]);
+    
+    // In a real app, the current user would come from a context or auth hook.
+    async function fetchCurrentUser() {
+        if (role === 'Engineer') {
+            const user = await getUserProfile('ENG-che-1'); 
+            setCurrentUser(user);
+        } else if (role === 'Manager') {
+             const user = await getUserProfile('MGR01');
+             setCurrentUser(user);
+        } else if (role === 'Country Manager') {
+            const user = await getUserProfile('CM01');
+            setCurrentUser(user);
+        }
+    }
+    fetchCurrentUser();
 
-  const isReadOnly = userRole === 'Engineer';
+  }, [data]);
 
   const handleRemarkChange = async (customerId: string, newRemark: Customer['remarks']) => {
     toast({ title: 'Updating status...', description: `Setting remark for customer to ${newRemark}.` });
@@ -201,10 +226,18 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         ));
     };
 
+    const isCellEditable = (row: any) => {
+        if (userRole === 'Engineer') {
+            return currentUser?.name === row.original.assignedEngineer;
+        }
+        return true; 
+    };
 
   const AssignedToCell = ({ row }: { row: any }) => {
     const customerRegion = row.original.region;
     const [engineers, setEngineers] = React.useState<Engineer[]>([]);
+    const isManagerOrAdmin = userRole === 'Manager' || userRole === 'Country Manager' || userRole === 'Admin';
+
 
     React.useEffect(() => {
         getEngineersByRegion(customerRegion).then(setEngineers);
@@ -214,7 +247,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         <Select
             value={row.original.assignedEngineer}
             onValueChange={(value) => handleEngineerChange(row.original.customerCode, value)}
-            disabled={isReadOnly}
+            disabled={!isManagerOrAdmin}
         >
             <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Assign an engineer" />
@@ -246,6 +279,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
     {
       accessorKey: "region",
       header: "Region",
+       cell: ({ row }) => <span className="capitalize">{row.getValue("region")}</span>
     },
     {
       accessorKey: "outstandingAmount",
@@ -272,7 +306,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
           <Select
             value={row.original.remarks}
             onValueChange={(value) => handleRemarkChange(row.original.customerCode, value as Customer['remarks'])}
-            disabled={isReadOnly}
+            disabled={!isCellEditable(row)}
           >
             <SelectTrigger className="w-[180px]">
               <SelectValue placeholder="Set remark" />
@@ -293,6 +327,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
         header: "Notes",
         cell: ({ row }) => {
             const [notes, setNotes] = React.useState(row.original.notes || '');
+            const editable = isCellEditable(row);
 
             const handleBlur = () => {
                 if (notes !== row.original.notes) {
@@ -313,8 +348,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
                 onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
                 className="min-w-[200px]"
-                // Engineer can add notes even if read-only for other fields
-                // readOnly={isReadOnly} 
+                readOnly={!editable}
             />;
         }
     },
@@ -352,18 +386,118 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
       rowSelection,
     },
   })
+  
+  const isCustomerDetailsReadOnly = (customer: Customer | null): boolean => {
+    if (!customer || !userRole) return true;
+    if (userRole === 'Engineer') {
+      return currentUser?.name !== customer.assignedEngineer;
+    }
+    return false;
+  };
+
+  const selectedRegion = table.getColumn("region")?.getFilterValue() as string;
+
+  const uniqueEngineers = React.useMemo(() => {
+    const engineerMap = new Map<string, string>(); // name -> region
+    data.forEach(c => {
+      if (c.assignedEngineer && c.region) {
+        engineerMap.set(c.assignedEngineer, c.region);
+      }
+    });
+
+    const allEngineers = Array.from(engineerMap.keys());
+
+    if (selectedRegion && selectedRegion !== 'All') {
+      return allEngineers.filter(engineer => engineerMap.get(engineer) === selectedRegion);
+    }
+    
+    return allEngineers;
+  }, [data, selectedRegion]);
+
 
   return (
     <div className="w-full">
-      <div className="flex items-center py-4">
-        <Input
-          placeholder="Filter by customer name..."
-          value={(table.getColumn("customerName")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("customerName")?.setFilterValue(event.target.value)
-          }
-          className="max-w-sm"
-        />
+      <div className="flex items-center py-4 gap-2">
+        <Popover>
+            <PopoverTrigger asChild>
+                <Button variant="outline">
+                    <Filter className="mr-2 h-4 w-4" />
+                    Filter
+                </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80" align="start">
+                <div className="grid gap-4">
+                    <div className="space-y-2">
+                        <h4 className="font-medium leading-none">Filters</h4>
+                        <p className="text-sm text-muted-foreground">
+                            Refine the customer data view.
+                        </p>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label>Customer Name</Label>
+                        <Input
+                          placeholder="Filter by customer name..."
+                          value={(table.getColumn("customerName")?.getFilterValue() as string) ?? ""}
+                          onChange={(event) =>
+                            table.getColumn("customerName")?.setFilterValue(event.target.value)
+                          }
+                          className="max-w-sm"
+                        />
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="region">Region</Label>
+                        <Select
+                            value={table.getColumn("region")?.getFilterValue() as string ?? ""}
+                            onValueChange={(value) => table.getColumn("region")?.setFilterValue(value === 'All' ? '' : value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select a region" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {regionOptions.map(option => (
+                                    <SelectItem key={option.value} value={option.value}>{option.label}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="grid gap-2">
+                        <Label htmlFor="remarks">Remarks</Label>
+                        <Select
+                            value={table.getColumn("remarks")?.getFilterValue() as string ?? ""}
+                            onValueChange={(value) => table.getColumn("remarks")?.setFilterValue(value === 'All' ? '' : value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select remarks" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All">All Remarks</SelectItem>
+                                {remarksOptions.map(option => (
+                                    <SelectItem key={option} value={option} className="capitalize">{option}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                     <div className="grid gap-2">
+                        <Label htmlFor="engineer">Engineer</Label>
+                        <Select
+                            value={table.getColumn("assignedEngineer")?.getFilterValue() as string ?? ""}
+                            onValueChange={(value) => table.getColumn("assignedEngineer")?.setFilterValue(value === 'All' ? '' : value)}
+                        >
+                            <SelectTrigger>
+                                <SelectValue placeholder="Select engineer" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="All">All Engineers</SelectItem>
+                                {uniqueEngineers.map(engineer => (
+                                    <SelectItem key={engineer} value={engineer}>{engineer}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                </div>
+            </PopoverContent>
+        </Popover>
+
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" className="ml-auto">
@@ -475,7 +609,7 @@ export const DataSheetTable = ({ data }: { data: Customer[] }) => {
             </DialogDescription>
           </DialogHeader>
           <div className="max-h-[60vh] overflow-y-auto pr-4">
-            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} isReadOnly={isReadOnly} />}
+            {selectedCustomer && <InvoiceDetails customer={selectedCustomer} onInvoiceUpdate={handleInvoiceUpdate} isReadOnly={isCustomerDetailsReadOnly(selectedCustomer)} />}
           </div>
         </DialogContent>
       </Dialog>

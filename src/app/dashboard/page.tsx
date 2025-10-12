@@ -13,6 +13,7 @@ import { generateMonthOptions, regionOptions, financialYearOptions } from '@/lib
 import { ChartContainer } from '@/components/ui/chart';
 import type { Kpi, MonthlyTrend, OutstandingByAge, RegionDistribution, OutstandingRecoveryTrend } from '@/lib/types';
 import { getDashboardData, getOutstandingRecoveryTrend } from '@/lib/api';
+import { AnimatedCounter } from '@/components/ui/animated-counter';
 
 const kpiIcons = {
     'Total Outstanding': IndianRupee,
@@ -37,6 +38,20 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
   // @ts-ignore
   const Icon = kpiIcons[kpi.label] || IndianRupee;
 
+  const numericValue = useMemo(() => {
+    if (typeof kpi.value === 'string') {
+        return parseFloat(kpi.value.replace(/[^0-9.]/g, '')) || 0;
+    }
+    return kpi.value;
+  }, [kpi.value]);
+
+  const formatter = (value: number) => {
+    if (typeof kpi.value === 'string' && kpi.value.startsWith('₹')) {
+        return `₹${Math.floor(value).toLocaleString('en-IN')}`;
+    }
+    return Math.floor(value).toLocaleString('en-IN');
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -44,7 +59,9 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
         <Icon className="h-4 w-4 text-muted-foreground" />
       </CardHeader>
       <CardContent>
-        <div className="text-2xl font-bold">{kpi.value}</div>
+        <div className="text-2xl font-bold">
+            <AnimatedCounter value={numericValue} formatter={formatter} />
+        </div>
         { kpi.description &&
             <div className="flex items-center text-xs text-muted-foreground">
             {kpi.change && (
@@ -161,6 +178,7 @@ export default function DashboardPage() {
     amount: { label: 'Amount' },
     ...regionOptions.reduce((acc, option) => {
         if (option.value !== 'All') {
+            // @ts-ignore
             acc[option.value] = { label: option.label, color: `hsl(var(--chart-${(Object.keys(acc).length % 5) + 1}))` };
         }
         return acc;
@@ -170,6 +188,7 @@ export default function DashboardPage() {
   const monthlyChartConfig = {
     ...regionOptions.reduce((acc, option) => {
         if (option.value !== 'All') {
+            // @ts-ignore
             acc[option.value] = { label: option.label, color: `hsl(var(--chart-${(Object.keys(acc).length % 5) + 1}))` };
         }
         return acc;
@@ -262,7 +281,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
                <div className="overflow-x-auto">
-                <div className="min-w-[400px] md:min-w-0">
+                <div className="min-w-[400px]">
                   {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
                       <RegionBarChart data={regionDistribution} />
                   </ChartContainer>}
