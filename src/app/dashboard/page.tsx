@@ -42,11 +42,11 @@ function KpiCard({ kpi }: { kpi: Kpi }) {
     if (typeof kpi.value === 'string') {
         return parseFloat(kpi.value.replace(/[^0-9.]/g, '')) || 0;
     }
-    return 0;
+    return kpi.value;
   }, [kpi.value]);
 
   const formatter = (value: number) => {
-    if (kpi.value.startsWith('₹')) {
+    if (typeof kpi.value === 'string' && kpi.value.startsWith('₹')) {
         return `₹${Math.floor(value).toLocaleString('en-IN')}`;
     }
     return Math.floor(value).toLocaleString('en-IN');
@@ -178,6 +178,7 @@ export default function DashboardPage() {
     amount: { label: 'Amount' },
     ...regionOptions.reduce((acc, option) => {
         if (option.value !== 'All') {
+            // @ts-ignore
             acc[option.value] = { label: option.label, color: `hsl(var(--chart-${(Object.keys(acc).length % 5) + 1}))` };
         }
         return acc;
@@ -187,6 +188,7 @@ export default function DashboardPage() {
   const monthlyChartConfig = {
     ...regionOptions.reduce((acc, option) => {
         if (option.value !== 'All') {
+            // @ts-ignore
             acc[option.value] = { label: option.label, color: `hsl(var(--chart-${(Object.keys(acc).length % 5) + 1}))` };
         }
         return acc;
