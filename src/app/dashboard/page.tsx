@@ -262,7 +262,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
                <div className="overflow-x-auto">
-                <div className="min-w-[400px] md:min-w-0">
+                <div className="min-w-[400px]">
                   {isClient && <ChartContainer config={regionChartConfig} className="min-h-[350px] w-full">
                       <RegionBarChart data={regionDistribution} />
                   </ChartContainer>}
