@@ -321,7 +321,7 @@ export default function UserManagementPage() {
                               <AlertDialogDescription>
                                 This action cannot be undone. This will permanently delete the user
                                 account and remove their data from our servers.
-                              </Description>
+                              </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancel</AlertDialogCancel>
